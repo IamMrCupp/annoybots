@@ -42,6 +42,17 @@ func TestQuoteCommandUnknownPack(t *testing.T) {
 	}
 }
 
+func TestPacksCommandListsPacks(t *testing.T) {
+	now := time.Unix(0, 0)
+	e := newTestEngine(t, quotePersonality(), &now)
+	r := &recorder{}
+	e.Handle(msg("!packs"), r)
+	got := r.all()
+	if len(got) != 1 || got[0] != "SAY net #chan quote packs: rickmorty, southpark — try !quote <name>" {
+		t.Fatalf("unexpected packs listing: %#v", got)
+	}
+}
+
 func TestAmbientQuoteRespectsCooldown(t *testing.T) {
 	now := time.Unix(0, 0)
 	p := quotePersonality()

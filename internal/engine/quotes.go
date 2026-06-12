@@ -2,6 +2,17 @@ package engine
 
 import "strings"
 
+// PackNames returns the configured quote-pack names, in order. Used by the
+// !packs text command and the Discord /packs slash command so users can discover
+// what they can pass to !quote / /quote.
+func (e *Engine) PackNames() []string {
+	names := make([]string, 0, len(e.p.Quotes.Packs))
+	for _, p := range e.p.Quotes.Packs {
+		names = append(names, p.Name)
+	}
+	return names
+}
+
 // allQuotes returns every quote across all packs.
 func (e *Engine) allQuotes() []string {
 	var out []string
@@ -39,6 +50,20 @@ func (e *Engine) maybeQuote(msg Message, out Sender) bool {
 		return false
 	}
 	out.Say(msg.Network, msg.Channel, line)
+	return true
+}
+
+// handlePacksCommand lists the available quote packs.
+func (e *Engine) handlePacksCommand(msg Message, out Sender) bool {
+	if !e.p.Quotes.Command {
+		return false
+	}
+	names := e.PackNames()
+	if len(names) == 0 {
+		out.Say(msg.Network, msg.Channel, "no quote packs loaded")
+		return true
+	}
+	out.Say(msg.Network, msg.Channel, "quote packs: "+strings.Join(names, ", ")+" — try !quote <name>")
 	return true
 }
 

@@ -12,7 +12,7 @@ different personality file.
 
 - **Keyword/regex triggers** → randomized, templated responses (`{nick}`, `{me}`, `{chan}`, capture groups).
 - **Ambient interjections** — random unprompted lines, with per-channel cooldowns.
-- **Quote packs** — drop-in `.txt` files (Rick & Morty, South Park, classic bot sass) surfaced randomly and via `!quote [pack]`.
+- **Quote packs** — drop-in `.txt` files (Rick & Morty, South Park, Futurama, Snuff Box, classic bot sass) surfaced randomly and via `!quote [pack]`; `!packs` lists what's available (same as the `/quote`, `/packs` slash commands on Discord).
 - **A learning "brain"** — an order-N Markov chain that learns from channel chatter and babbles it back, mangled. It persists to disk so learning survives restarts (just like the BMotion babble everyone remembers, minus the abandoned TCL stack).
 - **Multi-network in one process** — IRC + Twitch share the same wire protocol; Twitch just needs CAP negotiation, an `oauth:` token, and tighter rate limits, all handled automatically.
 

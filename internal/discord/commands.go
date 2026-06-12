@@ -1,6 +1,10 @@
 package discord
 
-import "github.com/bwmarrin/discordgo"
+import (
+	"strings"
+
+	"github.com/bwmarrin/discordgo"
+)
 
 // slashCommands mirrors the bot's "!" text commands as native Discord commands.
 var slashCommands = []*discordgo.ApplicationCommand{
@@ -23,6 +27,10 @@ var slashCommands = []*discordgo.ApplicationCommand{
 	{
 		Name:        "source",
 		Description: "Who is this bot?",
+	},
+	{
+		Name:        "packs",
+		Description: "List the available quote packs.",
 	},
 }
 
@@ -87,6 +95,13 @@ func (c *Client) onInteraction(s *session, dg *discordgo.Session, i *discordgo.I
 		}
 	case "source":
 		content = c.cmd.SourceLine()
+	case "packs":
+		names := c.cmd.PackNames()
+		if len(names) == 0 {
+			content = "no quote packs loaded"
+		} else {
+			content = "quote packs: " + strings.Join(names, ", ")
+		}
 	default:
 		return
 	}

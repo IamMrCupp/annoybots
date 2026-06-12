@@ -185,6 +185,8 @@ func (e *Engine) handleCommand(msg Message, out Sender) bool {
 	switch strings.ToLower(fields[0]) {
 	case "!quote":
 		return e.handleQuoteCommand(msg, out)
+	case "!packs":
+		return e.handlePacksCommand(msg, out)
 	}
 	if !e.p.Commands {
 		return false

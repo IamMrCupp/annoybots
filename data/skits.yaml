@@ -23,6 +23,26 @@ skits:
         line: "creature. CREATURE. she says, to the thing that eats her error logs."
         delay: "3s"
 
+  - name: whisky
+    chance: 0.01
+    cooldown: "15m"
+    steps:
+      - bot: kurkutu
+        line: "WHISKYYYYYY!"
+        delay: "2s"
+      - bot: arywen
+        line: "Kurkutu. This is a chat channel, not a saloon."
+        delay: "3s"
+      - bot: kurkutu
+        line: "is that good? IS THAT GOOD?"
+        delay: "2s"
+      - bot: arywen
+        line: "...very good. Now sit down."
+        delay: "3s"
+      - bot: kurkutu
+        line: "what doesn't kill you makes you stronger, your majesty"
+        delay: "3s"
+
   - name: saythething
     chance: 0.01
     cooldown: "15m"

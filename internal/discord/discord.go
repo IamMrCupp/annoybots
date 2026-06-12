@@ -27,6 +27,7 @@ type Commander interface {
 	RandomQuote(pack string) (string, bool)
 	AnnoyLine() string
 	SourceLine() string
+	PackNames() []string
 }
 
 type session struct {
