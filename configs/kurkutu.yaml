@@ -29,6 +29,10 @@ skits_file: "../data/skits.yaml"
 admin:
   enabled: true
   state_path: "/data/kurkutu-admin.json"
+  # Password fallback (DM !login <password>) for when services auth isn't
+  # available. Unset password_env to disable.
+  password_env: "KURKUTU_ADMIN_PASSWORD"
+  session_ttl: "30m"
   admins:
     - network: testnet
       account: "YOUR_NICKSERV_ACCOUNT"

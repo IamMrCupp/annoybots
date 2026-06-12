@@ -34,6 +34,11 @@ skits_file: "../data/skits.yaml"
 admin:
   enabled: true
   state_path: "/data/arywen-admin.json"
+  # Fallback for networks without services, or users not logged in: !login
+  # <password> in a DM grants a time-limited, nick-based session (weaker than
+  # services auth). Leave password_env unset to disable the fallback entirely.
+  password_env: "ARYWEN_ADMIN_PASSWORD"
+  session_ttl: "30m"
   admins:
     - network: testnet
       account: "YOUR_NICKSERV_ACCOUNT"

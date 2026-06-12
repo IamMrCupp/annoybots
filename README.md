@@ -129,6 +129,14 @@ over the botnet bus**, so you only have to DM one of them. Channel control and
 puppeting stay local to the bot you DM. (`!delquote` only removes runtime-added
 lines; file-pack lines are immutable — edit the `.txt` to change those.)
 
+**Password fallback.** Identity auth is primary, but if a network has no services
+(or someone just isn't logged in), set `password_env` and an admin can
+`!login <password>` in a DM to get a time-limited session (`!logout` to end it).
+Heads up: without services this session is keyed by **nick**, which is spoofable,
+so it's weaker than account-based auth — it's a convenience for when services are
+unavailable, with a constant-time password check, a failed-attempt throttle, and
+a configurable `session_ttl`. Leave `password_env` unset to disable it.
+
 ## Deploy to Kubernetes
 
 ```sh

@@ -66,7 +66,7 @@ func bossConfig() Config {
 func TestNonAdminRejected(t *testing.T) {
 	q := &fakeQuoter{}
 	c := &fakeControl{}
-	m := New("arywen", bossConfig(), q, c, nil, quietLog())
+	m := New("arywen", bossConfig(), "", q, c, nil, quietLog())
 
 	if !m.Handle(context.Background(), dm("rando", "!addquote rickmorty hello")) {
 		t.Fatal("admin command should be consumed even when rejected")
@@ -82,7 +82,7 @@ func TestNonAdminRejected(t *testing.T) {
 func TestAdminAddQuote(t *testing.T) {
 	q := &fakeQuoter{}
 	c := &fakeControl{}
-	m := New("arywen", bossConfig(), q, c, nil, quietLog())
+	m := New("arywen", bossConfig(), "", q, c, nil, quietLog())
 
 	m.Handle(context.Background(), dm("boss", "!addquote rickmorty get schwifty please"))
 	if q.addedCount() != 1 || q.added[0] != [2]string{"rickmorty", "get schwifty please"} {
@@ -91,7 +91,7 @@ func TestAdminAddQuote(t *testing.T) {
 }
 
 func TestPublicCommandIgnored(t *testing.T) {
-	m := New("arywen", bossConfig(), &fakeQuoter{}, &fakeControl{}, nil, quietLog())
+	m := New("arywen", bossConfig(), "", &fakeQuoter{}, &fakeControl{}, nil, quietLog())
 	pub := dm("boss", "!addquote rickmorty x")
 	pub.Private = false
 	if m.Handle(context.Background(), pub) {
@@ -101,7 +101,7 @@ func TestPublicCommandIgnored(t *testing.T) {
 
 func TestInviteCommand(t *testing.T) {
 	c := &fakeControl{}
-	m := New("arywen", bossConfig(), &fakeQuoter{}, c, nil, quietLog())
+	m := New("arywen", bossConfig(), "", &fakeQuoter{}, c, nil, quietLog())
 	m.Handle(context.Background(), dm("boss", "!invite testnet #secret bob"))
 	found := false
 	for _, s := range c.said {
@@ -120,8 +120,8 @@ func TestQuoteSyncOverBus(t *testing.T) {
 	defer cancel()
 
 	q1, q2 := &fakeQuoter{}, &fakeQuoter{}
-	ary := New("arywen", bossConfig(), q1, &fakeControl{}, bus, quietLog())
-	kur := New("kurkutu", bossConfig(), q2, &fakeControl{}, bus, quietLog())
+	ary := New("arywen", bossConfig(), "", q1, &fakeControl{}, bus, quietLog())
+	kur := New("kurkutu", bossConfig(), "", q2, &fakeControl{}, bus, quietLog())
 	if err := ary.Run(ctx); err != nil {
 		t.Fatal(err)
 	}
@@ -144,16 +144,81 @@ func TestQuoteSyncOverBus(t *testing.T) {
 	}
 }
 
+func TestPasswordLoginGrantsAndExpires(t *testing.T) {
+	c := &fakeControl{}
+	m := New("arywen", bossConfig(), "hunter2", &fakeQuoter{}, c, nil, quietLog())
+	now := time.Unix(0, 0)
+	m.now = func() time.Time { return now }
+
+	user := dm("", "anything") // no verified identity
+	if m.isAdmin(user) {
+		t.Fatal("should not be admin before login")
+	}
+
+	m.Handle(context.Background(), dm("", "!login hunter2"))
+	if !m.isAdmin(user) {
+		t.Fatal("should be admin right after a correct login")
+	}
+
+	now = now.Add(31 * time.Minute) // past the 30m default TTL
+	if m.isAdmin(user) {
+		t.Fatal("session should have expired")
+	}
+}
+
+func TestPasswordLoginWrongAndThrottle(t *testing.T) {
+	c := &fakeControl{}
+	m := New("arywen", bossConfig(), "hunter2", &fakeQuoter{}, c, nil, quietLog())
+	now := time.Unix(0, 0)
+	m.now = func() time.Time { return now }
+
+	m.Handle(context.Background(), dm("", "!login wrong"))
+	if m.isAdmin(dm("", "x")) {
+		t.Fatal("wrong password must not authenticate")
+	}
+	if !strings.Contains(c.last(), "nope.") {
+		t.Fatalf("expected failure reply, got %q", c.last())
+	}
+
+	for i := 0; i < 5; i++ {
+		m.Handle(context.Background(), dm("", "!login wrong"))
+	}
+	if !strings.Contains(c.last(), "too many") {
+		t.Fatalf("expected throttle after repeated failures, got %q", c.last())
+	}
+}
+
+func TestPasswordLoginDisabled(t *testing.T) {
+	c := &fakeControl{}
+	m := New("arywen", bossConfig(), "", &fakeQuoter{}, c, nil, quietLog())
+	m.Handle(context.Background(), dm("", "!login anything"))
+	if !strings.Contains(c.last(), "disabled") {
+		t.Fatalf("expected disabled reply when no password set, got %q", c.last())
+	}
+}
+
+func TestLogoutClearsSession(t *testing.T) {
+	m := New("arywen", bossConfig(), "hunter2", &fakeQuoter{}, &fakeControl{}, nil, quietLog())
+	m.Handle(context.Background(), dm("", "!login hunter2"))
+	if !m.isAdmin(dm("", "x")) {
+		t.Fatal("should be authed after login")
+	}
+	m.Handle(context.Background(), dm("", "!logout"))
+	if m.isAdmin(dm("", "x")) {
+		t.Fatal("logout should end the session")
+	}
+}
+
 func TestAdminPersistence(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "admin.json")
 	cfg := bossConfig()
 	cfg.StatePath = path
 
-	m1 := New("arywen", cfg, &fakeQuoter{}, &fakeControl{}, nil, quietLog())
+	m1 := New("arywen", cfg, "", &fakeQuoter{}, &fakeControl{}, nil, quietLog())
 	m1.Handle(context.Background(), dm("boss", "!addadmin testnet deputy"))
 
 	// A fresh manager loading the same state file should recognize the new admin.
-	m2 := New("arywen", cfg, &fakeQuoter{}, &fakeControl{}, nil, quietLog())
+	m2 := New("arywen", cfg, "", &fakeQuoter{}, &fakeControl{}, nil, quietLog())
 	if !m2.isAdmin(dm("deputy", "!admins")) {
 		t.Fatal("runtime-added admin should persist across restarts")
 	}

@@ -12,6 +12,7 @@ import (
 	"os"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/mrcupp/annoybots/internal/botnet"
 	"github.com/mrcupp/annoybots/internal/engine"
@@ -48,6 +49,10 @@ type Config struct {
 	Enabled   bool       `yaml:"enabled"`
 	StatePath string     `yaml:"state_path"`
 	Admins    []Identity `yaml:"admins"`
+	// Password fallback (for networks without services, or users not logged in).
+	// The password itself is read from PasswordEnv, never stored in the file.
+	PasswordEnv string          `yaml:"password_env"`
+	SessionTTL  engine.Duration `yaml:"session_ttl"` // how long a !login lasts (default 30m)
 }
 
 // persisted is the on-disk state: runtime-added admins and quotes.
@@ -65,16 +70,34 @@ type Manager struct {
 	bus botnet.Bus
 	log *slog.Logger
 
+	password string        // fallback admin password (empty disables !login)
+	ttl      time.Duration // session lifetime
+	now      func() time.Time
+
 	mu         sync.Mutex
-	configKeys map[string]bool     // admins defined in config (cannot be removed at runtime)
-	runtime    []Identity          // admins added at runtime
-	admins     map[string]bool     // combined auth set
-	quotes     map[string][]string // runtime quotes, for persistence
+	configKeys map[string]bool      // admins defined in config (cannot be removed at runtime)
+	runtime    []Identity           // admins added at runtime
+	admins     map[string]bool      // combined auth set
+	quotes     map[string][]string  // runtime quotes, for persistence
+	sessions   map[string]time.Time // network|nick -> session expiry (password logins)
+	fails      map[string][]time.Time
 }
 
+// session/throttle tuning for the password fallback.
+const (
+	defaultSessionTTL = 30 * time.Minute
+	maxFailedLogins   = 5
+	failWindow        = time.Minute
+)
+
 // New builds the console, loading persisted state and applying persisted quotes
-// to the engine. bus may be nil (admin still works locally, without sync).
-func New(bot string, cfg Config, eng Quoter, ctl Control, bus botnet.Bus, log *slog.Logger) *Manager {
+// to the engine. password is the fallback !login secret (empty disables it). bus
+// may be nil (admin still works locally, without sync).
+func New(bot string, cfg Config, password string, eng Quoter, ctl Control, bus botnet.Bus, log *slog.Logger) *Manager {
+	ttl := cfg.SessionTTL.D()
+	if ttl <= 0 {
+		ttl = defaultSessionTTL
+	}
 	m := &Manager{
 		bot:        strings.ToLower(bot),
 		cfg:        cfg,
@@ -82,9 +105,14 @@ func New(bot string, cfg Config, eng Quoter, ctl Control, bus botnet.Bus, log *s
 		ctl:        ctl,
 		bus:        bus,
 		log:        log,
+		password:   password,
+		ttl:        ttl,
+		now:        time.Now,
 		configKeys: make(map[string]bool),
 		admins:     make(map[string]bool),
 		quotes:     make(map[string][]string),
+		sessions:   make(map[string]time.Time),
+		fails:      make(map[string][]time.Time),
 	}
 	for _, a := range cfg.Admins {
 		m.configKeys[key(a.Network, a.Account)] = true
@@ -105,14 +133,57 @@ func (m *Manager) rebuild() {
 	}
 }
 
-// isAdmin reports whether a message's verified identity is an admin.
+// isAdmin reports whether a message is authorized: first by verified identity
+// (the strong path), then by an active password-login session (the fallback).
 func (m *Manager) isAdmin(msg engine.Message) bool {
-	if msg.Account == "" {
-		return false
-	}
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	return m.admins[key(msg.Network, msg.Account)] || m.admins[key("", msg.Account)]
+	if msg.Account != "" &&
+		(m.admins[key(msg.Network, msg.Account)] || m.admins[key("", msg.Account)]) {
+		return true
+	}
+	// Fallback: a live !login session, keyed by network+nick.
+	exp, ok := m.sessions[key(msg.Network, msg.Nick)]
+	return ok && m.now().Before(exp)
+}
+
+// grantSession records a password-login session for the sender.
+func (m *Manager) grantSession(msg engine.Message) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.sessions[key(msg.Network, msg.Nick)] = m.now().Add(m.ttl)
+}
+
+// clearSession ends a sender's password-login session.
+func (m *Manager) clearSession(msg engine.Message) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	delete(m.sessions, key(msg.Network, msg.Nick))
+}
+
+// throttled reports whether the sender has too many recent failed logins, and
+// records nothing (recordFail does that).
+func (m *Manager) throttled(msg engine.Message) bool {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	k := key(msg.Network, msg.Nick)
+	cut := m.now().Add(-failWindow)
+	kept := m.fails[k][:0]
+	for _, t := range m.fails[k] {
+		if t.After(cut) {
+			kept = append(kept, t)
+		}
+	}
+	m.fails[k] = kept
+	return len(kept) >= maxFailedLogins
+}
+
+// recordFail notes a failed login attempt for throttling.
+func (m *Manager) recordFail(msg engine.Message) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	k := key(msg.Network, msg.Nick)
+	m.fails[k] = append(m.fails[k], m.now())
 }
 
 func (m *Manager) load() {

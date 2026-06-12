@@ -80,7 +80,11 @@ func main() {
 	// Optional chat-based admin console (DM-only, identity-authenticated).
 	var adminMgr *admin.Manager
 	if cfg.Admin.Enabled {
-		adminMgr = admin.New(cfg.Bot, cfg.Admin, eng, router, bus, log)
+		adminPass := ""
+		if cfg.Admin.PasswordEnv != "" {
+			adminPass = os.Getenv(cfg.Admin.PasswordEnv)
+		}
+		adminMgr = admin.New(cfg.Bot, cfg.Admin, adminPass, eng, router, bus, log)
 		if rerr := adminMgr.Run(ctx); rerr != nil {
 			log.Error("admin console failed to start", "err", rerr)
 		} else {

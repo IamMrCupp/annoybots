@@ -2,6 +2,7 @@ package admin
 
 import (
 	"context"
+	"crypto/subtle"
 	"strings"
 
 	"github.com/mrcupp/annoybots/internal/botnet"
@@ -12,6 +13,7 @@ import (
 // first token is one of these is treated as an admin command (and gated on auth).
 var adminCommands = map[string]bool{
 	"!admin": true, "!help": true,
+	"!login": true, "!logout": true,
 	"!join": true, "!part": true, "!invite": true,
 	"!say": true, "!act": true,
 	"!addquote": true, "!delquote": true,
@@ -30,12 +32,45 @@ func (m *Manager) Handle(ctx context.Context, msg engine.Message) bool {
 	if len(fields) == 0 || !adminCommands[strings.ToLower(fields[0])] {
 		return false
 	}
-	if !m.isAdmin(msg) {
-		m.reply(msg, "you are not an admin.")
+	cmd := strings.ToLower(fields[0])
+
+	// !login / !logout are how you authenticate, so they bypass the admin gate.
+	switch cmd {
+	case "!login":
+		m.handleLogin(msg, text)
+		return true
+	case "!logout":
+		m.clearSession(msg)
+		m.reply(msg, "logged out.")
 		return true
 	}
-	m.exec(ctx, msg, strings.ToLower(fields[0]), fields, text)
+
+	if !m.isAdmin(msg) {
+		m.reply(msg, "you are not an admin. (try !login <password> if you have one)")
+		return true
+	}
+	m.exec(ctx, msg, cmd, fields, text)
 	return true
+}
+
+// handleLogin authenticates via the fallback password and grants a session.
+func (m *Manager) handleLogin(msg engine.Message, text string) {
+	if m.password == "" {
+		m.reply(msg, "password login is disabled.")
+		return
+	}
+	if m.throttled(msg) {
+		m.reply(msg, "too many failed attempts; wait a minute.")
+		return
+	}
+	pass := tailAfter(text, 1)
+	if pass != "" && subtle.ConstantTimeCompare([]byte(pass), []byte(m.password)) == 1 {
+		m.grantSession(msg)
+		m.reply(msg, "authenticated for "+m.ttl.String()+". (nick-based session; weaker than services auth)")
+		return
+	}
+	m.recordFail(msg)
+	m.reply(msg, "nope.")
 }
 
 func (m *Manager) reply(msg engine.Message, text string) {
@@ -45,7 +80,8 @@ func (m *Manager) reply(msg engine.Message, text string) {
 func (m *Manager) exec(_ context.Context, msg engine.Message, cmd string, fields []string, text string) {
 	switch cmd {
 	case "!admin", "!help":
-		m.reply(msg, "commands: !join <net> <#chan> | !part <net> <#chan> | "+
+		m.reply(msg, "commands: !login <password> | !logout | "+
+			"!join <net> <#chan> | !part <net> <#chan> | "+
 			"!invite <net> <#chan> <nick> | !say <net> <target> <text> | "+
 			"!act <net> <target> <text> | !addquote <pack> <text> | "+
 			"!delquote <pack> <text> | !addadmin <net|*> <account> | "+
