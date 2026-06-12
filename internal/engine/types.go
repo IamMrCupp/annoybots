@@ -1,0 +1,101 @@
+package engine
+
+import "time"
+
+// Message is a normalized inbound chat line, deliberately independent of any
+// IRC library so the engine can be unit-tested and reused across networks
+// (real IRC, a private InspIRCd test net, Twitch, etc.).
+type Message struct {
+	Network string // logical network name, e.g. "libera" or "twitch"
+	Channel string // channel where it was said; for PMs, the sender's nick
+	Nick    string // who said it
+	Text    string // message body
+	Private bool   // true if a direct message rather than a channel
+	Self    string // the bot's own current nick on this network
+}
+
+// Sender lets the engine emit lines back out to any network by name.
+type Sender interface {
+	Say(network, target, text string)
+	Action(network, target, text string)
+}
+
+// Duration is a time.Duration that unmarshals from a human string like "30s".
+type Duration time.Duration
+
+// D returns the underlying time.Duration.
+func (d Duration) D() time.Duration { return time.Duration(d) }
+
+// UnmarshalYAML parses durations written as strings ("45s", "5m").
+func (d *Duration) UnmarshalYAML(unmarshal func(any) error) error {
+	var s string
+	if err := unmarshal(&s); err != nil {
+		return err
+	}
+	if s == "" {
+		*d = 0
+		return nil
+	}
+	v, err := time.ParseDuration(s)
+	if err != nil {
+		return err
+	}
+	*d = Duration(v)
+	return nil
+}
+
+// Trigger fires a randomized response when an inbound line matches Pattern.
+type Trigger struct {
+	Name      string   `yaml:"name"`
+	Pattern   string   `yaml:"pattern"`
+	Chance    float64  `yaml:"chance"`   // 0..1 probability to fire when matched (0 => always)
+	Cooldown  Duration `yaml:"cooldown"` // per-channel cooldown for this trigger
+	Action    bool     `yaml:"action"`   // send as a /me action
+	Responses []string `yaml:"responses"`
+}
+
+// Interjections are random ambient lines dropped into channels to be annoying.
+type Interjections struct {
+	Enabled   bool     `yaml:"enabled"`
+	Chance    float64  `yaml:"chance"`   // per qualifying message
+	Cooldown  Duration `yaml:"cooldown"` // per channel
+	UseMarkov bool     `yaml:"use_markov"`
+	Lines     []string `yaml:"lines"`
+}
+
+// MarkovConfig controls the learning/generating "brain".
+type MarkovConfig struct {
+	Enabled  bool `yaml:"enabled"`
+	Learn    bool `yaml:"learn"`
+	Order    int  `yaml:"order"`
+	MaxWords int  `yaml:"max_words"`
+}
+
+// QuotePack is a named collection of canned lines, BMotion-style. Lines may be
+// listed inline and/or loaded from a File (one quote per line); the config layer
+// merges File contents into Lines so the engine only ever sees Lines.
+type QuotePack struct {
+	Name  string   `yaml:"name"`
+	File  string   `yaml:"file"`
+	Lines []string `yaml:"lines"`
+}
+
+// Quotes drops preloaded quotes into channels, both randomly and on demand.
+type Quotes struct {
+	Enabled  bool        `yaml:"enabled"`
+	Chance   float64     `yaml:"chance"`   // ambient random-quote chance per message
+	Cooldown Duration    `yaml:"cooldown"` // per channel
+	Command  bool        `yaml:"command"`  // enable the !quote [pack] command
+	Packs    []QuotePack `yaml:"packs"`
+}
+
+// Personality is the full behavioral config that distinguishes one bot from
+// another. Arywen and Kurkutu are the same binary with different Personalities.
+type Personality struct {
+	Name          string        `yaml:"name"`
+	Triggers      []Trigger     `yaml:"triggers"`
+	Interjections Interjections `yaml:"interjections"`
+	Quotes        Quotes        `yaml:"quotes"`
+	Markov        MarkovConfig  `yaml:"markov"`
+	Commands      bool          `yaml:"commands"`
+}

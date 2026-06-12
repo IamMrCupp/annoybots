@@ -1,0 +1,74 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: annoybot
+  labels:
+    app.kubernetes.io/name: annoybot
+spec:
+  serviceName: annoybot
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: annoybot
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: annoybot
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: annoybot
+          image: ghcr.io/mrcupp/annoybots:latest
+          args: ["-config", "/config/bot.yaml"]
+          ports:
+            - name: http
+              containerPort: 8080
+          # Secrets (oauth tokens, NickServ/SASL passwords) come from a Secret.
+          envFrom:
+            - secretRef:
+                name: bot-secrets
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: config
+              mountPath: /config
+              readOnly: true
+            - name: data
+              mountPath: /data
+      volumes:
+        - name: config
+          configMap:
+            name: bot-config
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 128Mi

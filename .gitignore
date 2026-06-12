@@ -1,0 +1,21 @@
+# Binaries
+/annoybot
+/bin/
+/out/
+
+# Secrets — never commit these
+deploy/k8s/overlays/*/secret.env
+
+# Markov brains / local data
+*.gob
+/data/*.gob
+
+# Go
+*.test
+*.out
+coverage.txt
+
+# Editor/OS
+.DS_Store
+.idea/
+.vscode/

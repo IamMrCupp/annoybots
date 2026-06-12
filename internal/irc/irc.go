@@ -1,0 +1,272 @@
+// Package irc adapts the ergochat/irc-go event client into a multi-network
+// manager. One process holds many simultaneous connections (real IRC networks,
+// a private InspIRCd test net, and Twitch) and routes every inbound channel
+// message through a single handler, while pacing outbound messages per network.
+package irc
+
+import (
+	"context"
+	"crypto/tls"
+	"log/slog"
+	"strings"
+	"sync"
+	"time"
+
+	"github.com/ergochat/irc-go/ircevent"
+	"github.com/ergochat/irc-go/ircmsg"
+
+	"github.com/mrcupp/annoybots/internal/config"
+	"github.com/mrcupp/annoybots/internal/engine"
+	"github.com/mrcupp/annoybots/internal/ratelimit"
+)
+
+var twitchCaps = []string{"twitch.tv/tags", "twitch.tv/commands", "twitch.tv/membership"}
+
+// Handler receives normalized inbound messages along with the Sender to reply.
+type Handler func(engine.Message, engine.Sender)
+
+type outMsg struct {
+	target string
+	text   string
+	action bool
+}
+
+// conn is a single network connection plus its outbound pacing.
+type conn struct {
+	cfg     config.Network
+	ic      *ircevent.Connection
+	limiter *ratelimit.Limiter
+	out     chan outMsg
+	log     *slog.Logger
+}
+
+// Manager owns all connections and implements engine.Sender.
+type Manager struct {
+	conns   map[string]*conn
+	order   []string
+	handler Handler
+	log     *slog.Logger
+	wg      sync.WaitGroup
+}
+
+// NewManager builds (but does not start) connections for every network. getenv
+// resolves secret env var names to their values (usually os.Getenv).
+func NewManager(nets []config.Network, handler Handler, log *slog.Logger, getenv func(string) string) (*Manager, error) {
+	m := &Manager{conns: make(map[string]*conn), handler: handler, log: log}
+	for _, n := range nets {
+		c := newConn(n, log, getenv)
+		m.bind(c)
+		m.conns[n.Name] = c
+		m.order = append(m.order, n.Name)
+	}
+	return m, nil
+}
+
+func newConn(n config.Network, log *slog.Logger, getenv func(string) string) *conn {
+	ic := &ircevent.Connection{
+		Server:        n.Server,
+		Nick:          n.Nick,
+		User:          n.User,
+		RealName:      n.RealName,
+		UseTLS:        n.TLS,
+		QuitMessage:   "reborn, and gone again",
+		Timeout:       60 * time.Second,
+		KeepAlive:     4 * time.Minute,
+		ReconnectFreq: 30 * time.Second,
+	}
+	if n.TLS {
+		ic.TLSConfig = &tls.Config{
+			ServerName:         hostOnly(n.Server),
+			InsecureSkipVerify: n.InsecureSkipVerify, //nolint:gosec // opt-in for self-signed test nets
+		}
+	}
+	if n.PasswordEnv != "" {
+		ic.Password = getenv(n.PasswordEnv)
+	}
+
+	if n.Kind == "twitch" {
+		// Twitch requires a lowercase nick, an "oauth:" password, and CAP
+		// negotiation for tags/commands/membership.
+		ic.Nick = strings.ToLower(n.Nick)
+		ic.User = ic.Nick
+		ic.RequestCaps = append(ic.RequestCaps, twitchCaps...)
+		if ic.Password != "" && !strings.HasPrefix(ic.Password, "oauth:") {
+			ic.Password = "oauth:" + ic.Password
+		}
+	} else {
+		ic.RequestCaps = append(ic.RequestCaps, "message-tags", "server-time")
+		if n.SASL {
+			ic.SASLLogin = n.SASLUser
+			ic.SASLPassword = getenv(n.SASLPassEnv)
+		}
+	}
+
+	return &conn{
+		cfg:     n,
+		ic:      ic,
+		limiter: ratelimit.New(n.Rate.Burst, n.Rate.PerSecond),
+		out:     make(chan outMsg, 256),
+		log:     log.With("network", n.Name),
+	}
+}
+
+// bind registers connect/message callbacks.
+func (m *Manager) bind(c *conn) {
+	ic := c.ic
+	ic.AddConnectCallback(func(ircmsg.Message) {
+		c.log.Info("connected", "nick", ic.CurrentNick())
+		for _, ch := range c.cfg.Channels {
+			if err := ic.Join(ch); err != nil {
+				c.log.Warn("join failed", "channel", ch, "err", err)
+			}
+		}
+	})
+	ic.AddCallback("PRIVMSG", func(e ircmsg.Message) {
+		if len(e.Params) < 2 {
+			return
+		}
+		target := e.Params[0]
+		private := !isChannel(target)
+		channel := target
+		if private {
+			channel = e.Nick()
+		}
+		m.handler(engine.Message{
+			Network: c.cfg.Name,
+			Channel: channel,
+			Nick:    e.Nick(),
+			Text:    e.Params[1],
+			Private: private,
+			Self:    ic.CurrentNick(),
+		}, m)
+	})
+}
+
+// Run starts every connection plus its sender loop, returning immediately.
+func (m *Manager) Run(ctx context.Context) {
+	for _, name := range m.order {
+		c := m.conns[name]
+		m.wg.Add(2)
+		go func(c *conn) { defer m.wg.Done(); c.runIRC(ctx) }(c)
+		go func(c *conn) { defer m.wg.Done(); c.sendLoop(ctx) }(c)
+	}
+}
+
+// runIRC connects and runs the event loop, retrying on failure until ctx ends.
+func (c *conn) runIRC(ctx context.Context) {
+	for {
+		if ctx.Err() != nil {
+			return
+		}
+		if err := c.ic.Connect(); err != nil {
+			c.log.Error("connect failed, retrying", "err", err)
+			select {
+			case <-ctx.Done():
+				return
+			case <-time.After(15 * time.Second):
+				continue
+			}
+		}
+		c.ic.Loop() // blocks; handles its own reconnects until Quit()
+		if ctx.Err() != nil {
+			return
+		}
+		c.log.Warn("event loop exited, reconnecting")
+		select {
+		case <-ctx.Done():
+			return
+		case <-time.After(5 * time.Second):
+		}
+	}
+}
+
+// sendLoop drains the outbox, pacing sends through the rate limiter.
+func (c *conn) sendLoop(ctx context.Context) {
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case msg := <-c.out:
+			if d := c.limiter.Reserve(); d > 0 {
+				select {
+				case <-ctx.Done():
+					return
+				case <-time.After(d):
+				}
+			}
+			var err error
+			if msg.action {
+				err = c.ic.Action(msg.target, msg.text)
+			} else {
+				err = c.ic.Privmsg(msg.target, msg.text)
+			}
+			if err != nil {
+				c.log.Warn("send failed", "target", msg.target, "err", err)
+			}
+		}
+	}
+}
+
+// Say queues a normal message (engine.Sender).
+func (m *Manager) Say(network, target, text string) {
+	m.enqueue(network, outMsg{target: target, text: text})
+}
+
+// Action queues a CTCP ACTION / "/me" (engine.Sender).
+func (m *Manager) Action(network, target, text string) {
+	m.enqueue(network, outMsg{target: target, text: text, action: true})
+}
+
+func (m *Manager) enqueue(network string, o outMsg) {
+	c, ok := m.conns[network]
+	if !ok {
+		m.log.Warn("send to unknown network", "network", network)
+		return
+	}
+	select {
+	case c.out <- o:
+	default:
+		c.log.Warn("outbox full, dropping message")
+	}
+}
+
+// Quit asks every connection to disconnect without reconnecting.
+func (m *Manager) Quit() {
+	for _, c := range m.conns {
+		c.ic.Quit()
+	}
+}
+
+// Wait blocks until all goroutines have stopped.
+func (m *Manager) Wait() { m.wg.Wait() }
+
+// AnyConnected reports whether at least one network is currently connected.
+func (m *Manager) AnyConnected() bool {
+	for _, c := range m.conns {
+		if c.ic.Connected() {
+			return true
+		}
+	}
+	return false
+}
+
+// isChannel reports whether a PRIVMSG target is a channel rather than a nick.
+func isChannel(target string) bool {
+	if target == "" {
+		return false
+	}
+	switch target[0] {
+	case '#', '&', '+', '!':
+		return true
+	default:
+		return false
+	}
+}
+
+// hostOnly strips a trailing :port from a host:port string for TLS SNI.
+func hostOnly(server string) string {
+	if i := strings.LastIndex(server, ":"); i > 0 {
+		return server[:i]
+	}
+	return server
+}

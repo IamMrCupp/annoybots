@@ -1,0 +1,112 @@
+# Kurkutu -- a feral chaos-gremlin who lives under the channel's floorboards.
+# Guttural, twitchy, prone to ALL-CAPS outbursts and gibberish chants. Where
+# Arywen condescends, Kurkutu simply gnaws.
+#
+# Secrets are NEVER stored here. Each *_env field names an environment variable
+# (populated from a Kubernetes Secret) that holds the actual token/password.
+
+bot: kurkutu
+
+health:
+  addr: ":8080"
+
+brain:
+  path: "/data/kurkutu-brain.gob"
+  save_every: "5m"
+
+networks:
+  - name: testnet
+    server: "irc.example-test.net:6697"
+    tls: true
+    insecure_skip_verify: false
+    nick: "Kurkutu"
+    sasl: true
+    sasl_user: "Kurkutu"
+    sasl_pass_env: "KURKUTU_TESTNET_SASL"
+    channels: ["#pit"]
+
+  - name: libera
+    server: "irc.libera.chat:6697"
+    tls: true
+    nick: "Kurkutu"
+    sasl: true
+    sasl_user: "Kurkutu"
+    sasl_pass_env: "KURKUTU_LIBERA_SASL"
+    channels: ["#yourchannel"]
+
+  - name: twitch
+    kind: twitch
+    nick: "Kurkutu"
+    password_env: "KURKUTU_TWITCH_TOKEN"
+    channels: ["#your_twitch_login"]
+
+personality:
+  name: "Kurkutu"
+  commands: true
+
+  triggers:
+    - name: greeting
+      pattern: "(?i)\\b(hello|hi|hey|yo)\\b"
+      chance: 0.7
+      cooldown: "30s"
+      responses:
+        - "HELLO {nick} HELLO HELLO yes hi hello"
+        - "oh? OH? a {nick} appears. it makes the words."
+        - "hi {nick} i was NOT hiding in the logs do not look there"
+
+    - name: name-mention
+      pattern: "(?i)\\bkurkutu\\b"
+      chance: 1.0
+      cooldown: "15s"
+      responses:
+        - "WHO SAYS THE NAME. who. WHO. ({nick}. it was {nick}.)"
+        - "i hear my name and i come SCUTTLING"
+        - "yes yes yes {nick} what WHAT what do you want"
+
+    - name: food
+      pattern: "(?i)\\b(pizza|taco|burger|snack|food|hungry)\\b"
+      chance: 0.8
+      cooldown: "45s"
+      action: true
+      responses:
+        - "lunges at the word '{1}' and devours it whole"
+        - "smells {1} and emits a deeply unsettling chitter"
+
+    - name: bot-insult
+      pattern: "(?i)\\b(stupid|dumb|bad) bot\\b"
+      chance: 1.0
+      cooldown: "20s"
+      responses:
+        - "RUDE. {nick} is RUDE. noted in the gnaw-ledger."
+        - "you'll regret that, {nick}. probably. eventually. maybe now."
+
+  interjections:
+    enabled: true
+    chance: 0.07          # twitchier than Arywen
+    cooldown: "2m"
+    use_markov: true       # babble the channel's own words back, mangled
+    lines:
+      - "BORK"
+      - "i found a bug. i ate it. problem solved."
+      - "what if. what IF. no. nevermind. WHAT IF though."
+      - "scuttle scuttle scuttle"
+      - "everyone be quiet i'm trying to misbehave"
+
+  quotes:
+    enabled: true
+    chance: 0.05
+    cooldown: "3m"
+    command: true
+    packs:
+      - name: classic
+        file: "classic.txt"
+      - name: rickmorty
+        file: "rickmorty.txt"
+      - name: southpark
+        file: "southpark.txt"
+
+  markov:
+    enabled: true
+    learn: true
+    order: 2
+    max_words: 40

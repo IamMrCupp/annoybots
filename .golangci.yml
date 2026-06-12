@@ -1,0 +1,22 @@
+run:
+  timeout: 5m
+
+linters:
+  enable:
+    - govet
+    - errcheck
+    - staticcheck
+    - ineffassign
+    - unused
+    - gofmt
+    - goimports
+    - misspell
+    - revive
+    - unconvert
+
+issues:
+  exclude-rules:
+    # Test helpers are allowed to ignore returned errors for brevity.
+    - path: _test\.go
+      linters:
+        - errcheck

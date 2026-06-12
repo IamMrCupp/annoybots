@@ -1,0 +1,28 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Names every resource arywen-* so both bots can share a namespace.
+namePrefix: arywen-
+commonLabels:
+  app.kubernetes.io/instance: arywen
+
+resources:
+  - ../../base
+
+# The bot's personality+networks file becomes the bot-config ConfigMap. It lives
+# in the repo's top-level configs/ dir, so build with:
+#   kubectl kustomize --load-restrictor LoadRestrictionsNone deploy/k8s/overlays/arywen
+configMapGenerator:
+  - name: bot-config
+    files:
+      - bot.yaml=../../../../configs/arywen.yaml
+
+# Secrets are read from secret.env (gitignored). Copy secret.example.env first.
+secretGenerator:
+  - name: bot-secrets
+    envs:
+      - secret.env
+
+images:
+  - name: ghcr.io/mrcupp/annoybots
+    newTag: latest

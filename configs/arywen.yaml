@@ -1,0 +1,122 @@
+# Arywen -- a haughty, mock-regal presence who treats the channel as her court
+# and everyone in it as tiresome peasants. Speaks in purple, condescending prose.
+#
+# Secrets are NEVER stored here. Each *_env field names an environment variable
+# (populated from a Kubernetes Secret) that holds the actual token/password.
+
+bot: arywen
+
+health:
+  addr: ":8080"
+
+brain:
+  path: "/data/arywen-brain.gob"
+  save_every: "5m"
+
+# ---------------------------------------------------------------------------
+# Networks. Edit servers/channels to taste. The same process holds all of these
+# connections at once. Twitch needs an oauth token in the named env var.
+# ---------------------------------------------------------------------------
+networks:
+  # Your private InspIRCd test network (RFC-compliant, with services).
+  - name: testnet
+    server: "irc.example-test.net:6697"
+    tls: true
+    insecure_skip_verify: false   # set true only for self-signed test certs
+    nick: "Arywen"
+    sasl: true
+    sasl_user: "Arywen"
+    sasl_pass_env: "ARYWEN_TESTNET_SASL"
+    channels: ["#court"]
+
+  # A public network (example: Libera.Chat).
+  - name: libera
+    server: "irc.libera.chat:6697"
+    tls: true
+    nick: "Arywen"
+    sasl: true
+    sasl_user: "Arywen"
+    sasl_pass_env: "ARYWEN_LIBERA_SASL"
+    channels: ["#yourchannel"]
+
+  # Twitch chat. Token must be a chat oauth token; the "oauth:" prefix is added
+  # automatically if you omit it.
+  - name: twitch
+    kind: twitch
+    nick: "Arywen"
+    password_env: "ARYWEN_TWITCH_TOKEN"
+    channels: ["#your_twitch_login"]
+
+# ---------------------------------------------------------------------------
+# Personality
+# ---------------------------------------------------------------------------
+personality:
+  name: "Arywen"
+  commands: true
+
+  triggers:
+    - name: greeting
+      pattern: "(?i)\\b(hello|hi|hey|yo)\\b"
+      chance: 0.6
+      cooldown: "45s"
+      responses:
+        - "Ah. {nick} graces us with a greeting. How... quaint."
+        - "You may approach, {nick}. Slowly."
+        - "A salutation from {nick}? The court is honored, I'm sure."
+
+    - name: name-mention
+      pattern: "(?i)\\barywen\\b"
+      chance: 1.0
+      cooldown: "20s"
+      responses:
+        - "You speak my name as though you've earned it, {nick}."
+        - "I heard that. I hear everything, {nick}."
+        - "Yes? Do be brief; my patience is a finite and precious thing."
+
+    - name: bot-insult
+      pattern: "(?i)\\b(stupid|dumb|bad) bot\\b"
+      chance: 1.0
+      cooldown: "30s"
+      action: true
+      responses:
+        - "regards {nick} the way one regards a stain on fine silk"
+        - "does not dignify {nick} with a reply, yet here we are"
+
+    - name: thanks
+      pattern: "(?i)\\b(thanks|thank you|ty)\\b"
+      chance: 0.5
+      cooldown: "1m"
+      responses:
+        - "As you should be grateful, {nick}."
+        - "Gratitude noted, and immediately forgotten."
+
+  interjections:
+    enabled: true
+    chance: 0.04          # ~4% of qualifying messages
+    cooldown: "3m"        # at most one ambient line per channel per 3 min
+    use_markov: false
+    lines:
+      - "How dreary this conversation has become."
+      - "I was promised wit. I am still waiting."
+      - "Mortals. Always so loud about so little."
+      - "Do carry on. I'll be over here, being superior."
+      - "This channel could use a touch more reverence."
+
+  quotes:
+    enabled: true
+    chance: 0.03
+    cooldown: "4m"
+    command: true         # enables !quote and !quote <pack>
+    packs:
+      - name: classic
+        file: "classic.txt"
+      - name: rickmorty
+        file: "rickmorty.txt"
+      - name: southpark
+        file: "southpark.txt"
+
+  markov:
+    enabled: true
+    learn: true
+    order: 2
+    max_words: 30
