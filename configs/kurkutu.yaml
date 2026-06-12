@@ -113,6 +113,8 @@ personality:
         file: "rickmorty.txt"
       - name: southpark
         file: "southpark.txt"
+      - name: futurama
+        file: "futurama.txt"
 
   markov:
     enabled: true
