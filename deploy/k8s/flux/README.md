@@ -10,7 +10,7 @@ via SOPS and quote/skit content served from ConfigMaps for live `!reload`.
    `release-please` (`.github/workflows/release.yml`) keeps a release PR open;
    merging it tags a semver release.
 2. **Image.** On release, CI builds and pushes
-   `ghcr.io/mrcupp/annoybots:<version>` (+ `latest`).
+   `ghcr.io/iammrcupp/annoybots:<version>` (+ `latest`).
 3. **Rollout.** Flux's `ImagePolicy` (semver range, `image-automation.yaml`)
    picks up the new version and `ImageUpdateAutomation` commits the new tag into
    the overlay's `images:` marker, which the `Kustomization` then applies.

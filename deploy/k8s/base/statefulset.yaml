@@ -21,7 +21,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: annoybot
-          image: ghcr.io/mrcupp/annoybots:latest
+          image: ghcr.io/iammrcupp/annoybots:latest
           args: ["-config", "/config/bot.yaml"]
           # Read quote packs and skits from mounted ConfigMaps (so editing them
           # in Git + Flux + !reload updates content live, without a rollout).

@@ -1,6 +1,6 @@
 package botnet
 
-import "github.com/mrcupp/annoybots/internal/engine"
+import "github.com/IamMrCupp/annoybots/internal/engine"
 
 // SkitStep is one line of a scripted multi-bot exchange.
 type SkitStep struct {

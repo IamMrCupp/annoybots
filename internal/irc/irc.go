@@ -15,9 +15,9 @@ import (
 	"github.com/ergochat/irc-go/ircevent"
 	"github.com/ergochat/irc-go/ircmsg"
 
-	"github.com/mrcupp/annoybots/internal/config"
-	"github.com/mrcupp/annoybots/internal/engine"
-	"github.com/mrcupp/annoybots/internal/ratelimit"
+	"github.com/IamMrCupp/annoybots/internal/config"
+	"github.com/IamMrCupp/annoybots/internal/engine"
+	"github.com/IamMrCupp/annoybots/internal/ratelimit"
 )
 
 var twitchCaps = []string{"twitch.tv/tags", "twitch.tv/commands", "twitch.tv/membership"}

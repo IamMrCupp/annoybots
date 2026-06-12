@@ -1,4 +1,4 @@
-module github.com/mrcupp/annoybots
+module github.com/IamMrCupp/annoybots
 
 go 1.24
 

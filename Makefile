@@ -1,5 +1,5 @@
 BINARY := annoybot
-IMAGE  := ghcr.io/mrcupp/annoybots
+IMAGE  := ghcr.io/iammrcupp/annoybots
 TAG    ?= latest
 
 .PHONY: build test lint run-arywen run-kurkutu docker k8s-arywen k8s-kurkutu tidy

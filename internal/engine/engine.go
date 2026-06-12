@@ -13,8 +13,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/mrcupp/annoybots/internal/cooldown"
-	"github.com/mrcupp/annoybots/internal/markov"
+	"github.com/IamMrCupp/annoybots/internal/cooldown"
+	"github.com/IamMrCupp/annoybots/internal/markov"
 )
 
 // Engine evaluates inbound messages against a Personality and emits responses.
@@ -240,7 +240,7 @@ func (e *Engine) AnnoyLine() string {
 
 // SourceLine returns the bot's self-description. Shared by "!source" and /source.
 func (e *Engine) SourceLine() string {
-	return "I am " + e.p.Name + ", reborn: github.com/mrcupp/annoybots"
+	return "I am " + e.p.Name + ", reborn: github.com/IamMrCupp/annoybots"
 }
 
 func (e *Engine) markovLine() string {

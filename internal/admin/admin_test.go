@@ -10,8 +10,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/mrcupp/annoybots/internal/botnet"
-	"github.com/mrcupp/annoybots/internal/engine"
+	"github.com/IamMrCupp/annoybots/internal/botnet"
+	"github.com/IamMrCupp/annoybots/internal/engine"
 )
 
 type fakeQuoter struct {

@@ -34,5 +34,5 @@ configMapGenerator:
       - skits.yaml=../../../../data/skits.yaml
 
 images:
-  - name: ghcr.io/mrcupp/annoybots
+  - name: ghcr.io/iammrcupp/annoybots
     newTag: latest # {"$imagepolicy": "flux-system:annoybots:tag"}
