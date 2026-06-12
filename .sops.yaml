@@ -7,4 +7,4 @@
 creation_rules:
   - path_regex: deploy/k8s/.*secret.*\.ya?ml$
     encrypted_regex: "^(data|stringData)$"
-    age: "age1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqREPLACEME"
+    age: "age1y5mjg49fm55fx0r5cs4je8p26zge2zmtmafgmr4hv3lrfrtldv8q4dycwa"
