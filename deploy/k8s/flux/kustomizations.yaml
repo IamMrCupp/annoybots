@@ -1,0 +1,65 @@
+# Flux (kustomize-controller) Kustomizations that deploy the bots and the bus.
+# Place these in your cluster-management repo (the one Flux already reconciles),
+# adjusting sourceRef/namespaces to your setup.
+#
+# Notes:
+# - Flux's kustomize-controller builds with the load restrictor disabled, so the
+#   overlays' references to ../../../../configs and ../../../../data resolve fine.
+# - decryption.provider: sops + a `sops-age` Secret in flux-system decrypts the
+#   committed secret.sops.yaml files at apply time.
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: annoybot-redis
+  namespace: flux-system
+spec:
+  interval: 30m
+  path: ./deploy/k8s/redis
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: annoybots # <- your GitRepository pointing at this app repo
+  targetNamespace: annoybots
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: annoybot-arywen
+  namespace: flux-system
+spec:
+  interval: 10m
+  path: ./deploy/k8s/overlays/arywen
+  prune: true
+  wait: true
+  dependsOn:
+    - name: annoybot-redis
+  sourceRef:
+    kind: GitRepository
+    name: annoybots
+  targetNamespace: annoybots
+  decryption:
+    provider: sops
+    secretRef:
+      name: sops-age # Secret in flux-system holding the age private key
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: annoybot-kurkutu
+  namespace: flux-system
+spec:
+  interval: 10m
+  path: ./deploy/k8s/overlays/kurkutu
+  prune: true
+  wait: true
+  dependsOn:
+    - name: annoybot-redis
+  sourceRef:
+    kind: GitRepository
+    name: annoybots
+  targetNamespace: annoybots
+  decryption:
+    provider: sops
+    secretRef:
+      name: sops-age

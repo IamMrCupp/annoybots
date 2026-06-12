@@ -139,24 +139,34 @@ so it's weaker than account-based auth — it's a convenience for when services 
 unavailable, with a constant-time password check, a failed-attempt throttle, and
 a configurable `session_ttl`. Leave `password_env` unset to disable it.
 
-## Deploy to Kubernetes
+## Deploy
 
-```sh
-cd deploy/k8s/overlays/arywen
-cp secret.example.env secret.env      # fill in real tokens; secret.env is gitignored
-
-# The bot config lives in ../../../../configs, so disable the load restrictor:
-kubectl kustomize --load-restrictor LoadRestrictionsNone . | kubectl apply -f -
-```
+This is built for **GitOps with Flux**: Conventional Commits → `release-please`
+cuts a semver release → CI builds the image → Flux's semver `ImagePolicy` rolls
+it out. Secrets are SOPS-encrypted; quote/skit content is served from ConfigMaps
+so edits go live via `!reload`. See [`deploy/k8s/flux/README.md`](deploy/k8s/flux/README.md)
+for the full wiring (Kustomizations, image automation, and the SOPS/age setup).
 
 Each bot deploys as a single-replica StatefulSet with its own PVC for the Markov
-brain. Repeat for `overlays/kurkutu`.
+brain; Redis (the botnet bus) deploys once from `deploy/k8s/redis`.
+
+### Manual apply (no Flux)
+
+```sh
+# Fill in deploy/k8s/overlays/arywen/secret.sops.yaml with real values (and
+# either encrypt it or apply it as-is in a trusted context), then:
+kubectl create namespace annoybots
+kubectl apply -k deploy/k8s/redis
+kubectl kustomize --load-restrictor LoadRestrictionsNone deploy/k8s/overlays/arywen | kubectl apply -n annoybots -f -
+kubectl kustomize --load-restrictor LoadRestrictionsNone deploy/k8s/overlays/kurkutu | kubectl apply -n annoybots -f -
+```
 
 ## Adding quotes
 
-Drop a `whatever.txt` file in `data/quotes/` (one quote per line, `#` comments
-allowed), then reference it in a bot's `personality.quotes.packs`. Rebuild the
-image (packs are baked in at `/quotes`) or mount them via a ConfigMap.
+Drop a `whatever.txt` in `data/quotes/` (one quote per line, `#` comments
+allowed), reference it in a bot's `personality.quotes.packs`, and list it in the
+overlay's `bot-quotes` `configMapGenerator`. With Flux, commit it and `!reload`;
+otherwise rebuild the image (packs are also baked in at `/quotes` as a fallback).
 
 ## Develop
 

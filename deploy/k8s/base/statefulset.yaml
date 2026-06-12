@@ -23,6 +23,13 @@ spec:
         - name: annoybot
           image: ghcr.io/mrcupp/annoybots:latest
           args: ["-config", "/config/bot.yaml"]
+          # Read quote packs and skits from mounted ConfigMaps (so editing them
+          # in Git + Flux + !reload updates content live, without a rollout).
+          env:
+            - name: ANNOYBOT_QUOTES_DIR
+              value: /quotes
+            - name: ANNOYBOT_SKITS_FILE
+              value: /etc/annoybot/skits.yaml
           ports:
             - name: http
               containerPort: 8080
@@ -58,12 +65,24 @@ spec:
             - name: config
               mountPath: /config
               readOnly: true
+            - name: quotes
+              mountPath: /quotes
+              readOnly: true
+            - name: skits
+              mountPath: /etc/annoybot
+              readOnly: true
             - name: data
               mountPath: /data
       volumes:
         - name: config
           configMap:
             name: bot-config
+        - name: quotes
+          configMap:
+            name: bot-quotes
+        - name: skits
+          configMap:
+            name: bot-skits
   volumeClaimTemplates:
     - metadata:
         name: data

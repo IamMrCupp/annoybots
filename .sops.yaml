@@ -1,0 +1,10 @@
+# SOPS configuration. Encrypts only the secret values (data/stringData) of the
+# Secret manifests, leaving the rest of the YAML readable so kustomize can still
+# build. Replace the age recipient with YOUR cluster's age public key (the
+# matching private key lives in a `sops-age` Secret in flux-system).
+#
+# Encrypt a secret:   sops --encrypt --in-place deploy/k8s/overlays/arywen/secret.sops.yaml
+creation_rules:
+  - path_regex: deploy/k8s/.*secret.*\.ya?ml$
+    encrypted_regex: "^(data|stringData)$"
+    age: "age1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqREPLACEME"

@@ -5,21 +5,34 @@ namePrefix: kurkutu-
 commonLabels:
   app.kubernetes.io/instance: kurkutu
 
-resources:
-  - ../../base
-
 # Build with:
 #   kubectl kustomize --load-restrictor LoadRestrictionsNone deploy/k8s/overlays/kurkutu
+resources:
+  - ../../base
+  - secret.sops.yaml
+
 configMapGenerator:
   - name: bot-config
     files:
       - bot.yaml=../../../../configs/kurkutu.yaml
-
-secretGenerator:
-  - name: bot-secrets
-    envs:
-      - secret.env
+  - name: bot-quotes
+    options:
+      disableNameSuffixHash: true
+    files:
+      - ../../../../data/quotes/classic.txt
+      - ../../../../data/quotes/rickmorty.txt
+      - ../../../../data/quotes/southpark.txt
+      - ../../../../data/quotes/futurama.txt
+      - ../../../../data/quotes/snuffbox.txt
+      - ../../../../data/quotes/timeric.txt
+      - ../../../../data/quotes/squidbillies.txt
+      - ../../../../data/quotes/orgazmo.txt
+  - name: bot-skits
+    options:
+      disableNameSuffixHash: true
+    files:
+      - skits.yaml=../../../../data/skits.yaml
 
 images:
   - name: ghcr.io/mrcupp/annoybots
-    newTag: latest
+    newTag: latest # {"$imagepolicy": "flux-system:annoybots:tag"}

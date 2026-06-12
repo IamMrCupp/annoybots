@@ -6,23 +6,41 @@ namePrefix: arywen-
 commonLabels:
   app.kubernetes.io/instance: arywen
 
+# Build with the load restrictor disabled (config/quote/skit files live in the
+# repo's top-level dirs):
+#   kubectl kustomize --load-restrictor LoadRestrictionsNone deploy/k8s/overlays/arywen
 resources:
   - ../../base
+  - secret.sops.yaml
 
-# The bot's personality+networks file becomes the bot-config ConfigMap. It lives
-# in the repo's top-level configs/ dir, so build with:
-#   kubectl kustomize --load-restrictor LoadRestrictionsNone deploy/k8s/overlays/arywen
 configMapGenerator:
+  # Personality + networks. Hashed: a config change triggers a rollout (needed,
+  # since networks/triggers are only read at startup).
   - name: bot-config
     files:
       - bot.yaml=../../../../configs/arywen.yaml
-
-# Secrets are read from secret.env (gitignored). Copy secret.example.env first.
-secretGenerator:
-  - name: bot-secrets
-    envs:
-      - secret.env
+  # Quote packs. Fixed name (no hash) so editing a pack in Git updates the same
+  # ConfigMap; the kubelet syncs the files into the running pod and !reload picks
+  # them up live, no rollout.
+  - name: bot-quotes
+    options:
+      disableNameSuffixHash: true
+    files:
+      - ../../../../data/quotes/classic.txt
+      - ../../../../data/quotes/rickmorty.txt
+      - ../../../../data/quotes/southpark.txt
+      - ../../../../data/quotes/futurama.txt
+      - ../../../../data/quotes/snuffbox.txt
+      - ../../../../data/quotes/timeric.txt
+      - ../../../../data/quotes/squidbillies.txt
+      - ../../../../data/quotes/orgazmo.txt
+  # Skits. Fixed name for the same live-reload reason.
+  - name: bot-skits
+    options:
+      disableNameSuffixHash: true
+    files:
+      - skits.yaml=../../../../data/skits.yaml
 
 images:
   - name: ghcr.io/mrcupp/annoybots
-    newTag: latest
+    newTag: latest # {"$imagepolicy": "flux-system:annoybots:tag"}

@@ -1,0 +1,54 @@
+# Flux image automation: watch the registry, pick the newest release by semver,
+# and commit the new tag back into Git (the $imagepolicy marker in each overlay's
+# kustomization.yaml `images:` block). Images are published by release-please +
+# CI on each release (see .github/workflows/release.yml), so the policy tracks
+# semver tags rather than arbitrary ones.
+#
+# If your cluster-management repo already has an ImageUpdateAutomation covering
+# this path, you only need the ImageRepository + ImagePolicy below.
+---
+apiVersion: image.toolkit.fluxcd.io/v1beta2
+kind: ImageRepository
+metadata:
+  name: annoybots
+  namespace: flux-system
+spec:
+  image: ghcr.io/mrcupp/annoybots
+  interval: 5m
+---
+apiVersion: image.toolkit.fluxcd.io/v1beta2
+kind: ImagePolicy
+metadata:
+  name: annoybots
+  namespace: flux-system
+spec:
+  imageRepositoryRef:
+    name: annoybots
+  policy:
+    semver:
+      range: ">=0.1.0"
+---
+apiVersion: image.toolkit.fluxcd.io/v1beta1
+kind: ImageUpdateAutomation
+metadata:
+  name: annoybots
+  namespace: flux-system
+spec:
+  interval: 10m
+  sourceRef:
+    kind: GitRepository
+    name: annoybots
+  git:
+    checkout:
+      ref:
+        branch: main
+    commit:
+      author:
+        name: fluxcdbot
+        email: fluxcdbot@users.noreply.github.com
+      messageTemplate: "chore(deploy): bump annoybots image to {{range .Updated.Images}}{{println .}}{{end}}"
+    push:
+      branch: main
+  update:
+    path: ./deploy/k8s/overlays
+    strategy: Setters
