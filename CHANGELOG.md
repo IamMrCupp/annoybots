@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.0.1](https://github.com/IamMrCupp/annoybots/compare/v1.0.0...v1.0.1) (2026-06-12)
+
+
+### Documentation
+
+* add MIT LICENSE ([84b10b5](https://github.com/IamMrCupp/annoybots/commit/84b10b5890c05d11494aa9be310d7f9c06b7945f))
+* add MIT LICENSE ([c72fcdf](https://github.com/IamMrCupp/annoybots/commit/c72fcdf79c65a4423850791e048166843b8edfc3))
+
 ## 1.0.0 (2026-06-12)
 
 
