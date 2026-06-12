@@ -9,8 +9,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/mrcupp/annoybots/internal/cooldown"
-	"github.com/mrcupp/annoybots/internal/engine"
+	"github.com/IamMrCupp/annoybots/internal/cooldown"
+	"github.com/IamMrCupp/annoybots/internal/engine"
 )
 
 // stepWaitTimeout bounds how long a bot waits for another bot's skit step before

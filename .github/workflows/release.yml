@@ -46,6 +46,6 @@ jobs:
           context: .
           push: true
           tags: |
-            ghcr.io/mrcupp/annoybots:${{ needs.release-please.outputs.tag_name }}
-            ghcr.io/mrcupp/annoybots:${{ needs.release-please.outputs.version }}
-            ghcr.io/mrcupp/annoybots:latest
+            ghcr.io/iammrcupp/annoybots:${{ needs.release-please.outputs.tag_name }}
+            ghcr.io/iammrcupp/annoybots:${{ needs.release-please.outputs.version }}
+            ghcr.io/iammrcupp/annoybots:latest

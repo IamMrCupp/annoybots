@@ -8,7 +8,7 @@ package bot
 import (
 	"context"
 
-	"github.com/mrcupp/annoybots/internal/engine"
+	"github.com/IamMrCupp/annoybots/internal/engine"
 )
 
 // Transport is one connection to a chat platform. It can send to its networks

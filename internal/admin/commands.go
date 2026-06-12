@@ -5,8 +5,8 @@ import (
 	"crypto/subtle"
 	"strings"
 
-	"github.com/mrcupp/annoybots/internal/botnet"
-	"github.com/mrcupp/annoybots/internal/engine"
+	"github.com/IamMrCupp/annoybots/internal/botnet"
+	"github.com/IamMrCupp/annoybots/internal/engine"
 )
 
 // adminCommands is the set of recognized admin keywords. A message in a DM whose

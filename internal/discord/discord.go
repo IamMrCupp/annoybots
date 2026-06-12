@@ -18,8 +18,8 @@ import (
 
 	"github.com/bwmarrin/discordgo"
 
-	"github.com/mrcupp/annoybots/internal/config"
-	"github.com/mrcupp/annoybots/internal/engine"
+	"github.com/IamMrCupp/annoybots/internal/config"
+	"github.com/IamMrCupp/annoybots/internal/engine"
 )
 
 // Commander is the slice of the engine the slash commands need.

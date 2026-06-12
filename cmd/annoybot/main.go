@@ -13,15 +13,15 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/mrcupp/annoybots/internal/admin"
-	"github.com/mrcupp/annoybots/internal/bot"
-	"github.com/mrcupp/annoybots/internal/botnet"
-	"github.com/mrcupp/annoybots/internal/config"
-	"github.com/mrcupp/annoybots/internal/discord"
-	"github.com/mrcupp/annoybots/internal/engine"
-	"github.com/mrcupp/annoybots/internal/health"
-	"github.com/mrcupp/annoybots/internal/irc"
-	"github.com/mrcupp/annoybots/internal/markov"
+	"github.com/IamMrCupp/annoybots/internal/admin"
+	"github.com/IamMrCupp/annoybots/internal/bot"
+	"github.com/IamMrCupp/annoybots/internal/botnet"
+	"github.com/IamMrCupp/annoybots/internal/config"
+	"github.com/IamMrCupp/annoybots/internal/discord"
+	"github.com/IamMrCupp/annoybots/internal/engine"
+	"github.com/IamMrCupp/annoybots/internal/health"
+	"github.com/IamMrCupp/annoybots/internal/irc"
+	"github.com/IamMrCupp/annoybots/internal/markov"
 )
 
 func main() {

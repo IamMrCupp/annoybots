@@ -14,8 +14,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/mrcupp/annoybots/internal/botnet"
-	"github.com/mrcupp/annoybots/internal/engine"
+	"github.com/IamMrCupp/annoybots/internal/botnet"
+	"github.com/IamMrCupp/annoybots/internal/engine"
 )
 
 // Quoter is the slice of the engine the console manipulates.

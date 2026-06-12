@@ -13,9 +13,9 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	"github.com/mrcupp/annoybots/internal/admin"
-	"github.com/mrcupp/annoybots/internal/botnet"
-	"github.com/mrcupp/annoybots/internal/engine"
+	"github.com/IamMrCupp/annoybots/internal/admin"
+	"github.com/IamMrCupp/annoybots/internal/botnet"
+	"github.com/IamMrCupp/annoybots/internal/engine"
 )
 
 // Config is the top-level bot configuration.

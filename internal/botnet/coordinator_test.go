@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/mrcupp/annoybots/internal/engine"
+	"github.com/IamMrCupp/annoybots/internal/engine"
 )
 
 type recorder struct {
