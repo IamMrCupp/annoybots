@@ -19,10 +19,13 @@ import (
 
 // Engine evaluates inbound messages against a Personality and emits responses.
 type Engine struct {
-	p     Personality
-	res   []*regexp.Regexp // compiled patterns, indexed alongside p.Triggers
-	cool  *cooldown.Manager
-	brain *markov.Chain
+	p        Personality
+	res      []*regexp.Regexp // compiled patterns, indexed alongside p.Triggers
+	cool     *cooldown.Manager
+	brain    *markov.Chain
+	siblings map[string]bool // lowercased sibling-bot names
+	banter   *windowCounter
+	now      func() time.Time
 
 	mu  sync.Mutex // guards rng (math/rand is not concurrency-safe)
 	rng *rand.Rand
@@ -66,12 +69,22 @@ func New(p Personality, opts Options) (*Engine, error) {
 		brain = markov.New(order)
 	}
 
+	siblings := make(map[string]bool, len(p.Siblings))
+	for _, s := range p.Siblings {
+		if s = strings.ToLower(strings.TrimSpace(s)); s != "" {
+			siblings[s] = true
+		}
+	}
+
 	return &Engine{
-		p:     p,
-		res:   res,
-		cool:  cooldown.NewWithClock(now),
-		brain: brain,
-		rng:   rng,
+		p:        p,
+		res:      res,
+		cool:     cooldown.NewWithClock(now),
+		brain:    brain,
+		siblings: siblings,
+		banter:   newWindowCounter(),
+		now:      now,
+		rng:      rng,
 	}, nil
 }
 
@@ -82,6 +95,14 @@ func (e *Engine) Brain() *markov.Chain { return e.brain }
 func (e *Engine) Handle(msg Message, out Sender) {
 	if msg.Text == "" || strings.EqualFold(msg.Nick, msg.Self) {
 		return // ignore empty lines and our own echoes
+	}
+
+	// Another bot is speaking: the ONLY allowed reaction is controlled banter.
+	// Normal triggers/interjections are suppressed for siblings so the two bots
+	// cannot trigger each other into an infinite channel-flooding loop.
+	if e.isSibling(msg.Nick) {
+		e.maybeBanter(msg, out)
+		return
 	}
 
 	// Learn from real chatter (not commands) to grow the brain.

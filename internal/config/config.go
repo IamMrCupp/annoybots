@@ -13,6 +13,7 @@ import (
 
 	"gopkg.in/yaml.v3"
 
+	"github.com/mrcupp/annoybots/internal/botnet"
 	"github.com/mrcupp/annoybots/internal/engine"
 )
 
@@ -23,6 +24,17 @@ type Config struct {
 	Brain       Brain              `yaml:"brain"`
 	Networks    []Network          `yaml:"networks"`
 	Personality engine.Personality `yaml:"personality"`
+	Botnet      Botnet             `yaml:"botnet"`
+	SkitsFile   string             `yaml:"skits_file"`
+	Skits       []botnet.Skit      `yaml:"-"` // loaded from SkitsFile
+}
+
+// Botnet configures the inter-bot communication bus (Redis pub/sub).
+type Botnet struct {
+	Enabled          bool   `yaml:"enabled"`
+	RedisAddr        string `yaml:"redis_addr"`
+	RedisPasswordEnv string `yaml:"redis_password_env"`
+	Channel          string `yaml:"channel"`
 }
 
 // Health configures the k8s liveness/readiness HTTP server.
@@ -64,7 +76,7 @@ type Rate struct {
 // Load reads, defaults, validates, and post-processes a config file. quoteDir,
 // if non-empty, is the base directory for resolving relative quote-pack files;
 // otherwise files are resolved relative to the config file's directory.
-func Load(path, quoteDir string) (*Config, error) {
+func Load(path, quoteDir, skitsOverride string) (*Config, error) {
 	b, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
@@ -81,12 +93,48 @@ func Load(path, quoteDir string) (*Config, error) {
 	if err := loadQuotePacks(&c.Personality, base); err != nil {
 		return nil, err
 	}
+	if skitsOverride != "" {
+		// An override (env/flag) is resolved against the working directory, not
+		// the config dir, so make it absolute before loadSkits sees it.
+		if abs, aerr := filepath.Abs(skitsOverride); aerr == nil {
+			c.SkitsFile = abs
+		} else {
+			c.SkitsFile = skitsOverride
+		}
+	}
+	if err := c.loadSkits(filepath.Dir(path)); err != nil {
+		return nil, err
+	}
 
 	c.applyDefaults()
 	if err := c.Validate(); err != nil {
 		return nil, err
 	}
 	return &c, nil
+}
+
+// loadSkits reads the shared skits file (if configured) into c.Skits. Both bots
+// point at the same file so they agree on each skit's full step sequence.
+func (c *Config) loadSkits(base string) error {
+	if c.SkitsFile == "" {
+		return nil
+	}
+	fp := c.SkitsFile
+	if !filepath.IsAbs(fp) {
+		fp = filepath.Join(base, fp)
+	}
+	data, err := os.ReadFile(fp)
+	if err != nil {
+		return fmt.Errorf("skits file: %w", err)
+	}
+	var sf struct {
+		Skits []botnet.Skit `yaml:"skits"`
+	}
+	if err := yaml.Unmarshal(data, &sf); err != nil {
+		return fmt.Errorf("parse skits file %s: %w", fp, err)
+	}
+	c.Skits = sf.Skits
+	return nil
 }
 
 // loadQuotePacks merges any File-backed quote packs into their Lines.
@@ -125,6 +173,14 @@ func parseLines(data []byte) []string {
 func (c *Config) applyDefaults() {
 	if c.Health.Addr == "" {
 		c.Health.Addr = ":8080"
+	}
+	if c.Botnet.Enabled {
+		if c.Botnet.RedisAddr == "" {
+			c.Botnet.RedisAddr = "redis:6379"
+		}
+		if c.Botnet.Channel == "" {
+			c.Botnet.Channel = "annoybots"
+		}
 	}
 	for i := range c.Networks {
 		n := &c.Networks[i]

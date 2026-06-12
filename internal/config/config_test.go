@@ -33,7 +33,7 @@ networks:
 personality:
   name: Arywen
 `)
-	c, err := Load(cfg, "")
+	c, err := Load(cfg, "", "")
 	if err != nil {
 		t.Fatalf("load: %v", err)
 	}
@@ -69,7 +69,7 @@ personality:
       - name: rickmorty
         file: rm.txt
 `)
-	c, err := Load(cfg, "")
+	c, err := Load(cfg, "", "")
 	if err != nil {
 		t.Fatalf("load: %v", err)
 	}
@@ -90,7 +90,7 @@ networks:
 personality:
   name: K
 `)
-	if _, err := Load(cfg, ""); err == nil {
+	if _, err := Load(cfg, "", ""); err == nil {
 		t.Fatal("expected error for invalid network kind")
 	}
 }
@@ -105,7 +105,7 @@ networks:
 personality:
   name: K
 `)
-	if _, err := Load(cfg, ""); err == nil {
+	if _, err := Load(cfg, "", ""); err == nil {
 		t.Fatal("expected error for twitch network without password_env")
 	}
 }

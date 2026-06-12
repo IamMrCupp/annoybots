@@ -8,10 +8,12 @@ import (
 	"log/slog"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
 	"github.com/mrcupp/annoybots/internal/bot"
+	"github.com/mrcupp/annoybots/internal/botnet"
 	"github.com/mrcupp/annoybots/internal/config"
 	"github.com/mrcupp/annoybots/internal/discord"
 	"github.com/mrcupp/annoybots/internal/engine"
@@ -23,11 +25,12 @@ import (
 func main() {
 	configPath := flag.String("config", envOr("ANNOYBOT_CONFIG", "config.yaml"), "path to bot config YAML")
 	quoteDir := flag.String("quotes", os.Getenv("ANNOYBOT_QUOTES_DIR"), "base dir for quote-pack files (defaults to config dir)")
+	skitsFile := flag.String("skits", os.Getenv("ANNOYBOT_SKITS_FILE"), "override path to the shared skits file")
 	flag.Parse()
 
 	log := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
 
-	cfg, err := config.Load(*configPath, *quoteDir)
+	cfg, err := config.Load(*configPath, *quoteDir, *skitsFile)
 	if err != nil {
 		log.Error("load config", "err", err)
 		os.Exit(1)
@@ -51,10 +54,34 @@ func main() {
 		os.Exit(1)
 	}
 
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
+
 	// The router fans engine replies back out to whichever transport a message
-	// arrived on. Every transport feeds inbound messages through this handler.
+	// arrived on. Every transport feeds inbound messages through the handler.
 	router := bot.NewRouter()
-	handler := func(m engine.Message) { eng.Handle(m, router) }
+
+	// Optional inter-bot bus + skit coordinator (the "botnet").
+	var coord *botnet.Coordinator
+	var bus *botnet.RedisBus
+	if cfg.Botnet.Enabled {
+		bus = botnet.NewRedis(cfg.Botnet.RedisAddr, os.Getenv(cfg.Botnet.RedisPasswordEnv), cfg.Botnet.Channel)
+		coord = botnet.NewCoordinator(cfg.Bot, bus, router, cfg.Skits, log, botnet.Options{})
+		if rerr := coord.Run(ctx); rerr != nil {
+			log.Error("botnet coordinator failed to start", "err", rerr)
+			coord = nil
+		} else {
+			log.Info("botnet bus connected", "addr", cfg.Botnet.RedisAddr, "skits", len(cfg.Skits))
+		}
+	}
+
+	handler := func(m engine.Message) {
+		eng.Handle(m, router)
+		// Let humans (not the bots themselves) kick off coordinated skits.
+		if coord != nil && !strings.EqualFold(m.Nick, m.Self) && !eng.IsSibling(m.Nick) {
+			coord.OnMessage(ctx, m)
+		}
+	}
 
 	var ircNets, discordNets []config.Network
 	for _, n := range cfg.Networks {
@@ -86,9 +113,6 @@ func main() {
 	hs.Start()
 	log.Info("health server listening", "addr", cfg.Health.Addr)
 
-	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
-	defer stop()
-
 	router.Run(ctx)
 	log.Info("bot running", "networks", len(cfg.Networks))
 
@@ -105,6 +129,9 @@ func main() {
 	log.Info("shutting down")
 
 	router.Quit()
+	if bus != nil {
+		_ = bus.Close()
+	}
 	saveBrain(eng, cfg.Brain.Path, log)
 
 	shutCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)

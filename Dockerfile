@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 # ---- build stage ----
-FROM golang:1.23-bookworm AS build
+FROM golang:1.24-bookworm AS build
 WORKDIR /src
 
 # Cache module downloads.
@@ -15,9 +15,11 @@ RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/annoybot ./cmd/ann
 # ---- runtime stage ----
 FROM gcr.io/distroless/static:nonroot
 COPY --from=build /out/annoybot /annoybot
-# Bake the default quote packs; a ConfigMap mount at /quotes can override them.
+# Bake the default quote packs and shared skits; ConfigMap mounts can override.
 COPY data/quotes /quotes
+COPY data/skits.yaml /skits.yaml
 ENV ANNOYBOT_QUOTES_DIR=/quotes
+ENV ANNOYBOT_SKITS_FILE=/skits.yaml
 USER nonroot:nonroot
 EXPOSE 8080
 ENTRYPOINT ["/annoybot"]

@@ -89,13 +89,28 @@ type Quotes struct {
 	Packs    []QuotePack `yaml:"packs"`
 }
 
+// Banter is controlled bot-to-bot cross-talk. When a known sibling bot speaks,
+// this bot may react -- but every reply is bounded by a per-channel cooldown AND
+// a windowed cap, so two bots can never runaway-loop and flood a channel.
+type Banter struct {
+	Enabled      bool     `yaml:"enabled"`
+	Chance       float64  `yaml:"chance"`         // probability of reacting to a sibling line
+	Cooldown     Duration `yaml:"cooldown"`       // minimum gap between banter replies per channel
+	MaxPerWindow int      `yaml:"max_per_window"` // hard cap on banter replies per window per channel
+	Window       Duration `yaml:"window"`         // the rolling window for MaxPerWindow
+	Action       bool     `yaml:"action"`         // send as a /me action
+	Lines        []string `yaml:"lines"`
+}
+
 // Personality is the full behavioral config that distinguishes one bot from
 // another. Arywen and Kurkutu are the same binary with different Personalities.
 type Personality struct {
 	Name          string        `yaml:"name"`
+	Siblings      []string      `yaml:"siblings"` // other bots' nicks/display names (for banter)
 	Triggers      []Trigger     `yaml:"triggers"`
 	Interjections Interjections `yaml:"interjections"`
 	Quotes        Quotes        `yaml:"quotes"`
+	Banter        Banter        `yaml:"banter"`
 	Markov        MarkovConfig  `yaml:"markov"`
 	Commands      bool          `yaml:"commands"`
 }

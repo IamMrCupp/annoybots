@@ -23,6 +23,7 @@ cmd/annoybot         entrypoint
 internal/engine      annoyance engine (triggers, interjections, quotes, commands)
 internal/markov      persistent Markov "brain"
 internal/bot         transport router (fans replies back to the right platform)
+internal/botnet      inter-bot bus (Redis pub/sub) + skit coordinator
 internal/irc         IRC/Twitch transport (ergochat/irc-go) + per-network rate limiting
 internal/discord     Discord transport (bwmarrin/discordgo) + slash commands
 internal/ratelimit   token-bucket limiter (Twitch-aware)
@@ -80,6 +81,33 @@ everywhere it can see. Discord's own HTTP rate limits are handled by the client
 library, so the token-bucket limiter is IRC/Twitch-only. The same triggers,
 quote packs, and Markov brain run on Discord unchanged; IRC `/me` actions render
 as italics.
+
+## Bot-to-bot interaction (the "botnet")
+
+Like the old eggdrop botnet BMotion used for coordinated trolling, the bots can
+talk to each other — but safely.
+
+**Banter (cross-talk).** Each bot lists the others as `siblings`. A sibling's
+messages can *only* produce capped banter — never normal triggers — so two bots
+can never trigger each other into an infinite flood. Banter is bounded twice: a
+per-channel cooldown *and* a hard "max replies per rolling window" cap.
+
+**Skits.** Multi-bot scripted bits live in a shared `data/skits.yaml` loaded by
+both bots. They coordinate over a Redis pub/sub bus, so a skit works even if the
+bots are on different platforms. The "lead" bot (owner of the first line)
+initiates — via `!skit <name>` in a shared channel, or randomly via each skit's
+`chance` — then the bots perform their lines in lockstep, bounded by the step
+count and a per-channel cooldown. Add your own skits by editing `data/skits.yaml`.
+
+Enable it with the `botnet:` block in each bot's config (both must share the same
+`channel`). Deploy the shared bus once:
+
+```sh
+kubectl apply -k deploy/k8s/redis
+```
+
+The bus carries only ephemeral coordination messages, so the Redis runs without
+persistence.
 
 ## Deploy to Kubernetes
 

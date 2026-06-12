@@ -13,6 +13,19 @@ brain:
   path: "/data/arywen-brain.gob"
   save_every: "5m"
 
+# Inter-bot "botnet" bus (Redis pub/sub). Lets Arywen and Kurkutu coordinate
+# scripted skits across pods and even across platforms. redis_password_env is
+# optional (leave the env var unset for an auth-less in-cluster Redis).
+botnet:
+  enabled: true
+  redis_addr: "redis:6379"
+  redis_password_env: "REDIS_PASSWORD"
+  channel: "annoybots"
+
+# Shared skit script, loaded by BOTH bots. For local runs this relative path
+# resolves from the config dir; in the container ANNOYBOT_SKITS_FILE overrides it.
+skits_file: "../data/skits.yaml"
+
 # ---------------------------------------------------------------------------
 # Networks. Edit servers/channels to taste. The same process holds all of these
 # connections at once. Twitch needs an oauth token in the named env var.
@@ -64,6 +77,21 @@ networks:
 personality:
   name: "Arywen"
   commands: true
+
+  # Other bots Arywen recognizes. Their messages can ONLY produce capped banter
+  # (never normal triggers), so the two bots cannot loop each other into a flood.
+  siblings: ["Kurkutu"]
+
+  banter:
+    enabled: true
+    chance: 0.5
+    cooldown: "30s"        # min gap between banter replies per channel
+    max_per_window: 3      # hard cap: at most 3 banter lines...
+    window: "5m"           # ...per 5 minutes per channel
+    lines:
+      - "Oh good. {nick} is here. The ambiance plummets."
+      - "Must you, {nick}?"
+      - "I shall pretend I did not hear that, {nick}."
 
   triggers:
     - name: greeting
