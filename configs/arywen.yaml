@@ -155,6 +155,8 @@ personality:
         file: "southpark.txt"
       - name: futurama
         file: "futurama.txt"
+      - name: snuffbox
+        file: "snuffbox.txt"
 
   markov:
     enabled: true
