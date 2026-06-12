@@ -51,6 +51,7 @@ type Network struct {
 	SASLUser           string   `yaml:"sasl_user"`
 	SASLPassEnv        string   `yaml:"sasl_pass_env"`
 	Channels           []string `yaml:"channels"`
+	Guilds             []string `yaml:"guilds"` // discord only: guild IDs for instant slash-command registration
 	Rate               Rate     `yaml:"rate"`
 }
 
@@ -165,28 +166,36 @@ func (c *Config) Validate() error {
 	}
 	seen := make(map[string]bool)
 	for _, n := range c.Networks {
-		switch {
-		case n.Name == "":
+		if n.Name == "" {
 			return fmt.Errorf("a network is missing its name")
-		case seen[n.Name]:
+		}
+		if seen[n.Name] {
 			return fmt.Errorf("duplicate network name %q", n.Name)
-		case n.Server == "":
-			return fmt.Errorf("network %q is missing server", n.Name)
-		case n.Nick == "":
-			return fmt.Errorf("network %q is missing nick", n.Name)
 		}
 		seen[n.Name] = true
 
 		switch n.Kind {
 		case "irc", "twitch":
+			if n.Server == "" {
+				return fmt.Errorf("network %q is missing server", n.Name)
+			}
+			if n.Nick == "" {
+				return fmt.Errorf("network %q is missing nick", n.Name)
+			}
+			if n.Kind == "twitch" && n.PasswordEnv == "" {
+				return fmt.Errorf("twitch network %q needs password_env (the oauth token)", n.Name)
+			}
+			if n.SASL && (n.SASLUser == "" || n.SASLPassEnv == "") {
+				return fmt.Errorf("network %q has sasl enabled but missing sasl_user/sasl_pass_env", n.Name)
+			}
+		case "discord":
+			// Discord uses a bot token; no server/nick. Channels (if given) are
+			// channel IDs used as an allowlist.
+			if n.PasswordEnv == "" {
+				return fmt.Errorf("discord network %q needs password_env (the bot token)", n.Name)
+			}
 		default:
-			return fmt.Errorf("network %q has invalid kind %q (want irc or twitch)", n.Name, n.Kind)
-		}
-		if n.Kind == "twitch" && n.PasswordEnv == "" {
-			return fmt.Errorf("twitch network %q needs password_env (the oauth token)", n.Name)
-		}
-		if n.SASL && (n.SASLUser == "" || n.SASLPassEnv == "") {
-			return fmt.Errorf("network %q has sasl enabled but missing sasl_user/sasl_pass_env", n.Name)
+			return fmt.Errorf("network %q has invalid kind %q (want irc, twitch, or discord)", n.Name, n.Kind)
 		}
 	}
 	return nil

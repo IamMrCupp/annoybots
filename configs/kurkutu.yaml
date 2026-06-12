@@ -40,6 +40,15 @@ networks:
     password_env: "KURKUTU_TWITCH_TOKEN"
     channels: ["#your_twitch_login"]
 
+  # Discord bot. Needs the privileged MESSAGE CONTENT intent. `guilds` enables
+  # instant slash-command (/quote, /annoy) registration; `channels` is an
+  # optional channel-ID allowlist (empty = respond everywhere it can see).
+  - name: discord
+    kind: discord
+    password_env: "KURKUTU_DISCORD_TOKEN"
+    guilds: ["YOUR_GUILD_ID"]
+    channels: []
+
 personality:
   name: "Kurkutu"
   commands: true

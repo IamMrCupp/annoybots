@@ -11,7 +11,9 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/mrcupp/annoybots/internal/bot"
 	"github.com/mrcupp/annoybots/internal/config"
+	"github.com/mrcupp/annoybots/internal/discord"
 	"github.com/mrcupp/annoybots/internal/engine"
 	"github.com/mrcupp/annoybots/internal/health"
 	"github.com/mrcupp/annoybots/internal/irc"
@@ -49,20 +51,45 @@ func main() {
 		os.Exit(1)
 	}
 
-	mgr, err := irc.NewManager(cfg.Networks, eng.Handle, log, os.Getenv)
-	if err != nil {
-		log.Error("build manager", "err", err)
-		os.Exit(1)
+	// The router fans engine replies back out to whichever transport a message
+	// arrived on. Every transport feeds inbound messages through this handler.
+	router := bot.NewRouter()
+	handler := func(m engine.Message) { eng.Handle(m, router) }
+
+	var ircNets, discordNets []config.Network
+	for _, n := range cfg.Networks {
+		if n.Kind == "discord" {
+			discordNets = append(discordNets, n)
+		} else {
+			ircNets = append(ircNets, n)
+		}
 	}
 
-	hs := health.New(cfg.Health.Addr, mgr.AnyConnected)
+	if len(ircNets) > 0 {
+		mgr, merr := irc.NewManager(ircNets, handler, log, os.Getenv)
+		if merr != nil {
+			log.Error("build irc transport", "err", merr)
+			os.Exit(1)
+		}
+		router.Add(mgr)
+	}
+	if len(discordNets) > 0 {
+		dc, derr := discord.New(discordNets, handler, eng, log, os.Getenv)
+		if derr != nil {
+			log.Error("build discord transport", "err", derr)
+			os.Exit(1)
+		}
+		router.Add(dc)
+	}
+
+	hs := health.New(cfg.Health.Addr, router.AnyConnected)
 	hs.Start()
 	log.Info("health server listening", "addr", cfg.Health.Addr)
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	mgr.Run(ctx)
+	router.Run(ctx)
 	log.Info("bot running", "networks", len(cfg.Networks))
 
 	// Periodically persist the brain so learning survives restarts.
@@ -77,7 +104,7 @@ func main() {
 	<-ctx.Done()
 	log.Info("shutting down")
 
-	mgr.Quit()
+	router.Quit()
 	saveBrain(eng, cfg.Brain.Path, log)
 
 	shutCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -86,7 +113,7 @@ func main() {
 
 	// Give connections a moment to close cleanly.
 	done := make(chan struct{})
-	go func() { mgr.Wait(); close(done) }()
+	go func() { router.Wait(); close(done) }()
 	select {
 	case <-done:
 	case <-time.After(5 * time.Second):

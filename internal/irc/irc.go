@@ -22,8 +22,9 @@ import (
 
 var twitchCaps = []string{"twitch.tv/tags", "twitch.tv/commands", "twitch.tv/membership"}
 
-// Handler receives normalized inbound messages along with the Sender to reply.
-type Handler func(engine.Message, engine.Sender)
+// Handler receives normalized inbound messages. Replies are sent via the Router
+// (which the engine is given), not directly, so cross-transport routing works.
+type Handler func(engine.Message)
 
 type outMsg struct {
 	target string
@@ -138,7 +139,7 @@ func (m *Manager) bind(c *conn) {
 			Text:    e.Params[1],
 			Private: private,
 			Self:    ic.CurrentNick(),
-		}, m)
+		})
 	})
 }
 
@@ -239,6 +240,9 @@ func (m *Manager) Quit() {
 
 // Wait blocks until all goroutines have stopped.
 func (m *Manager) Wait() { m.wg.Wait() }
+
+// Networks returns the names of the networks this transport owns.
+func (m *Manager) Networks() []string { return m.order }
 
 // AnyConnected reports whether at least one network is currently connected.
 func (m *Manager) AnyConnected() bool {

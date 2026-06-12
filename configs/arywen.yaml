@@ -47,6 +47,17 @@ networks:
     password_env: "ARYWEN_TWITCH_TOKEN"
     channels: ["#your_twitch_login"]
 
+  # Discord. Uses a bot token (NOT a nick/server). Requires the privileged
+  # MESSAGE CONTENT intent enabled in the Discord developer portal. Invite the
+  # bot to your server via an OAuth2 URL with the "bot" + "applications.commands"
+  # scopes. `channels` is an optional allowlist of channel IDs (empty = all).
+  # `guilds` lists server IDs for instant slash-command registration.
+  - name: discord
+    kind: discord
+    password_env: "ARYWEN_DISCORD_TOKEN"
+    guilds: ["YOUR_GUILD_ID"]
+    channels: []  # e.g. ["123456789012345678"] to restrict; empty = everywhere
+
 # ---------------------------------------------------------------------------
 # Personality
 # ---------------------------------------------------------------------------

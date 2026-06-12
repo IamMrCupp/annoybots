@@ -22,7 +22,9 @@ different personality file.
 cmd/annoybot         entrypoint
 internal/engine      annoyance engine (triggers, interjections, quotes, commands)
 internal/markov      persistent Markov "brain"
-internal/irc         multi-network client (ergochat/irc-go) + per-network rate limiting
+internal/bot         transport router (fans replies back to the right platform)
+internal/irc         IRC/Twitch transport (ergochat/irc-go) + per-network rate limiting
+internal/discord     Discord transport (bwmarrin/discordgo) + slash commands
 internal/ratelimit   token-bucket limiter (Twitch-aware)
 internal/cooldown    per-channel cooldown tracking
 internal/config      YAML config loading, validation, quote-pack loading
@@ -58,6 +60,26 @@ Set `kind: twitch` on a network and point `password_env` at an env var holding a
 chat oauth token. Server, TLS, CAPs, and conservative rate limits default
 automatically. Note Twitch does not reliably broadcast joins/parts or mode
 changes, so user/op tracking there is intentionally not relied upon.
+
+### Discord
+
+Set `kind: discord` on a network and point `password_env` at an env var holding
+the **bot token** (no nick/server needed). Then:
+
+1. In the [Discord developer portal](https://discord.com/developers/applications),
+   create an application + bot, and **enable the privileged MESSAGE CONTENT
+   intent** under Bot → Privileged Gateway Intents. Without it the bot connects
+   but every message body arrives empty.
+2. Invite the bot to your server with an OAuth2 URL using the `bot` and
+   `applications.commands` scopes.
+3. List your server's ID under `guilds:` for instant `/quote` and `/annoy` slash
+   commands (global registration works too but can take up to an hour to appear).
+
+`channels` is an optional allowlist of channel IDs; empty means the bot responds
+everywhere it can see. Discord's own HTTP rate limits are handled by the client
+library, so the token-bucket limiter is IRC/Twitch-only. The same triggers,
+quote packs, and Markov brain run on Discord unchanged; IRC `/me` actions render
+as italics.
 
 ## Deploy to Kubernetes
 

@@ -170,11 +170,7 @@ func (e *Engine) handleCommand(msg Message, out Sender) bool {
 	}
 	switch strings.ToLower(fields[0]) {
 	case "!annoy":
-		line := e.markovLine()
-		if line == "" {
-			line = e.render(e.pick(e.p.Interjections.Lines), msg, nil)
-		}
-		if line != "" {
+		if line := e.render(e.AnnoyLine(), msg, nil); line != "" {
 			out.Say(msg.Network, msg.Channel, line)
 		}
 		return true
@@ -184,6 +180,32 @@ func (e *Engine) handleCommand(msg Message, out Sender) bool {
 	default:
 		return false
 	}
+}
+
+// RandomQuote returns a random quote, optionally restricted to a named pack. The
+// returned bool is true when a pack name was supplied but does not exist. The
+// result is raw (not template-rendered); callers with message context may render
+// it themselves. Shared by the "!quote" text command and the Discord /quote
+// slash command.
+func (e *Engine) RandomQuote(pack string) (string, bool) {
+	if pack != "" {
+		lines := e.quotesFromPack(pack)
+		if lines == nil {
+			return "", true
+		}
+		return e.pick(lines), false
+	}
+	return e.pick(e.allQuotes()), false
+}
+
+// AnnoyLine returns a Markov babble if the brain has anything, otherwise a random
+// interjection line. Shared by the "!annoy" text command and the /annoy slash
+// command.
+func (e *Engine) AnnoyLine() string {
+	if line := e.markovLine(); line != "" {
+		return line
+	}
+	return e.pick(e.p.Interjections.Lines)
 }
 
 func (e *Engine) markovLine() string {

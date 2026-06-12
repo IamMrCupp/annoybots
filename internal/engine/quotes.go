@@ -48,16 +48,16 @@ func (e *Engine) handleQuoteCommand(msg Message, out Sender) bool {
 		return false
 	}
 	fields := strings.Fields(msg.Text)
-	var pool []string
+	pack := ""
 	if len(fields) > 1 {
-		if pool = e.quotesFromPack(fields[1]); pool == nil {
-			out.Say(msg.Network, msg.Channel, "no such quote pack: "+fields[1])
-			return true
-		}
-	} else {
-		pool = e.allQuotes()
+		pack = fields[1]
 	}
-	if line := e.render(e.pick(pool), msg, nil); line != "" {
+	line, unknown := e.RandomQuote(pack)
+	if unknown {
+		out.Say(msg.Network, msg.Channel, "no such quote pack: "+pack)
+		return true
+	}
+	if line := e.render(line, msg, nil); line != "" {
 		out.Say(msg.Network, msg.Channel, line)
 	}
 	return true
