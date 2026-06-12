@@ -175,7 +175,7 @@ func (e *Engine) handleCommand(msg Message, out Sender) bool {
 		}
 		return true
 	case "!source":
-		out.Say(msg.Network, msg.Channel, "I am "+e.p.Name+", reborn: github.com/mrcupp/annoybots")
+		out.Say(msg.Network, msg.Channel, e.SourceLine())
 		return true
 	default:
 		return false
@@ -206,6 +206,11 @@ func (e *Engine) AnnoyLine() string {
 		return line
 	}
 	return e.pick(e.p.Interjections.Lines)
+}
+
+// SourceLine returns the bot's self-description. Shared by "!source" and /source.
+func (e *Engine) SourceLine() string {
+	return "I am " + e.p.Name + ", reborn: github.com/mrcupp/annoybots"
 }
 
 func (e *Engine) markovLine() string {

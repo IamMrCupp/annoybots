@@ -13,7 +13,7 @@ func TestToMessageChannel(t *testing.T) {
 		Content:   "well hello there",
 		Author:    &discordgo.User{ID: "u1", Username: "victim"},
 	}}
-	got := toMessage("discord-main", m, "arywen")
+	got := toMessage("discord-main", m, "arywen", "self1")
 
 	if got.Network != "discord-main" || got.Channel != "chan123" {
 		t.Fatalf("network/channel wrong: %+v", got)
@@ -26,6 +26,23 @@ func TestToMessageChannel(t *testing.T) {
 	}
 }
 
+func TestToMessageRewritesMentions(t *testing.T) {
+	m := &discordgo.MessageCreate{Message: &discordgo.Message{
+		ChannelID: "c",
+		GuildID:   "g",
+		Content:   "<@self1> hello and <@!u2> too",
+		Author:    &discordgo.User{ID: "u1", Username: "victim"},
+		Mentions: []*discordgo.User{
+			{ID: "self1", Username: "ArywenBot"},
+			{ID: "u2", Username: "friend"},
+		},
+	}}
+	got := toMessage("d", m, "Arywen", "self1")
+	if got.Text != "Arywen hello and friend too" {
+		t.Fatalf("mention rewrite wrong: %q", got.Text)
+	}
+}
+
 func TestToMessageUsesGuildNick(t *testing.T) {
 	m := &discordgo.MessageCreate{Message: &discordgo.Message{
 		ChannelID: "c",
@@ -34,7 +51,7 @@ func TestToMessageUsesGuildNick(t *testing.T) {
 		Author:    &discordgo.User{ID: "u1", Username: "victim"},
 		Member:    &discordgo.Member{Nick: "TheVictim"},
 	}}
-	if got := toMessage("d", m, "self"); got.Nick != "TheVictim" {
+	if got := toMessage("d", m, "self", "selfID"); got.Nick != "TheVictim" {
 		t.Fatalf("expected guild nick to win, got %q", got.Nick)
 	}
 }
@@ -46,7 +63,7 @@ func TestToMessageDMIsPrivate(t *testing.T) {
 		Content:   "psst",
 		Author:    &discordgo.User{ID: "u1", Username: "victim"},
 	}}
-	if got := toMessage("d", m, "self"); !got.Private {
+	if got := toMessage("d", m, "self", "selfID"); !got.Private {
 		t.Fatal("DM should be private")
 	}
 }

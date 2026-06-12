@@ -20,6 +20,10 @@ var slashCommands = []*discordgo.ApplicationCommand{
 		Name:        "annoy",
 		Description: "Emit something annoying (Markov babble or a random interjection).",
 	},
+	{
+		Name:        "source",
+		Description: "Who is this bot?",
+	},
 }
 
 // registerCommands installs the slash commands. Per-guild registration is
@@ -81,6 +85,8 @@ func (c *Client) onInteraction(s *session, dg *discordgo.Session, i *discordgo.I
 		if content == "" {
 			content = "...I've got nothing. For now."
 		}
+	case "source":
+		content = c.cmd.SourceLine()
 	default:
 		return
 	}

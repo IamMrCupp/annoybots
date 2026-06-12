@@ -13,6 +13,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"strings"
 	"sync"
 
 	"github.com/bwmarrin/discordgo"
@@ -25,6 +26,7 @@ import (
 type Commander interface {
 	RandomQuote(pack string) (string, bool)
 	AnnoyLine() string
+	SourceLine() string
 }
 
 type session struct {
@@ -95,11 +97,12 @@ func (c *Client) bind(s *session) {
 		if s.allow != nil && !s.allow[m.ChannelID] {
 			return
 		}
-		self := ""
+		self, selfID := "", ""
 		if dg.State != nil && dg.State.User != nil {
 			self = dg.State.User.Username
+			selfID = dg.State.User.ID
 		}
-		c.handler(toMessage(network, m, self))
+		c.handler(toMessage(network, m, self, selfID))
 	})
 	s.dg.AddHandler(func(dg *discordgo.Session, i *discordgo.InteractionCreate) {
 		c.onInteraction(s, dg, i)
@@ -107,8 +110,10 @@ func (c *Client) bind(s *session) {
 }
 
 // toMessage converts a Discord message into the engine's transport-agnostic form.
-// Kept as a pure function so it can be unit-tested without a live gateway.
-func toMessage(network string, m *discordgo.MessageCreate, self string) engine.Message {
+// Raw mentions ("<@id>") are rewritten to display names so that "@Arywen" reads
+// as "Arywen" and fires the name-mention trigger like an IRC highlight. Kept as a
+// pure function so it can be unit-tested without a live gateway.
+func toMessage(network string, m *discordgo.MessageCreate, self, selfID string) engine.Message {
 	nick := ""
 	if m.Author != nil {
 		nick = m.Author.Username
@@ -120,10 +125,27 @@ func toMessage(network string, m *discordgo.MessageCreate, self string) engine.M
 		Network: network,
 		Channel: m.ChannelID,
 		Nick:    nick,
-		Text:    m.Content,
+		Text:    replaceMentions(m.Content, m.Mentions, selfID, self),
 		Private: m.GuildID == "",
 		Self:    self,
 	}
+}
+
+// replaceMentions rewrites "<@id>" and "<@!id>" tokens to the mentioned user's
+// display name (the bot's own mention becomes self), leaving other text intact.
+func replaceMentions(content string, mentions []*discordgo.User, selfID, self string) string {
+	for _, u := range mentions {
+		if u == nil {
+			continue
+		}
+		name := u.Username
+		if u.ID == selfID && self != "" {
+			name = self
+		}
+		content = strings.ReplaceAll(content, "<@"+u.ID+">", name)
+		content = strings.ReplaceAll(content, "<@!"+u.ID+">", name)
+	}
+	return content
 }
 
 // Say sends a normal message to a Discord channel ID.
