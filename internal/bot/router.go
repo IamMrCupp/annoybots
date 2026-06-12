@@ -12,9 +12,13 @@ import (
 )
 
 // Transport is one connection to a chat platform. It can send to its networks
-// (engine.Sender) and manages its own lifecycle.
+// (engine.Sender), perform channel control (join/part/invite), and manages its
+// own lifecycle.
 type Transport interface {
 	engine.Sender
+	Join(network, channel string)
+	Part(network, channel string)
+	Invite(network, nick, channel string)
 	Networks() []string
 	Run(ctx context.Context)
 	Quit()
@@ -22,16 +26,17 @@ type Transport interface {
 	AnyConnected() bool
 }
 
-// Router implements engine.Sender by dispatching to the owning transport, and
-// aggregates lifecycle calls across all registered transports.
+// Router implements engine.Sender (and channel control) by dispatching to the
+// owning transport, and aggregates lifecycle calls across all registered
+// transports.
 type Router struct {
 	transports []Transport
-	byNetwork  map[string]engine.Sender
+	byNetwork  map[string]Transport
 }
 
 // NewRouter returns an empty Router.
 func NewRouter() *Router {
-	return &Router{byNetwork: make(map[string]engine.Sender)}
+	return &Router{byNetwork: make(map[string]Transport)}
 }
 
 // Add registers a transport and indexes the networks it owns.
@@ -54,6 +59,33 @@ func (r *Router) Action(network, target, text string) {
 	if s, ok := r.byNetwork[network]; ok {
 		s.Action(network, target, text)
 	}
+}
+
+// Join asks the owning transport to join a channel.
+func (r *Router) Join(network, channel string) {
+	if t, ok := r.byNetwork[network]; ok {
+		t.Join(network, channel)
+	}
+}
+
+// Part asks the owning transport to leave a channel.
+func (r *Router) Part(network, channel string) {
+	if t, ok := r.byNetwork[network]; ok {
+		t.Part(network, channel)
+	}
+}
+
+// Invite asks the owning transport to invite a user to a channel.
+func (r *Router) Invite(network, nick, channel string) {
+	if t, ok := r.byNetwork[network]; ok {
+		t.Invite(network, nick, channel)
+	}
+}
+
+// HasNetwork reports whether any transport owns the named network.
+func (r *Router) HasNetwork(network string) bool {
+	_, ok := r.byNetwork[network]
+	return ok
 }
 
 // Run starts every transport.

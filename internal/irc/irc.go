@@ -253,6 +253,34 @@ func (m *Manager) Wait() { m.wg.Wait() }
 // Networks returns the names of the networks this transport owns.
 func (m *Manager) Networks() []string { return m.order }
 
+// Join makes the bot join a channel on the given network.
+func (m *Manager) Join(network, channel string) {
+	if c, ok := m.conns[network]; ok {
+		if err := c.ic.Join(channel); err != nil {
+			c.log.Warn("join failed", "channel", channel, "err", err)
+		}
+	}
+}
+
+// Part makes the bot leave a channel on the given network.
+func (m *Manager) Part(network, channel string) {
+	if c, ok := m.conns[network]; ok {
+		if err := c.ic.Part(channel); err != nil {
+			c.log.Warn("part failed", "channel", channel, "err", err)
+		}
+	}
+}
+
+// Invite sends an IRC INVITE for nick to channel. The bot must hold ops in the
+// channel for this to take effect on invite-only channels.
+func (m *Manager) Invite(network, nick, channel string) {
+	if c, ok := m.conns[network]; ok {
+		if err := c.ic.Send("INVITE", nick, channel); err != nil {
+			c.log.Warn("invite failed", "nick", nick, "channel", channel, "err", err)
+		}
+	}
+}
+
 // AnyConnected reports whether at least one network is currently connected.
 func (m *Manager) AnyConnected() bool {
 	for _, c := range m.conns {

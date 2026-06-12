@@ -12,6 +12,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/mrcupp/annoybots/internal/admin"
 	"github.com/mrcupp/annoybots/internal/bot"
 	"github.com/mrcupp/annoybots/internal/botnet"
 	"github.com/mrcupp/annoybots/internal/config"
@@ -63,10 +64,11 @@ func main() {
 
 	// Optional inter-bot bus + skit coordinator (the "botnet").
 	var coord *botnet.Coordinator
-	var bus *botnet.RedisBus
+	var bus botnet.Bus // nil interface when botnet is disabled
 	if cfg.Botnet.Enabled {
-		bus = botnet.NewRedis(cfg.Botnet.RedisAddr, os.Getenv(cfg.Botnet.RedisPasswordEnv), cfg.Botnet.Channel)
-		coord = botnet.NewCoordinator(cfg.Bot, bus, router, cfg.Skits, log, botnet.Options{})
+		rb := botnet.NewRedis(cfg.Botnet.RedisAddr, os.Getenv(cfg.Botnet.RedisPasswordEnv), cfg.Botnet.Channel)
+		bus = rb
+		coord = botnet.NewCoordinator(cfg.Bot, rb, router, cfg.Skits, log, botnet.Options{})
 		if rerr := coord.Run(ctx); rerr != nil {
 			log.Error("botnet coordinator failed to start", "err", rerr)
 			coord = nil
@@ -75,10 +77,26 @@ func main() {
 		}
 	}
 
+	// Optional chat-based admin console (DM-only, identity-authenticated).
+	var adminMgr *admin.Manager
+	if cfg.Admin.Enabled {
+		adminMgr = admin.New(cfg.Bot, cfg.Admin, eng, router, bus, log)
+		if rerr := adminMgr.Run(ctx); rerr != nil {
+			log.Error("admin console failed to start", "err", rerr)
+		} else {
+			log.Info("admin console enabled", "admins", len(cfg.Admin.Admins))
+		}
+	}
+
 	handler := func(m engine.Message) {
+		isOther := !strings.EqualFold(m.Nick, m.Self) && !eng.IsSibling(m.Nick)
+		// Admin commands (DM-only) are handled first and never reach the engine.
+		if adminMgr != nil && isOther && adminMgr.Handle(ctx, m) {
+			return
+		}
 		eng.Handle(m, router)
 		// Let humans (not the bots themselves) kick off coordinated skits.
-		if coord != nil && !strings.EqualFold(m.Nick, m.Self) && !eng.IsSibling(m.Nick) {
+		if coord != nil && isOther {
 			coord.OnMessage(ctx, m)
 		}
 	}

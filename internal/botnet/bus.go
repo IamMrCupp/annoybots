@@ -14,21 +14,32 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-// Event is a structured message passed between bots over the bus.
+// Event is a structured message passed between bots over the bus. It carries
+// both skit coordination and admin-console sync.
 type Event struct {
-	Type    string `json:"type"`            // skit_start | skit_advance
-	From    string `json:"from"`            // originating bot name
-	Network string `json:"network"`         // chat network the skit plays out on
-	Channel string `json:"channel"`         // chat channel/ID the skit plays out on
-	Skit    string `json:"skit,omitempty"`  // skit name
-	Step    int    `json:"step,omitempty"`  // step index for skit_advance
-	Nonce   string `json:"nonce,omitempty"` // unique per skit run
+	Type    string `json:"type"`
+	From    string `json:"from"` // originating bot name
+	Network string `json:"network,omitempty"`
+	Channel string `json:"channel,omitempty"`
+	// skit coordination
+	Skit  string `json:"skit,omitempty"`
+	Step  int    `json:"step,omitempty"`
+	Nonce string `json:"nonce,omitempty"`
+	// admin-console sync
+	Pack     string `json:"pack,omitempty"`      // quote pack name
+	Line     string `json:"line,omitempty"`      // quote text
+	Account  string `json:"account,omitempty"`   // admin identity account
+	AdminNet string `json:"admin_net,omitempty"` // admin identity network
 }
 
 // Event type constants.
 const (
 	EventSkitStart   = "skit_start"
 	EventSkitAdvance = "skit_advance"
+	EventQuoteAdd    = "quote_add"
+	EventQuoteDel    = "quote_del"
+	EventAdminAdd    = "admin_add"
+	EventAdminDel    = "admin_del"
 )
 
 // Bus is a publish/subscribe channel shared by all bots.

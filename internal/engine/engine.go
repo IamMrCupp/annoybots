@@ -88,6 +88,7 @@ func New(p Personality, opts Options) (*Engine, error) {
 		siblings: siblings,
 		banter:   newWindowCounter(),
 		now:      now,
+		custom:   make(map[string][]string),
 		rng:      rng,
 	}, nil
 }

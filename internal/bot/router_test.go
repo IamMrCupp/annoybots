@@ -18,6 +18,15 @@ func (f *fakeTransport) Say(network, target, text string) {
 func (f *fakeTransport) Action(network, target, text string) {
 	f.sent = append(f.sent, "ACT "+network+" "+target+" "+text)
 }
+func (f *fakeTransport) Join(network, channel string) {
+	f.sent = append(f.sent, "JOIN "+network+" "+channel)
+}
+func (f *fakeTransport) Part(network, channel string) {
+	f.sent = append(f.sent, "PART "+network+" "+channel)
+}
+func (f *fakeTransport) Invite(network, nick, channel string) {
+	f.sent = append(f.sent, "INVITE "+network+" "+nick+" "+channel)
+}
 func (f *fakeTransport) Networks() []string  { return f.networks }
 func (f *fakeTransport) Run(context.Context) {}
 func (f *fakeTransport) Quit()               {}
@@ -34,9 +43,10 @@ func TestRouterDispatchesByNetwork(t *testing.T) {
 
 	r.Say("libera", "#chan", "hi there")
 	r.Action("discord-main", "12345", "waves")
+	r.Invite("testnet", "bob", "#secret")
 	r.Say("nonexistent", "#x", "dropped") // unknown network: no panic, no send
 
-	if len(ircT.sent) != 1 || ircT.sent[0] != "SAY libera #chan hi there" {
+	if len(ircT.sent) != 2 || ircT.sent[0] != "SAY libera #chan hi there" || ircT.sent[1] != "INVITE testnet bob #secret" {
 		t.Fatalf("irc transport got %#v", ircT.sent)
 	}
 	if len(discordT.sent) != 1 || discordT.sent[0] != "ACT discord-main 12345 waves" {

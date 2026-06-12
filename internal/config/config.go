@@ -13,6 +13,7 @@ import (
 
 	"gopkg.in/yaml.v3"
 
+	"github.com/mrcupp/annoybots/internal/admin"
 	"github.com/mrcupp/annoybots/internal/botnet"
 	"github.com/mrcupp/annoybots/internal/engine"
 )
@@ -27,6 +28,7 @@ type Config struct {
 	Botnet      Botnet             `yaml:"botnet"`
 	SkitsFile   string             `yaml:"skits_file"`
 	Skits       []botnet.Skit      `yaml:"-"` // loaded from SkitsFile
+	Admin       admin.Config       `yaml:"admin"`
 }
 
 // Botnet configures the inter-bot communication bus (Redis pub/sub).

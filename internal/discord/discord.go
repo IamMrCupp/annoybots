@@ -173,6 +173,25 @@ func (c *Client) Action(network, target, text string) {
 // Networks returns the names of the Discord networks this client owns.
 func (c *Client) Networks() []string { return c.order }
 
+// Join is not applicable on Discord (the bot is present in channels of guilds it
+// was invited to); it logs and no-ops so the Transport interface is satisfied.
+func (c *Client) Join(network, channel string) { c.unsupported(network, "join", channel) }
+
+// Part is not applicable on Discord; logs and no-ops.
+func (c *Client) Part(network, channel string) { c.unsupported(network, "part", channel) }
+
+// Invite is not applicable on Discord (no per-channel member invites); logs and
+// no-ops.
+func (c *Client) Invite(network, nick, channel string) {
+	c.unsupported(network, "invite", nick+" -> "+channel)
+}
+
+func (c *Client) unsupported(network, op, detail string) {
+	if s, ok := c.sessions[network]; ok {
+		s.log.Info("channel control not supported on discord", "op", op, "detail", detail)
+	}
+}
+
 // Run opens every session and registers slash commands. Open is non-blocking.
 func (c *Client) Run(ctx context.Context) {
 	for _, name := range c.order {

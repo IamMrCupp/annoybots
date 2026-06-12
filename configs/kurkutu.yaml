@@ -24,6 +24,19 @@ botnet:
 # Same shared skit script as Arywen (both bots must load the identical file).
 skits_file: "../data/skits.yaml"
 
+# Chat admin console (DM the bot; !help for commands). Admins matched by verified
+# identity (NickServ account / Discord user ID / Twitch login), not nick.
+admin:
+  enabled: true
+  state_path: "/data/kurkutu-admin.json"
+  admins:
+    - network: testnet
+      account: "YOUR_NICKSERV_ACCOUNT"
+    - network: discord
+      account: "YOUR_DISCORD_USER_ID"
+    - network: twitch
+      account: "your_twitch_login"
+
 networks:
   - name: testnet
     server: "irc.example-test.net:6697"

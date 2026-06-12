@@ -26,6 +26,22 @@ botnet:
 # resolves from the config dir; in the container ANNOYBOT_SKITS_FILE overrides it.
 skits_file: "../data/skits.yaml"
 
+# Chat admin console. DM the bot to run admin commands (!help for the list).
+# Admins are matched by VERIFIED identity, never by spoofable nick: an IRC
+# services/NickServ account, a Discord user ID, or a Twitch login. Use network
+# "*" to match an account on any network. Quote/admin changes sync to the sibling
+# bot over the botnet bus and persist to state_path on the data volume.
+admin:
+  enabled: true
+  state_path: "/data/arywen-admin.json"
+  admins:
+    - network: testnet
+      account: "YOUR_NICKSERV_ACCOUNT"
+    - network: discord
+      account: "YOUR_DISCORD_USER_ID"
+    - network: twitch
+      account: "your_twitch_login"
+
 # ---------------------------------------------------------------------------
 # Networks. Edit servers/channels to taste. The same process holds all of these
 # connections at once. Twitch needs an oauth token in the named env var.

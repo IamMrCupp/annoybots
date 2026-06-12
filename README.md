@@ -109,6 +109,26 @@ kubectl apply -k deploy/k8s/redis
 The bus carries only ephemeral coordination messages, so the Redis runs without
 persistence.
 
+## Admin console (chat)
+
+DM a bot to run admin commands. Admins are matched by **verified identity** — an
+IRC services/NickServ account, a Discord user ID, or a Twitch login — never by
+spoofable nick, and commands are only honored in DMs. Configure admins in the
+`admin:` block of each bot's config.
+
+Commands (send `!help` for the list):
+
+- `!join <net> <#chan>` / `!part <net> <#chan>` — channel ops
+- `!invite <net> <#chan> <nick>` — IRC INVITE (bot needs ops on `+i` channels)
+- `!say <net> <target> <text>` / `!act <net> <target> <text>` — puppet the bot
+- `!addquote <pack> <text>` / `!delquote <pack> <text>` — runtime quote editing
+- `!addadmin <net|*> <account>` / `!deladmin <net|*> <account>` / `!admins`
+
+Quote and admin changes persist to the data volume and **sync to the sibling bot
+over the botnet bus**, so you only have to DM one of them. Channel control and
+puppeting stay local to the bot you DM. (`!delquote` only removes runtime-added
+lines; file-pack lines are immutable — edit the `.txt` to change those.)
+
 ## Deploy to Kubernetes
 
 ```sh

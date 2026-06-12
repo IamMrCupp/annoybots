@@ -2,34 +2,98 @@ package engine
 
 import "strings"
 
-// PackNames returns the configured quote-pack names, in order. Used by the
-// !packs text command and the Discord /packs slash command so users can discover
-// what they can pass to !quote / /quote.
+// configHasPack reports whether name matches a file-backed (config) pack.
+func (e *Engine) configHasPack(name string) bool {
+	for _, p := range e.p.Quotes.Packs {
+		if strings.EqualFold(p.Name, name) {
+			return true
+		}
+	}
+	return false
+}
+
+// PackNames returns every quote-pack name (file packs plus runtime-added packs),
+// in a stable order. Used by !packs and the Discord /packs slash command.
 func (e *Engine) PackNames() []string {
 	names := make([]string, 0, len(e.p.Quotes.Packs))
 	for _, p := range e.p.Quotes.Packs {
 		names = append(names, p.Name)
 	}
+	e.qmu.RLock()
+	names = append(names, e.customNames...)
+	e.qmu.RUnlock()
 	return names
 }
 
-// allQuotes returns every quote across all packs.
+// allQuotes returns every quote across all packs (file + runtime).
 func (e *Engine) allQuotes() []string {
 	var out []string
 	for _, p := range e.p.Quotes.Packs {
 		out = append(out, p.Lines...)
 	}
+	e.qmu.RLock()
+	for _, lines := range e.custom {
+		out = append(out, lines...)
+	}
+	e.qmu.RUnlock()
 	return out
 }
 
-// quotesFromPack returns the lines of a pack by case-insensitive name, or nil.
+// quotesFromPack returns the lines of a pack by case-insensitive name (merging
+// file lines and runtime-added lines), or nil if the pack is unknown.
 func (e *Engine) quotesFromPack(name string) []string {
+	var out []string
 	for _, p := range e.p.Quotes.Packs {
 		if strings.EqualFold(p.Name, name) {
-			return p.Lines
+			out = append(out, p.Lines...)
 		}
 	}
-	return nil
+	e.qmu.RLock()
+	out = append(out, e.custom[strings.ToLower(name)]...)
+	e.qmu.RUnlock()
+	if len(out) == 0 {
+		return nil
+	}
+	return out
+}
+
+// AddQuote appends a line to a pack at runtime, creating the pack if needed.
+// Returns false if the line is empty or already present in the runtime store.
+func (e *Engine) AddQuote(pack, line string) bool {
+	line = strings.TrimSpace(line)
+	if pack == "" || line == "" {
+		return false
+	}
+	key := strings.ToLower(pack)
+	e.qmu.Lock()
+	defer e.qmu.Unlock()
+	for _, existing := range e.custom[key] {
+		if existing == line {
+			return false
+		}
+	}
+	if _, seen := e.custom[key]; !seen && !e.configHasPack(pack) {
+		e.customNames = append(e.customNames, pack) // a brand-new runtime pack
+	}
+	e.custom[key] = append(e.custom[key], line)
+	return true
+}
+
+// DelQuote removes a runtime-added line from a pack. It cannot remove lines that
+// came from a file pack. Returns true if a line was removed.
+func (e *Engine) DelQuote(pack, line string) bool {
+	line = strings.TrimSpace(line)
+	key := strings.ToLower(pack)
+	e.qmu.Lock()
+	defer e.qmu.Unlock()
+	lines := e.custom[key]
+	for i, existing := range lines {
+		if existing == line {
+			e.custom[key] = append(lines[:i:i], lines[i+1:]...)
+			return true
+		}
+	}
+	return false
 }
 
 // maybeQuote randomly emits an ambient quote. Returns true if it emitted.
