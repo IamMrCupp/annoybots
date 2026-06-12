@@ -122,6 +122,10 @@ func toMessage(network string, m *discordgo.MessageCreate, self, selfID string) 
 			nick = m.Member.Nick
 		}
 	}
+	account := ""
+	if m.Author != nil {
+		account = m.Author.ID // Discord user ID: the stable verified identity
+	}
 	return engine.Message{
 		Network: network,
 		Channel: m.ChannelID,
@@ -129,6 +133,7 @@ func toMessage(network string, m *discordgo.MessageCreate, self, selfID string) 
 		Text:    replaceMentions(m.Content, m.Mentions, selfID, self),
 		Private: m.GuildID == "",
 		Self:    self,
+		Account: account,
 	}
 }
 

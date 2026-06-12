@@ -95,7 +95,7 @@ func newConn(n config.Network, log *slog.Logger, getenv func(string) string) *co
 			ic.Password = "oauth:" + ic.Password
 		}
 	} else {
-		ic.RequestCaps = append(ic.RequestCaps, "message-tags", "server-time")
+		ic.RequestCaps = append(ic.RequestCaps, "message-tags", "server-time", "account-tag")
 		if n.SASL {
 			ic.SASLLogin = n.SASLUser
 			ic.SASLPassword = getenv(n.SASLPassEnv)
@@ -132,6 +132,14 @@ func (m *Manager) bind(c *conn) {
 		if private {
 			channel = e.Nick()
 		}
+		// Verified identity: Twitch login is stable, otherwise the services
+		// account from the account-tag cap (empty if the user isn't logged in).
+		account := ""
+		if c.cfg.Kind == "twitch" {
+			account = e.Nick()
+		} else if ok, v := e.GetTag("account"); ok {
+			account = v
+		}
 		m.handler(engine.Message{
 			Network: c.cfg.Name,
 			Channel: channel,
@@ -139,6 +147,7 @@ func (m *Manager) bind(c *conn) {
 			Text:    e.Params[1],
 			Private: private,
 			Self:    ic.CurrentNick(),
+			Account: account,
 		})
 	})
 }

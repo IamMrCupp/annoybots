@@ -27,6 +27,10 @@ type Engine struct {
 	banter   *windowCounter
 	now      func() time.Time
 
+	qmu         sync.RWMutex        // guards the runtime-added quote store
+	custom      map[string][]string // pack(lower) -> lines added at runtime
+	customNames []string            // display names of custom-only packs, in add order
+
 	mu  sync.Mutex // guards rng (math/rand is not concurrency-safe)
 	rng *rand.Rand
 }
