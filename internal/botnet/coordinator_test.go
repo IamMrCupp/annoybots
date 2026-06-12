@@ -89,6 +89,20 @@ func TestSkitPerformedInLockstepAcrossBots(t *testing.T) {
 	}
 }
 
+func TestSetSkitsReplaces(t *testing.T) {
+	c := NewCoordinator("arywen", NewMem(), &recorder{}, duet(), quietLogger(), Options{})
+	if _, ok := c.getSkit("duet"); !ok {
+		t.Fatal("duet should exist before reload")
+	}
+	c.SetSkits([]Skit{{Name: "solo", Steps: []SkitStep{{Bot: "arywen", Line: "x"}}}})
+	if _, ok := c.getSkit("duet"); ok {
+		t.Fatal("duet should be gone after reload")
+	}
+	if _, ok := c.getSkit("solo"); !ok {
+		t.Fatal("solo should exist after reload")
+	}
+}
+
 func TestNonLeadDoesNotInitiate(t *testing.T) {
 	bus := NewMem()
 	ctx, cancel := context.WithCancel(context.Background())

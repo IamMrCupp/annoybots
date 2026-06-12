@@ -27,7 +27,8 @@ type Engine struct {
 	banter   *windowCounter
 	now      func() time.Time
 
-	qmu         sync.RWMutex        // guards the runtime-added quote store
+	qmu         sync.RWMutex        // guards the quote store (file packs + runtime additions)
+	filePacks   []QuotePack         // file-backed packs (replaceable via reload)
 	custom      map[string][]string // pack(lower) -> lines added at runtime
 	customNames []string            // display names of custom-only packs, in add order
 
@@ -81,15 +82,16 @@ func New(p Personality, opts Options) (*Engine, error) {
 	}
 
 	return &Engine{
-		p:        p,
-		res:      res,
-		cool:     cooldown.NewWithClock(now),
-		brain:    brain,
-		siblings: siblings,
-		banter:   newWindowCounter(),
-		now:      now,
-		custom:   make(map[string][]string),
-		rng:      rng,
+		p:         p,
+		res:       res,
+		cool:      cooldown.NewWithClock(now),
+		brain:     brain,
+		siblings:  siblings,
+		banter:    newWindowCounter(),
+		now:       now,
+		filePacks: append([]QuotePack(nil), p.Quotes.Packs...),
+		custom:    make(map[string][]string),
+		rng:       rng,
 	}, nil
 }
 

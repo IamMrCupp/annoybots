@@ -123,6 +123,8 @@ Commands (send `!help` for the list):
 - `!say <net> <target> <text>` / `!act <net> <target> <text>` — puppet the bot
 - `!addquote <pack> <text>` / `!delquote <pack> <text>` — runtime quote editing
 - `!addadmin <net|*> <account>` / `!deladmin <net|*> <account>` / `!admins`
+- `!reload` — re-read quote-pack files and the skits file from disk, no restart
+  (network connections and personality triggers still require a restart)
 
 Quote and admin changes persist to the data volume and **sync to the sibling bot
 over the botnet bus**, so you only have to DM one of them. Channel control and

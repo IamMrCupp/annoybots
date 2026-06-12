@@ -209,6 +209,42 @@ func TestLogoutClearsSession(t *testing.T) {
 	}
 }
 
+func TestReloadCommand(t *testing.T) {
+	c := &fakeControl{}
+	m := New("arywen", bossConfig(), "", &fakeQuoter{}, c, nil, quietLog())
+
+	// Without a reload hook, the command reports unavailable.
+	m.Handle(context.Background(), dm("boss", "!reload"))
+	if !strings.Contains(c.last(), "not available") {
+		t.Fatalf("expected unavailable reply, got %q", c.last())
+	}
+
+	called := false
+	m.SetReload(func() (string, error) {
+		called = true
+		return "3 quote packs, 2 skits", nil
+	})
+	m.Handle(context.Background(), dm("boss", "!reload"))
+	if !called {
+		t.Fatal("reload hook should have been invoked")
+	}
+	if !strings.Contains(c.last(), "3 quote packs, 2 skits") {
+		t.Fatalf("expected reload summary, got %q", c.last())
+	}
+}
+
+func TestReloadRequiresAdmin(t *testing.T) {
+	c := &fakeControl{}
+	called := false
+	m := New("arywen", bossConfig(), "", &fakeQuoter{}, c, nil, quietLog())
+	m.SetReload(func() (string, error) { called = true; return "x", nil })
+
+	m.Handle(context.Background(), dm("rando", "!reload"))
+	if called {
+		t.Fatal("non-admin must not be able to reload")
+	}
+}
+
 func TestAdminPersistence(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "admin.json")
 	cfg := bossConfig()

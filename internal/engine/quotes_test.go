@@ -79,6 +79,33 @@ func TestAddQuoteCreatesPackAndMerges(t *testing.T) {
 	}
 }
 
+func TestSetQuotePacksReplacesFilePacksKeepsRuntime(t *testing.T) {
+	now := time.Unix(0, 0)
+	e := newTestEngine(t, quotePersonality(), &now)
+	e.AddQuote("custom", "keepme") // runtime addition
+
+	e.SetQuotePacks([]QuotePack{{Name: "fresh", Lines: []string{"new line"}}})
+
+	names := e.PackNames()
+	has := func(n string) bool {
+		for _, x := range names {
+			if x == n {
+				return true
+			}
+		}
+		return false
+	}
+	if has("rickmorty") || !has("fresh") || !has("custom") {
+		t.Fatalf("reload should swap file packs but keep runtime packs: %#v", names)
+	}
+	if got := e.quotesFromPack("fresh"); len(got) != 1 || got[0] != "new line" {
+		t.Fatalf("fresh pack wrong: %#v", got)
+	}
+	if got := e.quotesFromPack("custom"); len(got) != 1 || got[0] != "keepme" {
+		t.Fatalf("runtime pack should survive reload: %#v", got)
+	}
+}
+
 func TestAddQuoteDedupAndDel(t *testing.T) {
 	now := time.Unix(0, 0)
 	e := newTestEngine(t, quotePersonality(), &now)

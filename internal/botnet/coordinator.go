@@ -118,8 +118,38 @@ func (c *Coordinator) onEvent(ctx context.Context, e Event) {
 	}
 }
 
+// getSkit returns a skit by name (concurrency-safe; skits can be hot-reloaded).
+func (c *Coordinator) getSkit(name string) (Skit, bool) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	s, ok := c.skits[strings.ToLower(name)]
+	return s, ok
+}
+
+// skitOrder returns a snapshot of skit keys in order.
+func (c *Coordinator) skitOrder() []string {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return append([]string(nil), c.order...)
+}
+
+// SetSkits replaces the loaded skit definitions (used by !reload).
+func (c *Coordinator) SetSkits(skits []Skit) {
+	m := make(map[string]Skit, len(skits))
+	order := make([]string, 0, len(skits))
+	for _, s := range skits {
+		k := strings.ToLower(s.Name)
+		m[k] = s
+		order = append(order, k)
+	}
+	c.mu.Lock()
+	c.skits = m
+	c.order = order
+	c.mu.Unlock()
+}
+
 func (c *Coordinator) beginPerform(ctx context.Context, e Event) {
-	skit, ok := c.skits[strings.ToLower(e.Skit)]
+	skit, ok := c.getSkit(e.Skit)
 	if !ok || len(skit.Steps) == 0 {
 		return
 	}
@@ -212,7 +242,7 @@ func (c *Coordinator) tryStart(ctx context.Context, network, channel, name strin
 	var skit Skit
 	var ok bool
 	if name != "" {
-		skit, ok = c.skits[strings.ToLower(name)]
+		skit, ok = c.getSkit(name)
 	} else {
 		skit, ok = c.randomLedSkit()
 	}
@@ -241,9 +271,9 @@ func (c *Coordinator) tryStart(ctx context.Context, network, channel, name strin
 }
 
 func (c *Coordinator) maybeAutoStart(ctx context.Context, network, channel string) {
-	for _, key := range c.order {
-		s := c.skits[key]
-		if s.Chance <= 0 || !strings.EqualFold(s.Lead(), c.name) {
+	for _, key := range c.skitOrder() {
+		s, ok := c.getSkit(key)
+		if !ok || s.Chance <= 0 || !strings.EqualFold(s.Lead(), c.name) {
 			continue
 		}
 		if c.roll(s.Chance) {
@@ -255,8 +285,8 @@ func (c *Coordinator) maybeAutoStart(ctx context.Context, network, channel strin
 
 func (c *Coordinator) randomLedSkit() (Skit, bool) {
 	var led []string
-	for _, key := range c.order {
-		if strings.EqualFold(c.skits[key].Lead(), c.name) {
+	for _, key := range c.skitOrder() {
+		if s, ok := c.getSkit(key); ok && strings.EqualFold(s.Lead(), c.name) {
 			led = append(led, key)
 		}
 	}
@@ -266,7 +296,7 @@ func (c *Coordinator) randomLedSkit() (Skit, bool) {
 	c.rngMu.Lock()
 	pick := led[c.rng.Intn(len(led))]
 	c.rngMu.Unlock()
-	return c.skits[pick], true
+	return c.getSkit(pick)
 }
 
 func (c *Coordinator) emit(network, channel, line string, action bool) {

@@ -5,6 +5,7 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 	"log/slog"
 	"os"
 	"os/signal"
@@ -85,6 +86,18 @@ func main() {
 			adminPass = os.Getenv(cfg.Admin.PasswordEnv)
 		}
 		adminMgr = admin.New(cfg.Bot, cfg.Admin, adminPass, eng, router, bus, log)
+		// !reload re-reads quote packs and skits from disk without a restart.
+		adminMgr.SetReload(func() (string, error) {
+			fresh, lerr := config.Load(*configPath, *quoteDir, *skitsFile)
+			if lerr != nil {
+				return "", lerr
+			}
+			eng.SetQuotePacks(fresh.Personality.Quotes.Packs)
+			if coord != nil {
+				coord.SetSkits(fresh.Skits)
+			}
+			return fmt.Sprintf("%d quote packs, %d skits", len(fresh.Personality.Quotes.Packs), len(fresh.Skits)), nil
+		})
 		if rerr := adminMgr.Run(ctx); rerr != nil {
 			log.Error("admin console failed to start", "err", rerr)
 		} else {

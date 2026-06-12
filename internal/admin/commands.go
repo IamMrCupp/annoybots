@@ -18,6 +18,7 @@ var adminCommands = map[string]bool{
 	"!say": true, "!act": true,
 	"!addquote": true, "!delquote": true,
 	"!addadmin": true, "!deladmin": true, "!admins": true,
+	"!reload": true,
 }
 
 // Handle processes a potential admin command. It only acts on DMs. Returns true
@@ -85,7 +86,7 @@ func (m *Manager) exec(_ context.Context, msg engine.Message, cmd string, fields
 			"!invite <net> <#chan> <nick> | !say <net> <target> <text> | "+
 			"!act <net> <target> <text> | !addquote <pack> <text> | "+
 			"!delquote <pack> <text> | !addadmin <net|*> <account> | "+
-			"!deladmin <net|*> <account> | !admins")
+			"!deladmin <net|*> <account> | !admins | !reload")
 
 	case "!join":
 		if len(fields) < 3 {
@@ -178,6 +179,18 @@ func (m *Manager) exec(_ context.Context, msg engine.Message, cmd string, fields
 
 	case "!admins":
 		m.reply(msg, "admins: "+m.adminList())
+
+	case "!reload":
+		if m.reload == nil {
+			m.reply(msg, "reload is not available.")
+			return
+		}
+		summary, err := m.reload()
+		if err != nil {
+			m.reply(msg, "reload failed: "+err.Error())
+			return
+		}
+		m.reply(msg, "reloaded "+summary+" (note: network/personality changes still need a restart)")
 	}
 }
 

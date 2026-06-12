@@ -73,6 +73,7 @@ type Manager struct {
 	password string        // fallback admin password (empty disables !login)
 	ttl      time.Duration // session lifetime
 	now      func() time.Time
+	reload   func() (string, error) // re-read quotes/skits from disk (set by main)
 
 	mu         sync.Mutex
 	configKeys map[string]bool      // admins defined in config (cannot be removed at runtime)
@@ -121,6 +122,11 @@ func New(bot string, cfg Config, password string, eng Quoter, ctl Control, bus b
 	m.rebuild()
 	return m
 }
+
+// SetReload registers the reload hook invoked by the !reload command. fn should
+// re-read on-disk config (quote packs, skits) and apply it, returning a short
+// human summary.
+func (m *Manager) SetReload(fn func() (string, error)) { m.reload = fn }
 
 // rebuild recomputes the combined auth set from config + runtime admins.
 func (m *Manager) rebuild() {
