@@ -157,6 +157,12 @@ personality:
         file: "futurama.txt"
       - name: snuffbox
         file: "snuffbox.txt"
+      - name: timeric
+        file: "timeric.txt"
+      - name: squidbillies
+        file: "squidbillies.txt"
+      - name: orgazmo
+        file: "orgazmo.txt"
 
   markov:
     enabled: true

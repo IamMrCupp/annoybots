@@ -12,6 +12,7 @@ type Message struct {
 	Text    string // message body
 	Private bool   // true if a direct message rather than a channel
 	Self    string // the bot's own current nick on this network
+	Account string // verified identity (IRC services account, Discord user ID, Twitch login); empty if none
 }
 
 // Sender lets the engine emit lines back out to any network by name.
