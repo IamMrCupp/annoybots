@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.0.2](https://github.com/IamMrCupp/annoybots/compare/v1.0.1...v1.0.2) (2026-06-13)
+
+
+### CI/CD
+
+* build multi-arch (amd64+arm64) release image ([2e7df6a](https://github.com/IamMrCupp/annoybots/commit/2e7df6a5f0301de7e3d94cfb3608f7b9fef6e041))
+* build multi-arch (amd64+arm64) release image ([6c34162](https://github.com/IamMrCupp/annoybots/commit/6c341629f6ea968c4ff3506b6c96aec669a0d911))
+
 ## [1.0.1](https://github.com/IamMrCupp/annoybots/compare/v1.0.0...v1.0.1) (2026-06-12)
 
 
