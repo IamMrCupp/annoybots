@@ -64,6 +64,7 @@ type Network struct {
 	SASL               bool     `yaml:"sasl"`         // use SASL PLAIN (real networks)
 	SASLUser           string   `yaml:"sasl_user"`
 	SASLPassEnv        string   `yaml:"sasl_pass_env"`
+	NickServPassEnv    string   `yaml:"nickserv_pass_env"` // identify to NickServ on connect (networks without SASL)
 	Channels           []string `yaml:"channels"`
 	Guilds             []string `yaml:"guilds"` // discord only: guild IDs for instant slash-command registration
 	Rate               Rate     `yaml:"rate"`

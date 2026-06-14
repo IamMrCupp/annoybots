@@ -66,6 +66,10 @@ networks:
     sasl: true
     sasl_user: "Echo"
     sasl_pass_env: "ECHO_TESTNET_SASL"
+    # If the network has NickServ but does NOT offer the SASL capability, set
+    # sasl: false and use nickserv_pass_env instead — the bot will
+    # "PRIVMSG NickServ IDENTIFY <pass>" on connect (before joining).
+    # nickserv_pass_env: "ECHO_TESTNET_SASL"
     channels: ["#example"]
 
   # A second IRC network (example: Libera.Chat). Delete if you only want one.

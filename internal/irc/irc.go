@@ -34,11 +34,12 @@ type outMsg struct {
 
 // conn is a single network connection plus its outbound pacing.
 type conn struct {
-	cfg     config.Network
-	ic      *ircevent.Connection
-	limiter *ratelimit.Limiter
-	out     chan outMsg
-	log     *slog.Logger
+	cfg          config.Network
+	ic           *ircevent.Connection
+	limiter      *ratelimit.Limiter
+	out          chan outMsg
+	log          *slog.Logger
+	nickservPass string // if set, IDENTIFY to NickServ on connect (non-SASL networks)
 }
 
 // Manager owns all connections and implements engine.Sender.
@@ -102,13 +103,19 @@ func newConn(n config.Network, log *slog.Logger, getenv func(string) string) *co
 		}
 	}
 
-	return &conn{
+	c := &conn{
 		cfg:     n,
 		ic:      ic,
 		limiter: ratelimit.New(n.Rate.Burst, n.Rate.PerSecond),
 		out:     make(chan outMsg, 256),
 		log:     log.With("network", n.Name),
 	}
+	// NickServ IDENTIFY is the pre-SASL fallback for networks that don't offer
+	// the SASL capability. Only meaningful for real IRC (Twitch has no NickServ).
+	if n.Kind != "twitch" && n.NickServPassEnv != "" {
+		c.nickservPass = getenv(n.NickServPassEnv)
+	}
+	return c
 }
 
 // bind registers connect/message callbacks.
@@ -116,6 +123,16 @@ func (m *Manager) bind(c *conn) {
 	ic := c.ic
 	ic.AddConnectCallback(func(ircmsg.Message) {
 		c.log.Info("connected", "nick", ic.CurrentNick())
+		// Identify to services before joining, in case a channel is +r
+		// (registered-only). NickServ processes this asynchronously; for
+		// unrestricted channels the ordering doesn't matter.
+		if c.nickservPass != "" {
+			if err := ic.Privmsg("NickServ", "IDENTIFY "+c.nickservPass); err != nil {
+				c.log.Warn("nickserv identify failed", "err", err)
+			} else {
+				c.log.Info("sent NickServ IDENTIFY")
+			}
+		}
 		for _, ch := range c.cfg.Channels {
 			if err := ic.Join(ch); err != nil {
 				c.log.Warn("join failed", "channel", ch, "err", err)
