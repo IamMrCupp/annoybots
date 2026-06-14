@@ -1,10 +1,14 @@
-# SOPS configuration. Encrypts only the secret values (data/stringData) of the
-# Secret manifests, leaving the rest of the YAML readable so kustomize can still
-# build. Replace the age recipient with YOUR cluster's age public key (the
+# SOPS configuration — OPTIONAL. The default deploy hand-applies a plain Secret
+# (see deploy/k8s/overlays/<bot>/secret.example.yaml). Use SOPS only if you want
+# encrypted-secrets-in-Git for a GitOps flow; see deploy/k8s/flux/README.md.
+#
+# This rule encrypts only the secret values (data/stringData) of a committed
+# `secret.sops.yaml`, leaving the rest readable so kustomize can still build.
+# Replace the age recipient below with YOUR cluster's age public key (the
 # matching private key lives in a `sops-age` Secret in flux-system).
 #
-# Encrypt a secret:   sops --encrypt --in-place deploy/k8s/overlays/arywen/secret.sops.yaml
+# Encrypt:  sops --encrypt --in-place deploy/k8s/overlays/echo/secret.sops.yaml
 creation_rules:
-  - path_regex: deploy/k8s/.*secret.*\.ya?ml$
+  - path_regex: deploy/k8s/.*secret\.sops\.ya?ml$
     encrypted_regex: "^(data|stringData)$"
-    age: "age1y5mjg49fm55fx0r5cs4je8p26zge2zmtmafgmr4hv3lrfrtldv8q4dycwa"
+    age: "age1exampleexampleexampleexampleexampleexampleexampleexamp00000"

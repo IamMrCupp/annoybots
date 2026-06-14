@@ -1,24 +1,23 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
-# Names every resource arywen-* so both bots can share a namespace.
-namePrefix: arywen-
+# Names every resource echo-* so multiple bots can share a namespace.
+namePrefix: echo-
 commonLabels:
-  app.kubernetes.io/instance: arywen
+  app.kubernetes.io/instance: echo
 
 # Build with the load restrictor disabled (config/quote/skit files live in the
 # repo's top-level dirs):
-#   kubectl kustomize --load-restrictor LoadRestrictionsNone deploy/k8s/overlays/arywen
+#   kubectl kustomize --load-restrictor LoadRestrictionsNone deploy/k8s/overlays/echo
 resources:
   - ../../base
-  - secret.sops.yaml
 
 configMapGenerator:
   # Personality + networks. Hashed: a config change triggers a rollout (needed,
   # since networks/triggers are only read at startup).
   - name: bot-config
     files:
-      - bot.yaml=../../../../configs/arywen.yaml
+      - bot.yaml=../../../../configs/echo.yaml
   # Quote packs. Fixed name (no hash) so editing a pack in Git updates the same
   # ConfigMap; the kubelet syncs the files into the running pod and !reload picks
   # them up live, no rollout.
@@ -40,6 +39,21 @@ configMapGenerator:
       disableNameSuffixHash: true
     files:
       - skits.yaml=../../../../data/skits.yaml
+
+# Secrets: by default the bot's Secret is hand-applied as `echo-bot-secrets` and
+# never committed (see secret.example.yaml + the flux README). Point the base
+# StatefulSet's envFrom at it explicitly.
+#
+# OPTIONAL — SOPS-encrypted secrets-in-Git instead: drop this patch, add a
+# `secret.sops.yaml` (name: echo-bot-secrets) to `resources:` above, and give
+# the bot's Flux Kustomization a `decryption:` block (see flux/README.md).
+patches:
+  - target:
+      kind: StatefulSet
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/envFrom/0/secretRef/name
+        value: echo-bot-secrets
 
 images:
   - name: ghcr.io/iammrcupp/annoybots

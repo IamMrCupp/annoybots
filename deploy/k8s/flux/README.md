@@ -1,8 +1,9 @@
 # Flux / GitOps deployment
 
 This app is built for a GitOps flow: **Conventional Commits → release-please →
-semver release → CI builds the image → Flux rolls it out**, with secrets sealed
-via SOPS and quote/skit content served from ConfigMaps for live `!reload`.
+semver release → CI builds the image → Flux rolls it out**, with secrets
+hand-applied (SOPS optional) and quote/skit content served from ConfigMaps for
+live `!reload`.
 
 ## How it fits together
 
@@ -22,30 +23,45 @@ already reconciles). You likely already have a `GitRepository` and possibly an
 `ImageUpdateAutomation`; reuse them and adjust names.
 
 - `kustomizations.yaml` — one Flux `Kustomization` per bot + Redis. They set
-  `targetNamespace: annoybots`, `decryption.provider: sops`, and point `path:` at
-  this repo's overlays. (Flux's kustomize-controller builds with the load
-  restrictor disabled, so the overlays' `../../../../configs` / `data` references
-  resolve.)
+  `targetNamespace: annoybots` and point `path:` at this repo's overlays. (Flux's
+  kustomize-controller builds with the load restrictor disabled, so the overlays'
+  `../../../../configs` / `data` references resolve.) Secrets are hand-applied by
+  default — add a `decryption:` block only if you opt into SOPS (below).
 - `image-automation.yaml` — `ImageRepository` + `ImagePolicy` (+ an example
   `ImageUpdateAutomation`).
 
-## Secrets (SOPS)
+## Secrets
 
-Secrets live as `deploy/k8s/overlays/<bot>/secret.sops.yaml`, committed
-**encrypted**. Set up once:
+**Default — hand-applied (nothing secret in Git).** Each bot reads its tokens
+from a Secret named `<bot>-bot-secrets`. Copy the template, fill it in, and apply
+it out-of-band — `deploy/k8s/overlays/<bot>/secret.example.yaml` lists the keys:
+
+```sh
+kubectl -n annoybots create secret generic echo-bot-secrets \
+  --from-literal=ECHO_TWITCH_TOKEN='...' --from-literal=ECHO_DISCORD_TOKEN='...'
+# ...repeat for mimic-bot-secrets (MIMIC_* keys). Omit a key to disable a network.
+```
+
+The bot pod stays `ContainerCreating` until its Secret exists.
+
+**Optional — SOPS-encrypted secrets-in-Git** (for a fully declarative GitOps
+flow). Set up once:
 
 ```sh
 # Generate a cluster age key (private key goes into flux-system as `sops-age`):
 age-keygen -o age.agekey
 kubectl -n flux-system create secret generic sops-age --from-file=age.agekey
 
-# Put the PUBLIC key in .sops.yaml (replace the REPLACEME recipient), then:
-sops --encrypt --in-place deploy/k8s/overlays/arywen/secret.sops.yaml
-sops --encrypt --in-place deploy/k8s/overlays/kurkutu/secret.sops.yaml
+# Put the PUBLIC key in .sops.yaml (replace the example recipient). Create a
+# secret.sops.yaml from the .example template, then encrypt it:
+sops --encrypt --in-place deploy/k8s/overlays/echo/secret.sops.yaml
+sops --encrypt --in-place deploy/k8s/overlays/mimic/secret.sops.yaml
 git commit -s -am "chore: encrypt bot secrets"
 ```
 
-Flux decrypts them at apply time using the `sops-age` Secret.
+Then add `secret.sops.yaml` to that overlay's `resources:` (dropping the
+secretRef patch) and give the bot's Flux `Kustomization` a `decryption:` block.
+Flux decrypts at apply time using the `sops-age` Secret.
 
 ## Content updates without a rollout
 

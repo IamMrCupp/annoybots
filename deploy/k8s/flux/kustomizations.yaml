@@ -1,12 +1,18 @@
 # Flux (kustomize-controller) Kustomizations that deploy the bots and the bus.
 # Place these in your cluster-management repo (the one Flux already reconciles),
-# adjusting sourceRef/namespaces to your setup.
+# adjusting sourceRef/namespaces to your setup. One Kustomization per bot — copy
+# a block and change the name/path to add more bots.
 #
 # Notes:
 # - Flux's kustomize-controller builds with the load restrictor disabled, so the
 #   overlays' references to ../../../../configs and ../../../../data resolve fine.
-# - decryption.provider: sops + a `sops-age` Secret in flux-system decrypts the
-#   committed secret.sops.yaml files at apply time.
+# - By default each bot's Secret is HAND-APPLIED (not in Git), so no decryption
+#   block is needed here. If you opt into SOPS-encrypted secrets-in-Git instead,
+#   add this to the bot's spec (and see .sops.yaml / README.md):
+#       decryption:
+#         provider: sops
+#         secretRef:
+#           name: sops-age   # Secret in flux-system holding the age private key
 ---
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
@@ -25,11 +31,11 @@ spec:
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: annoybot-arywen
+  name: annoybot-echo
   namespace: flux-system
 spec:
   interval: 10m
-  path: ./deploy/k8s/overlays/arywen
+  path: ./deploy/k8s/overlays/echo
   prune: true
   wait: true
   dependsOn:
@@ -38,19 +44,15 @@ spec:
     kind: GitRepository
     name: annoybots
   targetNamespace: annoybots
-  decryption:
-    provider: sops
-    secretRef:
-      name: sops-age # Secret in flux-system holding the age private key
 ---
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: annoybot-kurkutu
+  name: annoybot-mimic
   namespace: flux-system
 spec:
   interval: 10m
-  path: ./deploy/k8s/overlays/kurkutu
+  path: ./deploy/k8s/overlays/mimic
   prune: true
   wait: true
   dependsOn:
@@ -59,7 +61,3 @@ spec:
     kind: GitRepository
     name: annoybots
   targetNamespace: annoybots
-  decryption:
-    provider: sops
-    secretRef:
-      name: sops-age
