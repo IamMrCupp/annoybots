@@ -1,5 +1,5 @@
-// Command annoybot runs a single annoying IRC/Twitch bot. The same binary
-// becomes Arywen or Kurkutu depending on the config file it is given.
+// Command annoybot runs a single annoying IRC/Twitch/Discord bot. The same
+// binary takes on a different personality depending on the config file it is given.
 package main
 
 import (

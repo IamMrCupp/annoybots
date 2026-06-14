@@ -104,7 +104,7 @@ type Banter struct {
 }
 
 // Personality is the full behavioral config that distinguishes one bot from
-// another. Arywen and Kurkutu are the same binary with different Personalities.
+// another. Every bot is the same binary with a different Personality.
 type Personality struct {
 	Name          string        `yaml:"name"`
 	Siblings      []string      `yaml:"siblings"` // other bots' nicks/display names (for banter)

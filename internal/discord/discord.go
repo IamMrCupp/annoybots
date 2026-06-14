@@ -111,9 +111,9 @@ func (c *Client) bind(s *session) {
 }
 
 // toMessage converts a Discord message into the engine's transport-agnostic form.
-// Raw mentions ("<@id>") are rewritten to display names so that "@Arywen" reads
-// as "Arywen" and fires the name-mention trigger like an IRC highlight. Kept as a
-// pure function so it can be unit-tested without a live gateway.
+// Raw mentions ("<@id>") are rewritten to display names so that an "@bot" mention
+// reads as the bot's name and fires the name-mention trigger like an IRC
+// highlight. Kept as a pure function so it can be unit-tested without a live gateway.
 func toMessage(network string, m *discordgo.MessageCreate, self, selfID string) engine.Message {
 	nick := ""
 	if m.Author != nil {
