@@ -72,6 +72,20 @@ type MarkovConfig struct {
 	MaxWords int  `yaml:"max_words"`
 }
 
+// AmbientTimer drives self-initiated ambient chatter. Unlike interjections/quotes
+// (which only fire in REACTION to an inbound message), this lets the bot speak
+// into a channel ON ITS OWN on a timer — the classic BMotion "the bot sometimes
+// just talks" behavior. It only targets channels with recent-but-now-quiet
+// activity, never a dead or silent-from-the-start one. Disabled by default.
+type AmbientTimer struct {
+	Enabled      bool     `yaml:"enabled"`
+	Interval     Duration `yaml:"interval"`      // how often the timer rolls (default 60s)
+	Chance       float64  `yaml:"chance"`        // 0..1 roll per eligible channel per tick (default 0.3)
+	Cooldown     Duration `yaml:"cooldown"`      // per-channel min gap between self-initiated lines (default 5m)
+	QuietFor     Duration `yaml:"quiet_for"`     // only interject if the channel has been silent >= this (default 90s)
+	ActiveWithin Duration `yaml:"active_within"` // skip channels with no activity in this long (default 30m)
+}
+
 // QuotePack is a named collection of canned lines, BMotion-style. Lines may be
 // listed inline and/or loaded from a File (one quote per line); the config layer
 // merges File contents into Lines so the engine only ever sees Lines.
@@ -113,5 +127,6 @@ type Personality struct {
 	Quotes        Quotes        `yaml:"quotes"`
 	Banter        Banter        `yaml:"banter"`
 	Markov        MarkovConfig  `yaml:"markov"`
+	AmbientTimer  AmbientTimer  `yaml:"ambient_timer"`
 	Commands      bool          `yaml:"commands"`
 }

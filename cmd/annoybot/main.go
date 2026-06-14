@@ -160,6 +160,12 @@ func main() {
 		go brainSaver(ctx, eng, cfg.Brain.Path, saveEvery, log)
 	}
 
+	// Self-initiated ambient chatter: periodically butt into quiet-but-live channels.
+	if eng.AmbientEnabled() {
+		go ambientTicker(ctx, eng, router, eng.AmbientInterval())
+		log.Info("ambient timer enabled", "interval", eng.AmbientInterval().String())
+	}
+
 	<-ctx.Done()
 	log.Info("shutting down")
 
@@ -192,6 +198,20 @@ func brainSaver(ctx context.Context, eng *engine.Engine, path string, every time
 			return
 		case <-t.C:
 			saveBrain(eng, path, log)
+		}
+	}
+}
+
+// ambientTicker drives the engine's self-initiated ambient chatter on a timer.
+func ambientTicker(ctx context.Context, eng *engine.Engine, out engine.Sender, every time.Duration) {
+	t := time.NewTicker(every)
+	defer t.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-t.C:
+			eng.Tick(out)
 		}
 	}
 }

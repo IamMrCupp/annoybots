@@ -27,6 +27,9 @@ type Engine struct {
 	banter   *windowCounter
 	now      func() time.Time
 
+	amu      sync.Mutex           // guards activity
+	activity map[string]time.Time // "network\x00channel" -> last human-activity time (for the ambient timer)
+
 	qmu         sync.RWMutex        // guards the quote store (file packs + runtime additions)
 	filePacks   []QuotePack         // file-backed packs (replaceable via reload)
 	custom      map[string][]string // pack(lower) -> lines added at runtime
@@ -81,6 +84,16 @@ func New(p Personality, opts Options) (*Engine, error) {
 		}
 	}
 
+	if p.AmbientTimer.Enabled {
+		defaultDur(&p.AmbientTimer.Interval, time.Minute)
+		defaultDur(&p.AmbientTimer.Cooldown, 5*time.Minute)
+		defaultDur(&p.AmbientTimer.QuietFor, 90*time.Second)
+		defaultDur(&p.AmbientTimer.ActiveWithin, 30*time.Minute)
+		if p.AmbientTimer.Chance <= 0 {
+			p.AmbientTimer.Chance = 0.3
+		}
+	}
+
 	return &Engine{
 		p:         p,
 		res:       res,
@@ -89,10 +102,18 @@ func New(p Personality, opts Options) (*Engine, error) {
 		siblings:  siblings,
 		banter:    newWindowCounter(),
 		now:       now,
+		activity:  make(map[string]time.Time),
 		filePacks: append([]QuotePack(nil), p.Quotes.Packs...),
 		custom:    make(map[string][]string),
 		rng:       rng,
 	}, nil
+}
+
+// defaultDur sets *d to fallback when it is unset (<= 0).
+func defaultDur(d *Duration, fallback time.Duration) {
+	if d.D() <= 0 {
+		*d = Duration(fallback)
+	}
 }
 
 // Brain exposes the Markov chain so the caller can persist it.
@@ -110,6 +131,12 @@ func (e *Engine) Handle(msg Message, out Sender) {
 	if e.isSibling(msg.Nick) {
 		e.maybeBanter(msg, out)
 		return
+	}
+
+	// Note real human activity per channel so the ambient timer knows which
+	// channels are "live but currently quiet" candidates to butt into.
+	if !msg.Private {
+		e.recordActivity(msg.Network, msg.Channel)
 	}
 
 	// Learn from real chatter (not commands) to grow the brain.
