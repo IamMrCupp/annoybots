@@ -1,20 +1,24 @@
 # annoybots
 
-Modern, containerized rebirth of two classic [BMotion](http://bmotion.sourceforge.net/)-style
-IRC nuisance bots — **Arywen** and **Kurkutu** — for Kubernetes.
+A framework for chat "nuisance" bots — the modern, containerized descendant of
+the classic [BMotion](http://bmotion.sourceforge.net/) IRC bots, rebuilt in Go
+for Kubernetes.
 
-One small Go binary holds many simultaneous chat connections at once (real IRC
-networks, a private InspIRCd test net, and Twitch) and routes every channel
-through a shared "annoyance engine." Each bot is the same binary with a
-different personality file.
+One small Go binary holds many simultaneous chat connections at once (IRC
+networks, Twitch, and Discord) and routes every channel through a shared
+"annoyance engine." **Each bot is the same binary with a different personality
+file**, so you can run as many bots as you like — each with its own name,
+triggers, and voice. The repo ships two example personalities, **Echo** and
+**Mimic**, to copy from.
 
 ## What it does
 
 - **Keyword/regex triggers** → randomized, templated responses (`{nick}`, `{me}`, `{chan}`, capture groups).
 - **Ambient interjections** — random unprompted lines, with per-channel cooldowns.
-- **Quote packs** — drop-in `.txt` files (Rick & Morty, South Park, Futurama, Snuff Box, classic bot sass) surfaced randomly and via `!quote [pack]`; `!packs` lists what's available (same as the `/quote`, `/packs` slash commands on Discord).
+- **Quote packs** — drop-in `.txt` files surfaced randomly and via `!quote [pack]`; `!packs` lists what's available (same as the `/quote`, `/packs` slash commands on Discord).
 - **A learning "brain"** — an order-N Markov chain that learns from channel chatter and babbles it back, mangled. It persists to disk so learning survives restarts (just like the BMotion babble everyone remembers, minus the abandoned TCL stack).
-- **Multi-network in one process** — IRC + Twitch share the same wire protocol; Twitch just needs CAP negotiation, an `oauth:` token, and tighter rate limits, all handled automatically.
+- **Multi-network in one process** — IRC + Twitch share the same wire protocol; Twitch just needs CAP negotiation, an `oauth:` token, and tighter rate limits, all handled automatically. Discord rides alongside on the same engine.
+- **Many bots, one binary** — personality is config, not code, so a new bot is a new YAML file (and a pod), never a fork.
 
 ## Layout
 
@@ -30,8 +34,9 @@ internal/ratelimit   token-bucket limiter (Twitch-aware)
 internal/cooldown    per-channel cooldown tracking
 internal/config      YAML config loading, validation, quote-pack loading
 internal/health      /healthz + /readyz for Kubernetes probes
-configs/             arywen.yaml, kurkutu.yaml (personality + networks)
+configs/             echo.yaml, mimic.yaml — example personalities (+ networks)
 data/quotes/         starter quote packs
+data/skits.yaml      shared multi-bot skit scripts
 deploy/k8s/          kustomize base + per-bot overlays
 ```
 
@@ -39,10 +44,11 @@ deploy/k8s/          kustomize base + per-bot overlays
 
 ```sh
 # Export the secrets your config references first, e.g.:
-export ARYWEN_LIBERA_SASL=...           # NickServ/SASL password
-export ARYWEN_TWITCH_TOKEN=oauth:...    # Twitch chat token
+export ECHO_LIBERA_SASL=...           # NickServ/SASL password
+export ECHO_TWITCH_TOKEN=oauth:...    # Twitch chat token
 
-make run-arywen
+make run-echo                          # or run-mimic
+# any config:  go run ./cmd/annoybot -config configs/yourbot.yaml
 ```
 
 Quote-pack files resolve relative to `ANNOYBOT_QUOTES_DIR` (the Makefile points
@@ -54,6 +60,28 @@ Everything behavioral lives in `configs/<bot>.yaml`: networks, triggers,
 interjection/quote rates and cooldowns, and Markov settings. **Secrets are never
 stored in the config** — each `*_env` field names an environment variable
 (populated from a Kubernetes Secret) that holds the actual token or password.
+Start from `configs/echo.yaml` or `configs/mimic.yaml`; both exercise every
+feature and all three platforms.
+
+### Add a bot
+
+A bot is just the binary pointed at a different config, so adding one is purely
+additive — no code changes:
+
+1. **Copy an example config.** `cp configs/echo.yaml configs/jeeves.yaml`, then
+   set `bot: jeeves` and `personality.name: "Jeeves"` and edit the networks,
+   triggers, banter, and quote packs to taste.
+2. **Name its secrets.** Each `*_env` field names an env var. For Kubernetes,
+   collect them into a `jeeves-bot-secrets` Secret (see [Deploy](#deploy)).
+3. **Introduce it to the others.** Add `"Jeeves"` to every other bot's
+   `personality.siblings`, and optionally give it lines in `data/skits.yaml`
+   (skit steps are matched by the `bot:` value, e.g. `bot: jeeves`).
+4. **Deploy it.** Copy `deploy/k8s/overlays/echo/` to `…/jeeves/`: point the
+   `bot-config` generator at `configs/jeeves.yaml` and the secretRef patch at
+   `jeeves-bot-secrets`. Add a Flux `Kustomization` (copy a block in
+   `deploy/k8s/flux/kustomizations.yaml`).
+
+The engine, botnet bus, and admin console all work the same for any number of bots.
 
 ### Twitch
 
@@ -88,19 +116,20 @@ Like the old eggdrop botnet BMotion used for coordinated trolling, the bots can
 talk to each other — but safely.
 
 **Banter (cross-talk).** Each bot lists the others as `siblings`. A sibling's
-messages can *only* produce capped banter — never normal triggers — so two bots
-can never trigger each other into an infinite flood. Banter is bounded twice: a
+messages can *only* produce capped banter — never normal triggers — so bots can
+never trigger each other into an infinite flood. Banter is bounded twice: a
 per-channel cooldown *and* a hard "max replies per rolling window" cap.
 
 **Skits.** Multi-bot scripted bits live in a shared `data/skits.yaml` loaded by
-both bots. They coordinate over a Redis pub/sub bus, so a skit works even if the
-bots are on different platforms. The "lead" bot (owner of the first line)
+every sibling bot. They coordinate over a Redis pub/sub bus, so a skit works even
+if the bots are on different platforms. The "lead" bot (owner of the first line)
 initiates — via `!skit <name>` in a shared channel, or randomly via each skit's
 `chance` — then the bots perform their lines in lockstep, bounded by the step
-count and a per-channel cooldown. Add your own skits by editing `data/skits.yaml`.
+count and a per-channel cooldown. Add your own by editing `data/skits.yaml`
+(each step's `bot:` must match a bot's `bot:` config value).
 
-Enable it with the `botnet:` block in each bot's config (both must share the same
-`channel`). Deploy the shared bus once:
+Enable it with the `botnet:` block in each bot's config (all bots must share the
+same `channel`). Deploy the shared bus once:
 
 ```sh
 kubectl apply -k deploy/k8s/redis
@@ -126,7 +155,7 @@ Commands (send `!help` for the list):
 - `!reload` — re-read quote-pack files and the skits file from disk, no restart
   (network connections and personality triggers still require a restart)
 
-Quote and admin changes persist to the data volume and **sync to the sibling bot
+Quote and admin changes persist to the data volume and **sync to the sibling bots
 over the botnet bus**, so you only have to DM one of them. Channel control and
 puppeting stay local to the bot you DM. (`!delquote` only removes runtime-added
 lines; file-pack lines are immutable — edit the `.txt` to change those.)
@@ -143,9 +172,10 @@ a configurable `session_ttl`. Leave `password_env` unset to disable it.
 
 This is built for **GitOps with Flux**: Conventional Commits → `release-please`
 cuts a semver release → CI builds the image → Flux's semver `ImagePolicy` rolls
-it out. Secrets are SOPS-encrypted; quote/skit content is served from ConfigMaps
-so edits go live via `!reload`. See [`deploy/k8s/flux/README.md`](deploy/k8s/flux/README.md)
-for the full wiring (Kustomizations, image automation, and the SOPS/age setup).
+it out. Secrets are **hand-applied by default** (SOPS-encrypted secrets-in-Git
+are optional); quote/skit content is served from ConfigMaps so edits go live via
+`!reload`. See [`deploy/k8s/flux/README.md`](deploy/k8s/flux/README.md) for the
+full wiring (Kustomizations, image automation, and the optional SOPS/age setup).
 
 Each bot deploys as a single-replica StatefulSet with its own PVC for the Markov
 brain; Redis (the botnet bus) deploys once from `deploy/k8s/redis`.
@@ -153,12 +183,18 @@ brain; Redis (the botnet bus) deploys once from `deploy/k8s/redis`.
 ### Manual apply (no Flux)
 
 ```sh
-# Fill in deploy/k8s/overlays/arywen/secret.sops.yaml with real values (and
-# either encrypt it or apply it as-is in a trusted context), then:
 kubectl create namespace annoybots
+
+# Hand-apply each bot's Secret — keys are listed in
+# deploy/k8s/overlays/<bot>/secret.example.yaml. Omit a key to disable a network:
+kubectl -n annoybots create secret generic echo-bot-secrets \
+  --from-literal=ECHO_TWITCH_TOKEN='...' --from-literal=ECHO_DISCORD_TOKEN='...'
+kubectl -n annoybots create secret generic mimic-bot-secrets \
+  --from-literal=MIMIC_TWITCH_TOKEN='...' --from-literal=MIMIC_DISCORD_TOKEN='...'
+
 kubectl apply -k deploy/k8s/redis
-kubectl kustomize --load-restrictor LoadRestrictionsNone deploy/k8s/overlays/arywen | kubectl apply -n annoybots -f -
-kubectl kustomize --load-restrictor LoadRestrictionsNone deploy/k8s/overlays/kurkutu | kubectl apply -n annoybots -f -
+kubectl kustomize --load-restrictor LoadRestrictionsNone deploy/k8s/overlays/echo  | kubectl apply -n annoybots -f -
+kubectl kustomize --load-restrictor LoadRestrictionsNone deploy/k8s/overlays/mimic | kubectl apply -n annoybots -f -
 ```
 
 ## Adding quotes
