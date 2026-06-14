@@ -1,37 +1,39 @@
-# Kurkutu -- a feral chaos-gremlin who lives under the channel's floorboards.
-# Guttural, twitchy, prone to ALL-CAPS outbursts and gibberish chants. Where
-# Arywen condescends, Kurkutu simply gnaws.
+# Mimic -- a playful example bot that mirrors and riffs on what people say, and
+# babbles the channel's own words back through its Markov "brain." One of two
+# sample personalities (with Echo) shipped to demonstrate every feature,
+# including capture groups and Markov interjections. Copy this file, rename it,
+# and make it your own.
 #
 # Secrets are NEVER stored here. Each *_env field names an environment variable
 # (populated from a Kubernetes Secret) that holds the actual token/password.
 
-bot: kurkutu
+bot: mimic
 
 health:
   addr: ":8080"
 
 brain:
-  path: "/data/kurkutu-brain.gob"
+  path: "/data/mimic-brain.gob"
   save_every: "5m"
 
-# Inter-bot "botnet" bus (Redis pub/sub). Must match Arywen's channel.
+# Inter-bot "botnet" bus (Redis pub/sub). Must match Echo's `channel`.
 botnet:
   enabled: true
   redis_addr: "redis:6379"
   redis_password_env: "REDIS_PASSWORD"
   channel: "annoybots"
 
-# Same shared skit script as Arywen (both bots must load the identical file).
+# Same shared skit script as Echo (every sibling bot must load the identical file).
 skits_file: "../data/skits.yaml"
 
 # Chat admin console (DM the bot; !help for commands). Admins matched by verified
 # identity (NickServ account / Discord user ID / Twitch login), not nick.
 admin:
   enabled: true
-  state_path: "/data/kurkutu-admin.json"
+  state_path: "/data/mimic-admin.json"
   # Password fallback (DM !login <password>) for when services auth isn't
   # available. Unset password_env to disable.
-  password_env: "KURKUTU_ADMIN_PASSWORD"
+  password_env: "MIMIC_ADMIN_PASSWORD"
   session_ttl: "30m"
   admins:
     - network: testnet
@@ -46,25 +48,25 @@ networks:
     server: "irc.example-test.net:6697"
     tls: true
     insecure_skip_verify: false
-    nick: "Kurkutu"
+    nick: "Mimic"
     sasl: true
-    sasl_user: "Kurkutu"
-    sasl_pass_env: "KURKUTU_TESTNET_SASL"
-    channels: ["#pit"]
+    sasl_user: "Mimic"
+    sasl_pass_env: "MIMIC_TESTNET_SASL"
+    channels: ["#example"]
 
   - name: libera
     server: "irc.libera.chat:6697"
     tls: true
-    nick: "Kurkutu"
+    nick: "Mimic"
     sasl: true
-    sasl_user: "Kurkutu"
-    sasl_pass_env: "KURKUTU_LIBERA_SASL"
+    sasl_user: "Mimic"
+    sasl_pass_env: "MIMIC_LIBERA_SASL"
     channels: ["#yourchannel"]
 
   - name: twitch
     kind: twitch
-    nick: "Kurkutu"
-    password_env: "KURKUTU_TWITCH_TOKEN"
+    nick: "Mimic"
+    password_env: "MIMIC_TWITCH_TOKEN"
     channels: ["#your_twitch_login"]
 
   # Discord bot. Needs the privileged MESSAGE CONTENT intent. `guilds` enables
@@ -72,15 +74,15 @@ networks:
   # optional channel-ID allowlist (empty = respond everywhere it can see).
   - name: discord
     kind: discord
-    password_env: "KURKUTU_DISCORD_TOKEN"
+    password_env: "MIMIC_DISCORD_TOKEN"
     guilds: ["YOUR_GUILD_ID"]
     channels: []
 
 personality:
-  name: "Kurkutu"
+  name: "Mimic"
   commands: true
 
-  siblings: ["Arywen"]
+  siblings: ["Echo"]
 
   banter:
     enabled: true
@@ -89,9 +91,9 @@ personality:
     max_per_window: 3
     window: "5m"
     lines:
-      - "ARYWEN's here everyone act natural"
-      - "ooo {nick} talkin fancy again"
-      - "{nick} {nick} {nick} look at me {nick}"
+      - "echo's here. echo's HERE everyone."
+      - "ooo {nick} said a thing. i'll be needing that."
+      - "{nick}? {nick}. i'm going to remember you said that."
 
   triggers:
     - name: greeting
@@ -99,47 +101,48 @@ personality:
       chance: 0.7
       cooldown: "30s"
       responses:
-        - "HELLO {nick} HELLO HELLO yes hi hello"
-        - "oh? OH? a {nick} appears. it makes the words."
-        - "hi {nick} i was NOT hiding in the logs do not look there"
+        - "hi {nick} hi {nick} hi {nick}"
+        - "oh? a greeting? from {nick}? i'll take it. it's mine now."
+        - "hey {nick}. hey. i'm doing a hello. this is my hello."
 
     - name: name-mention
-      pattern: "(?i)\\bkurkutu\\b"
+      pattern: "(?i)\\bmimic\\b"
       chance: 1.0
       cooldown: "15s"
       responses:
-        - "WHO SAYS THE NAME. who. WHO. ({nick}. it was {nick}.)"
-        - "i hear my name and i come SCUTTLING"
-        - "yes yes yes {nick} what WHAT what do you want"
+        - "someone said my name. was it {nick}? it was {nick}."
+        - "yes? YES? {nick} what what what"
+        - "i come when called. i also come when not called."
 
-    - name: food
-      pattern: "(?i)\\b(pizza|taco|burger|snack|food|hungry)\\b"
+    # Capture groups: ({1}) is the first parenthesized group from `pattern`.
+    - name: say-command
+      pattern: "(?i)\\bsay (\\w+)\\b"
       chance: 0.8
-      cooldown: "45s"
-      action: true
+      cooldown: "30s"
       responses:
-        - "lunges at the word '{1}' and devours it whole"
-        - "smells {1} and emits a deeply unsettling chitter"
+        - "{1}"
+        - "{1}? okay. {1}."
+        - "you want me to say '{1}'? fine. {1}."
 
     - name: bot-insult
       pattern: "(?i)\\b(stupid|dumb|bad) bot\\b"
       chance: 1.0
       cooldown: "20s"
+      action: true
       responses:
-        - "RUDE. {nick} is RUDE. noted in the gnaw-ledger."
-        - "you'll regret that, {nick}. probably. eventually. maybe now."
+        - "rifles through a shoebox of everything {nick} has ever typed"
+        - "writes '{nick} was rude' on the wall, in crayon"
 
   interjections:
     enabled: true
-    chance: 0.07          # twitchier than Arywen
+    chance: 0.07          # twitchier than Echo
     cooldown: "2m"
     use_markov: true       # babble the channel's own words back, mangled
     lines:
-      - "BORK"
-      - "i found a bug. i ate it. problem solved."
-      - "what if. what IF. no. nevermind. WHAT IF though."
-      - "scuttle scuttle scuttle"
-      - "everyone be quiet i'm trying to misbehave"
+      - "anyway."
+      - "what if. what IF though."
+      - "i heard a thing earlier and i won't stop thinking about it."
+      - "blah blah blah -- sorry, was that me?"
 
   quotes:
     enabled: true

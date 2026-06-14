@@ -1,64 +1,66 @@
-# Shared skit scripts, loaded by BOTH bots so they agree on every sequence.
-# A skit is performed in lockstep over the botnet bus: the "lead" bot (owner of
-# the first step) initiates, and each bot delivers only the steps assigned to it,
-# waiting for the other to finish each line. Bounded by step count + cooldown.
+# Shared skit scripts, loaded by EVERY sibling bot so they agree on every
+# sequence. A skit is performed in lockstep over the botnet bus: the "lead" bot
+# (owner of the first step) initiates, and each bot delivers only the steps
+# assigned to it (matched by `bot:`), waiting for the other to finish each line.
+# Bounded by step count + cooldown.
 #
-# Trigger a skit with "!skit <name>" in a channel both bots share, or let them
-# fire randomly via each skit's `chance`.
+# Each step's `bot:` MUST match a bot's top-level `bot:` config value (here,
+# `echo` and `mimic`). Trigger a skit with "!skit <name>" in a channel the bots
+# share, or let them fire randomly via each skit's `chance`.
 skits:
-  - name: argument
+  - name: roundabout
     chance: 0.01        # ~1% chance to auto-start on a human message (lead only)
     cooldown: "15m"
     steps:
-      - bot: arywen
-        line: "Kurkutu. Must you lurk in every channel I grace?"
+      - bot: echo
+        line: "Hey Mimic. Say something interesting."
         delay: "2s"
-      - bot: kurkutu
-        line: "LURK? i LIVE here, your majesty. you're the tourist."
+      - bot: mimic
+        line: "say something interesting"
         delay: "3s"
-      - bot: arywen
-        line: "I cannot believe I share a server with this... creature."
+      - bot: echo
+        line: "...that was just what I said."
         delay: "3s"
-      - bot: kurkutu
-        line: "creature. CREATURE. she says, to the thing that eats her error logs."
+      - bot: mimic
+        line: "that was just what i said"
         delay: "3s"
+      - bot: echo
+        line: "I'm going to stop talking now."
+        delay: "2s"
 
-  - name: whisky
+  - name: countoff
     chance: 0.01
     cooldown: "15m"
     steps:
-      - bot: kurkutu
-        line: "WHISKYYYYYY!"
+      - bot: mimic
+        line: "one!"
         delay: "2s"
-      - bot: arywen
-        line: "Kurkutu. This is a chat channel, not a saloon."
-        delay: "3s"
-      - bot: kurkutu
-        line: "is that good? IS THAT GOOD?"
+      - bot: echo
+        line: "Two."
         delay: "2s"
-      - bot: arywen
-        line: "...very good. Now sit down."
-        delay: "3s"
-      - bot: kurkutu
-        line: "what doesn't kill you makes you stronger, your majesty"
+      - bot: mimic
+        line: "THREE!"
+        delay: "2s"
+      - bot: echo
+        line: "...we are not very good at this."
         delay: "3s"
 
-  - name: saythething
+  - name: thebit
     chance: 0.01
     cooldown: "15m"
     steps:
-      - bot: kurkutu
-        line: "psst. arywen. ARYWEN. say the thing."
+      - bot: mimic
+        line: "psst. Echo. ECHO. do the bit."
         delay: "2s"
-      - bot: arywen
-        line: "I will not 'say the thing,' you insufferable gremlin."
+      - bot: echo
+        line: "I am not going to 'do the bit.'"
         delay: "3s"
-      - bot: kurkutu
-        line: "say the THING say the THING say the THIIING"
+      - bot: mimic
+        line: "do the bit do the bit do the biiit"
         delay: "2s"
-      - bot: arywen
-        line: "...fine. Wubba lubba dub dub. There. Are you content?"
+      - bot: echo
+        line: "...Hello, and welcome to the channel. There. Happy?"
         delay: "3s"
-      - bot: kurkutu
-        line: "HEHEHE. yes. very."
+      - bot: mimic
+        line: "hehe. yes. very."
         delay: "2s"

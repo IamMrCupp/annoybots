@@ -2,7 +2,7 @@ BINARY := annoybot
 IMAGE  := ghcr.io/iammrcupp/annoybots
 TAG    ?= latest
 
-.PHONY: build test lint run-arywen run-kurkutu docker k8s-arywen k8s-kurkutu tidy
+.PHONY: build test lint run-echo run-mimic docker k8s-arywen k8s-kurkutu tidy
 
 build:
 	go build -trimpath -o bin/$(BINARY) ./cmd/annoybot
@@ -16,13 +16,13 @@ lint:
 tidy:
 	go mod tidy
 
-# Run locally against the canonical configs, loading quote packs from data/quotes.
+# Run locally against an example config, loading quote packs from data/quotes.
 # Export the *_env secrets in your shell first.
-run-arywen:
-	ANNOYBOT_QUOTES_DIR=data/quotes go run ./cmd/annoybot -config configs/arywen.yaml
+run-echo:
+	ANNOYBOT_QUOTES_DIR=data/quotes go run ./cmd/annoybot -config configs/echo.yaml
 
-run-kurkutu:
-	ANNOYBOT_QUOTES_DIR=data/quotes go run ./cmd/annoybot -config configs/kurkutu.yaml
+run-mimic:
+	ANNOYBOT_QUOTES_DIR=data/quotes go run ./cmd/annoybot -config configs/mimic.yaml
 
 docker:
 	docker build -t $(IMAGE):$(TAG) .
