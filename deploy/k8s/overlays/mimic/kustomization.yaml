@@ -1,20 +1,19 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
-namePrefix: kurkutu-
+namePrefix: mimic-
 commonLabels:
-  app.kubernetes.io/instance: kurkutu
+  app.kubernetes.io/instance: mimic
 
 # Build with:
-#   kubectl kustomize --load-restrictor LoadRestrictionsNone deploy/k8s/overlays/kurkutu
+#   kubectl kustomize --load-restrictor LoadRestrictionsNone deploy/k8s/overlays/mimic
 resources:
   - ../../base
-  - secret.sops.yaml
 
 configMapGenerator:
   - name: bot-config
     files:
-      - bot.yaml=../../../../configs/kurkutu.yaml
+      - bot.yaml=../../../../configs/mimic.yaml
   - name: bot-quotes
     options:
       disableNameSuffixHash: true
@@ -32,6 +31,18 @@ configMapGenerator:
       disableNameSuffixHash: true
     files:
       - skits.yaml=../../../../data/skits.yaml
+
+# Secrets: hand-applied as `mimic-bot-secrets` by default (see
+# secret.example.yaml + flux/README.md). For SOPS-in-Git instead, drop this
+# patch, add a `secret.sops.yaml` (name: mimic-bot-secrets) to `resources:`, and
+# add a `decryption:` block to the bot's Flux Kustomization.
+patches:
+  - target:
+      kind: StatefulSet
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/envFrom/0/secretRef/name
+        value: mimic-bot-secrets
 
 images:
   - name: ghcr.io/iammrcupp/annoybots

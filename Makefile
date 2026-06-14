@@ -2,7 +2,7 @@ BINARY := annoybot
 IMAGE  := ghcr.io/iammrcupp/annoybots
 TAG    ?= latest
 
-.PHONY: build test lint run-echo run-mimic docker k8s-arywen k8s-kurkutu tidy
+.PHONY: build test lint run-echo run-mimic docker k8s-echo k8s-mimic tidy
 
 build:
 	go build -trimpath -o bin/$(BINARY) ./cmd/annoybot
@@ -29,8 +29,8 @@ docker:
 
 # Render manifests. The bot config lives outside the overlay dir, so disable the
 # load restrictor. Pipe to `| kubectl apply -f -` to deploy.
-k8s-arywen:
-	kubectl kustomize --load-restrictor LoadRestrictionsNone deploy/k8s/overlays/arywen
+k8s-echo:
+	kubectl kustomize --load-restrictor LoadRestrictionsNone deploy/k8s/overlays/echo
 
-k8s-kurkutu:
-	kubectl kustomize --load-restrictor LoadRestrictionsNone deploy/k8s/overlays/kurkutu
+k8s-mimic:
+	kubectl kustomize --load-restrictor LoadRestrictionsNone deploy/k8s/overlays/mimic
