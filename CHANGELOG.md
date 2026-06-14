@@ -1,5 +1,23 @@
 # Changelog
 
+## [1.0.3](https://github.com/IamMrCupp/annoybots/compare/v1.0.2...v1.0.3) (2026-06-14)
+
+
+### Refactoring
+
+* **configs:** replace named bots with neutral Echo/Mimic examples ([3e04b67](https://github.com/IamMrCupp/annoybots/commit/3e04b670afdfd3aaa8b4b8d479a8e7387a9bd4e9))
+* **configs:** replace named bots with neutral Echo/Mimic examples ([95dd87a](https://github.com/IamMrCupp/annoybots/commit/95dd87a54447be32d2fa3505baac5dac617f39b8))
+* **deploy:** genericize overlays to echo/mimic; make SOPS optional ([c464295](https://github.com/IamMrCupp/annoybots/commit/c46429532e37143d850e33012fd05c70e83dacfa))
+* **deploy:** genericize overlays to echo/mimic; make SOPS optional ([965441d](https://github.com/IamMrCupp/annoybots/commit/965441d887a0c76f44071ce938e3447742a43763))
+
+
+### Documentation
+
+* add CONTRIBUTING, SECURITY, and issue/PR templates ([ffa3677](https://github.com/IamMrCupp/annoybots/commit/ffa36778b840585637446f058d90daa46af48685))
+* add CONTRIBUTING, SECURITY, and issue/PR templates ([dd89524](https://github.com/IamMrCupp/annoybots/commit/dd895242818b175dd468c40b64e589fec3f8997d))
+* **readme:** reframe as reusable framework, add "Add a bot" guide ([de22024](https://github.com/IamMrCupp/annoybots/commit/de2202483403b7b30f85aaf8226c2cfc76c9bf0f))
+* **readme:** reframe as reusable framework, add "Add a bot" guide ([b0f32fa](https://github.com/IamMrCupp/annoybots/commit/b0f32fa20b2ecd33192a022eaebdff3e5467efca))
+
 ## [1.0.2](https://github.com/IamMrCupp/annoybots/compare/v1.0.1...v1.0.2) (2026-06-13)
 
 
