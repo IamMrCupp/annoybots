@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.2.0](https://github.com/IamMrCupp/annoybots/compare/v1.1.0...v1.2.0) (2026-06-14)
+
+
+### Features
+
+* **engine:** timer-driven ambient chatter (Track A) ([cc591b2](https://github.com/IamMrCupp/annoybots/commit/cc591b217a4abf3ed98670aa90f3a05deffe5580))
+* **engine:** timer-driven ambient chatter into quiet-but-live channels ([5a5364d](https://github.com/IamMrCupp/annoybots/commit/5a5364dcea145892daafef3df2dfa6e6406aeaf4))
+
 ## [1.1.0](https://github.com/IamMrCupp/annoybots/compare/v1.0.3...v1.1.0) (2026-06-14)
 
 
