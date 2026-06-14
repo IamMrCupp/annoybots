@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.0](https://github.com/IamMrCupp/annoybots/compare/v1.0.3...v1.1.0) (2026-06-14)
+
+
+### Features
+
+* **irc:** NickServ IDENTIFY on connect for networks without SASL ([136d4d4](https://github.com/IamMrCupp/annoybots/commit/136d4d441cbb78fef2c9e9e22dd5ff8e3fbe8918))
+* **irc:** NickServ IDENTIFY on connect for non-SASL networks ([284998e](https://github.com/IamMrCupp/annoybots/commit/284998e813f7d14573f580387b1c1012969b4b96))
+
 ## [1.0.3](https://github.com/IamMrCupp/annoybots/compare/v1.0.2...v1.0.3) (2026-06-14)
 
 
