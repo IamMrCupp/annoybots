@@ -17,6 +17,7 @@ import (
 
 	"github.com/IamMrCupp/annoybots/internal/config"
 	"github.com/IamMrCupp/annoybots/internal/engine"
+	"github.com/IamMrCupp/annoybots/internal/event"
 	"github.com/IamMrCupp/annoybots/internal/ratelimit"
 )
 
@@ -47,14 +48,22 @@ type Manager struct {
 	conns   map[string]*conn
 	order   []string
 	handler Handler
+	emit    func(event.Event) // presence/event sink (default no-op; set via SetEventSink)
 	log     *slog.Logger
 	wg      sync.WaitGroup
+}
+
+// SetEventSink wires JOIN/PART/QUIT (and future IRC events) to a dispatcher.
+func (m *Manager) SetEventSink(fn func(event.Event)) {
+	if fn != nil {
+		m.emit = fn
+	}
 }
 
 // NewManager builds (but does not start) connections for every network. getenv
 // resolves secret env var names to their values (usually os.Getenv).
 func NewManager(nets []config.Network, handler Handler, log *slog.Logger, getenv func(string) string) (*Manager, error) {
-	m := &Manager{conns: make(map[string]*conn), handler: handler, log: log}
+	m := &Manager{conns: make(map[string]*conn), handler: handler, emit: func(event.Event) {}, log: log}
 	for _, n := range nets {
 		c := newConn(n, log, getenv)
 		m.bind(c)
@@ -167,6 +176,55 @@ func (m *Manager) bind(c *conn) {
 			Account: account,
 		})
 	})
+
+	// Presence events feed the dispatcher (tells, channel-keeping, idlerpg, …).
+	ic.AddCallback("JOIN", func(e ircmsg.Message) {
+		if len(e.Params) < 1 {
+			return
+		}
+		ident, host := event.SplitUserHost(e.Source)
+		m.emit(event.Event{
+			Kind: event.Join, Network: c.cfg.Name, Channel: e.Params[0],
+			Nick: e.Nick(), Ident: ident, Host: host, Account: joinAccount(e),
+		})
+	})
+	ic.AddCallback("PART", func(e ircmsg.Message) {
+		if len(e.Params) < 1 {
+			return
+		}
+		ident, host := event.SplitUserHost(e.Source)
+		m.emit(event.Event{
+			Kind: event.Part, Network: c.cfg.Name, Channel: e.Params[0],
+			Nick: e.Nick(), Ident: ident, Host: host, Text: paramAt(e, 1),
+		})
+	})
+	ic.AddCallback("QUIT", func(e ircmsg.Message) {
+		ident, host := event.SplitUserHost(e.Source)
+		m.emit(event.Event{
+			Kind: event.Quit, Network: c.cfg.Name,
+			Nick: e.Nick(), Ident: ident, Host: host, Text: paramAt(e, 0),
+		})
+	})
+}
+
+// joinAccount extracts the joiner's services account: from the account-tag if
+// present, else from the extended-join param (":nick JOIN #c account :real").
+func joinAccount(e ircmsg.Message) string {
+	if ok, a := e.GetTag("account"); ok && a != "" {
+		return a
+	}
+	if len(e.Params) >= 2 && e.Params[1] != "*" {
+		return e.Params[1]
+	}
+	return ""
+}
+
+// paramAt returns e.Params[i] or "" when out of range.
+func paramAt(e ircmsg.Message, i int) string {
+	if i < len(e.Params) {
+		return e.Params[i]
+	}
+	return ""
 }
 
 // Run starts every connection plus its sender loop, returning immediately.
