@@ -19,6 +19,7 @@ import (
 	"github.com/IamMrCupp/annoybots/internal/config"
 	"github.com/IamMrCupp/annoybots/internal/discord"
 	"github.com/IamMrCupp/annoybots/internal/engine"
+	"github.com/IamMrCupp/annoybots/internal/event"
 	"github.com/IamMrCupp/annoybots/internal/health"
 	"github.com/IamMrCupp/annoybots/internal/irc"
 	"github.com/IamMrCupp/annoybots/internal/markov"
@@ -127,12 +128,25 @@ func main() {
 		}
 	}
 
+	// The event dispatcher carries non-message events (JOIN/PART/QUIT/…) — the
+	// foundation for tells, channel-keeping, idlerpg, and plugins. Today it just
+	// logs presence at debug; features subscribe as they're built.
+	disp := event.New()
+	logPresence := func(ev event.Event) {
+		log.Debug("presence", "kind", ev.Kind.String(), "network", ev.Network,
+			"channel", ev.Channel, "nick", ev.Nick, "account", ev.Account)
+	}
+	disp.On(event.Join, logPresence)
+	disp.On(event.Part, logPresence)
+	disp.On(event.Quit, logPresence)
+
 	if len(ircNets) > 0 {
 		mgr, merr := irc.NewManager(ircNets, handler, log, os.Getenv)
 		if merr != nil {
 			log.Error("build irc transport", "err", merr)
 			os.Exit(1)
 		}
+		mgr.SetEventSink(disp.Emit)
 		router.Add(mgr)
 	}
 	if len(discordNets) > 0 {
