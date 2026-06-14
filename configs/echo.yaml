@@ -171,6 +171,19 @@ personality:
       - "I heard that. I hear everything. In a friendly way."
       - "Hello? ...hello? Okay, just checking."
 
+  # Self-initiated ambient chatter (off by default). Unlike interjections above —
+  # which only fire in REACTION to a message — this lets the bot speak ON ITS OWN
+  # on a timer, but only into channels that were recently active and have since
+  # gone quiet (it won't talk to a dead or never-active channel). Reuses the
+  # interjection/quote pools. The BMotion "the bot sometimes just talks" behavior.
+  # ambient_timer:
+  #   enabled: true
+  #   interval: "60s"        # how often it rolls (default 60s)
+  #   chance: 0.3            # per eligible channel per tick (default 0.3)
+  #   cooldown: "5m"         # min gap between self-initiated lines per channel
+  #   quiet_for: "90s"       # only butt in once the channel has been silent this long
+  #   active_within: "30m"   # ignore channels with no activity in this long
+
   quotes:
     enabled: true
     chance: 0.03
