@@ -20,6 +20,7 @@ import (
 	"github.com/IamMrCupp/annoybots/internal/discord"
 	"github.com/IamMrCupp/annoybots/internal/engine"
 	"github.com/IamMrCupp/annoybots/internal/event"
+	"github.com/IamMrCupp/annoybots/internal/games"
 	"github.com/IamMrCupp/annoybots/internal/health"
 	"github.com/IamMrCupp/annoybots/internal/irc"
 	"github.com/IamMrCupp/annoybots/internal/markov"
@@ -68,6 +69,9 @@ func main() {
 	// "Leave a message for someone" — !message <nick> <text>, delivered on their
 	// next activity/JOIN (the latter via the event dispatcher, wired below).
 	tellMgr := tell.New(router)
+
+	// Public channel toys: !8ball, !roll, karma (name++ / !karma / !top).
+	gamesMgr := games.New(router)
 
 	// Optional inter-bot bus + skit coordinator (the "botnet").
 	var coord *botnet.Coordinator
@@ -118,6 +122,9 @@ func main() {
 			return
 		}
 		if isOther && tellMgr.Handle(m) {
+			return
+		}
+		if isOther && gamesMgr.Handle(m) {
 			return
 		}
 		eng.Handle(m, router)
