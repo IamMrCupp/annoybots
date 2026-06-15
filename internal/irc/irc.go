@@ -166,6 +166,7 @@ func (m *Manager) bind(c *conn) {
 		} else if ok, v := e.GetTag("account"); ok {
 			account = v
 		}
+		ident, host := event.SplitUserHost(e.Source)
 		m.handler(engine.Message{
 			Network: c.cfg.Name,
 			Channel: channel,
@@ -174,6 +175,8 @@ func (m *Manager) bind(c *conn) {
 			Private: private,
 			Self:    ic.CurrentNick(),
 			Account: account,
+			Ident:   ident,
+			Host:    host,
 		})
 	})
 

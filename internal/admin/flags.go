@@ -60,6 +60,7 @@ func normalizeFlags(f, def string) string {
 func (m *Manager) flagsFor(msg engine.Message) string {
 	m.mu.Lock()
 	defer m.mu.Unlock()
+	// 1. Verified account — the strong path.
 	if msg.Account != "" {
 		if f, ok := m.admins[key(msg.Network, msg.Account)]; ok {
 			return f
@@ -68,7 +69,20 @@ func (m *Manager) flagsFor(msg engine.Message) string {
 			return f
 		}
 	}
-	if exp, ok := m.sessions[key(msg.Network, msg.Nick)]; ok && m.now().Before(exp) {
+	// 2. Hostmask match — for services-less networks (no account-tag/SASL).
+	if msg.Host != "" {
+		hm := hostmask(msg)
+		for _, a := range m.maskAdmins {
+			if a.network != "" && !strings.EqualFold(a.network, msg.Network) {
+				continue
+			}
+			if wildcardMatchFold(a.mask, hm) {
+				return a.flags
+			}
+		}
+	}
+	// 3. Host-bound !login session — the weakest fallback.
+	if exp, ok := m.sessions[sessKey(msg)]; ok && m.now().Before(exp) {
 		return string(flagMaster)
 	}
 	return ""
