@@ -38,6 +38,7 @@ type Control interface {
 type Identity struct {
 	Network string `yaml:"network" json:"network"`
 	Account string `yaml:"account" json:"account"`
+	Flags   string `yaml:"flags" json:"flags"` // access flags (F2); empty = full (owner) for config admins
 }
 
 func key(network, account string) string {
@@ -76,9 +77,9 @@ type Manager struct {
 	reload   func() (string, error) // re-read quotes/skits from disk (set by main)
 
 	mu         sync.Mutex
-	configKeys map[string]bool      // admins defined in config (cannot be removed at runtime)
+	configKeys map[string]string    // config admin key -> flags (cannot be removed at runtime)
 	runtime    []Identity           // admins added at runtime
-	admins     map[string]bool      // combined auth set
+	admins     map[string]string    // combined auth set: key -> flags
 	quotes     map[string][]string  // runtime quotes, for persistence
 	sessions   map[string]time.Time // network|nick -> session expiry (password logins)
 	fails      map[string][]time.Time
@@ -110,15 +111,15 @@ func New(bot string, cfg Config, password string, eng Quoter, ctl Control, bus b
 		password:   password,
 		ttl:        ttl,
 		now:        time.Now,
-		configKeys: make(map[string]bool),
-		admins:     make(map[string]bool),
+		configKeys: make(map[string]string),
+		admins:     make(map[string]string),
 		quotes:     make(map[string][]string),
 		sessions:   make(map[string]time.Time),
 		fails:      make(map[string][]time.Time),
 		party:      make(map[string]partyMember),
 	}
 	for _, a := range cfg.Admins {
-		m.configKeys[key(a.Network, a.Account)] = true
+		m.configKeys[key(a.Network, a.Account)] = normalizeFlags(a.Flags, string(flagOwner))
 	}
 	m.load()
 	m.rebuild()
@@ -132,27 +133,19 @@ func (m *Manager) SetReload(fn func() (string, error)) { m.reload = fn }
 
 // rebuild recomputes the combined auth set from config + runtime admins.
 func (m *Manager) rebuild() {
-	m.admins = make(map[string]bool)
-	for k := range m.configKeys {
-		m.admins[k] = true
+	m.admins = make(map[string]string)
+	for k, f := range m.configKeys {
+		m.admins[k] = f
 	}
 	for _, a := range m.runtime {
-		m.admins[key(a.Network, a.Account)] = true
+		m.admins[key(a.Network, a.Account)] = normalizeFlags(a.Flags, string(flagOp))
 	}
 }
 
-// isAdmin reports whether a message is authorized: first by verified identity
-// (the strong path), then by an active password-login session (the fallback).
+// isAdmin reports whether a message carries at least master access (verified
+// identity or an active password-login session). Finer-grained gating uses has().
 func (m *Manager) isAdmin(msg engine.Message) bool {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	if msg.Account != "" &&
-		(m.admins[key(msg.Network, msg.Account)] || m.admins[key("", msg.Account)]) {
-		return true
-	}
-	// Fallback: a live !login session, keyed by network+nick.
-	exp, ok := m.sessions[key(msg.Network, msg.Nick)]
-	return ok && m.now().Before(exp)
+	return m.has(msg, flagMaster)
 }
 
 // grantSession records a password-login session for the sender.
@@ -282,7 +275,7 @@ func (m *Manager) onBusEvent(e botnet.Event) {
 	case botnet.EventQuoteDel:
 		m.applyQuoteDel(e.Pack, e.Line)
 	case botnet.EventAdminAdd:
-		m.applyAdminAdd(Identity{Network: e.AdminNet, Account: e.Account})
+		m.applyAdminAdd(Identity{Network: e.AdminNet, Account: e.Account, Flags: e.Flags})
 	case botnet.EventAdminDel:
 		m.applyAdminDel(Identity{Network: e.AdminNet, Account: e.Account})
 	}
