@@ -23,6 +23,7 @@ import (
 	"github.com/IamMrCupp/annoybots/internal/health"
 	"github.com/IamMrCupp/annoybots/internal/irc"
 	"github.com/IamMrCupp/annoybots/internal/markov"
+	"github.com/IamMrCupp/annoybots/internal/tell"
 )
 
 func main() {
@@ -63,6 +64,10 @@ func main() {
 	// The router fans engine replies back out to whichever transport a message
 	// arrived on. Every transport feeds inbound messages through the handler.
 	router := bot.NewRouter()
+
+	// "Leave a message for someone" — !message <nick> <text>, delivered on their
+	// next activity/JOIN (the latter via the event dispatcher, wired below).
+	tellMgr := tell.New(router)
 
 	// Optional inter-bot bus + skit coordinator (the "botnet").
 	var coord *botnet.Coordinator
@@ -112,6 +117,9 @@ func main() {
 		if adminMgr != nil && isOther && adminMgr.Handle(ctx, m) {
 			return
 		}
+		if isOther && tellMgr.Handle(m) {
+			return
+		}
 		eng.Handle(m, router)
 		// Let humans (not the bots themselves) kick off coordinated skits.
 		if coord != nil && isOther {
@@ -139,6 +147,7 @@ func main() {
 	disp.On(event.Join, logPresence)
 	disp.On(event.Part, logPresence)
 	disp.On(event.Quit, logPresence)
+	disp.On(event.Join, tellMgr.OnJoin) // deliver pending !message notes on join
 
 	if len(ircNets) > 0 {
 		mgr, merr := irc.NewManager(ircNets, handler, log, os.Getenv)
