@@ -38,6 +38,7 @@ type Control interface {
 type Identity struct {
 	Network string `yaml:"network" json:"network"`
 	Account string `yaml:"account" json:"account"`
+	Mask    string `yaml:"mask" json:"mask"`   // hostmask glob (nick!ident@host); alternative to Account on services-less nets
 	Flags   string `yaml:"flags" json:"flags"` // access flags (F2); empty = full (owner) for config admins
 }
 
@@ -76,14 +77,16 @@ type Manager struct {
 	now      func() time.Time
 	reload   func() (string, error) // re-read quotes/skits from disk (set by main)
 
-	mu         sync.Mutex
-	configKeys map[string]string    // config admin key -> flags (cannot be removed at runtime)
-	runtime    []Identity           // admins added at runtime
-	admins     map[string]string    // combined auth set: key -> flags
-	quotes     map[string][]string  // runtime quotes, for persistence
-	sessions   map[string]time.Time // network|nick -> session expiry (password logins)
-	fails      map[string][]time.Time
-	party      map[string]partyMember // network|nick -> joined partyline member
+	mu          sync.Mutex
+	configKeys  map[string]string    // config admin key -> flags (cannot be removed at runtime)
+	configMasks []maskAdmin          // config hostmask admins (cannot be removed at runtime)
+	runtime     []Identity           // admins added at runtime
+	admins      map[string]string    // combined account auth set: key -> flags
+	maskAdmins  []maskAdmin          // combined hostmask auth set
+	quotes      map[string][]string  // runtime quotes, for persistence
+	sessions    map[string]time.Time // network|nick -> session expiry (password logins)
+	fails       map[string][]time.Time
+	party       map[string]partyMember // network|nick -> joined partyline member
 }
 
 // session/throttle tuning for the password fallback.
@@ -119,6 +122,12 @@ func New(bot string, cfg Config, password string, eng Quoter, ctl Control, bus b
 		party:      make(map[string]partyMember),
 	}
 	for _, a := range cfg.Admins {
+		if a.Mask != "" {
+			m.configMasks = append(m.configMasks, maskAdmin{
+				network: a.Network, mask: a.Mask, flags: normalizeFlags(a.Flags, string(flagOwner)),
+			})
+			continue
+		}
 		m.configKeys[key(a.Network, a.Account)] = normalizeFlags(a.Flags, string(flagOwner))
 	}
 	m.load()
@@ -140,6 +149,8 @@ func (m *Manager) rebuild() {
 	for _, a := range m.runtime {
 		m.admins[key(a.Network, a.Account)] = normalizeFlags(a.Flags, string(flagOp))
 	}
+	// Hostmask admins come from config only (v1); runtime adds are account-based.
+	m.maskAdmins = append([]maskAdmin(nil), m.configMasks...)
 }
 
 // isAdmin reports whether a message carries at least master access (verified
@@ -152,14 +163,14 @@ func (m *Manager) isAdmin(msg engine.Message) bool {
 func (m *Manager) grantSession(msg engine.Message) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	m.sessions[key(msg.Network, msg.Nick)] = m.now().Add(m.ttl)
+	m.sessions[sessKey(msg)] = m.now().Add(m.ttl)
 }
 
 // clearSession ends a sender's password-login session.
 func (m *Manager) clearSession(msg engine.Message) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	delete(m.sessions, key(msg.Network, msg.Nick))
+	delete(m.sessions, sessKey(msg))
 }
 
 // throttled reports whether the sender has too many recent failed logins, and
