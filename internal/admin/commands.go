@@ -19,6 +19,7 @@ var adminCommands = map[string]bool{
 	"!addquote": true, "!delquote": true,
 	"!addadmin": true, "!deladmin": true, "!admins": true,
 	"!reload": true,
+	"!party":  true, "!unparty": true,
 }
 
 // Handle processes a potential admin command. It only acts on DMs. Returns true
@@ -31,6 +32,11 @@ func (m *Manager) Handle(ctx context.Context, msg engine.Message) bool {
 	text := strings.TrimSpace(msg.Text)
 	fields := strings.Fields(text)
 	if len(fields) == 0 || !adminCommands[strings.ToLower(fields[0])] {
+		// A joined member's non-command DM is partyline chat — relay it.
+		if len(fields) > 0 && m.isPartyMember(msg) {
+			m.sendPartyline(msg, text)
+			return true
+		}
 		return false
 	}
 	cmd := strings.ToLower(fields[0])
@@ -86,7 +92,24 @@ func (m *Manager) exec(_ context.Context, msg engine.Message, cmd string, fields
 			"!invite <net> <#chan> <nick> | !say <net> <target> <text> | "+
 			"!act <net> <target> <text> | !addquote <pack> <text> | "+
 			"!delquote <pack> <text> | !addadmin <net|*> <account> | "+
-			"!deladmin <net|*> <account> | !admins | !reload")
+			"!deladmin <net|*> <account> | !admins | !reload | "+
+			"!party [text] | !unparty")
+
+	case "!party":
+		body := tailAfter(text, 1)
+		if !m.joinParty(msg) {
+			m.reply(msg, "you're on the partyline. just type to chat; !unparty to leave.")
+			m.announceParty(msg, msg.Nick+" joined the partyline")
+		}
+		m.sendPartyline(msg, body) // no-op if body is empty
+
+	case "!unparty":
+		if m.leaveParty(msg) {
+			m.reply(msg, "left the partyline.")
+			m.announceParty(msg, msg.Nick+" left the partyline")
+		} else {
+			m.reply(msg, "you're not on the partyline.")
+		}
 
 	case "!join":
 		if len(fields) < 3 {

@@ -30,6 +30,9 @@ type Event struct {
 	Line     string `json:"line,omitempty"`      // quote text
 	Account  string `json:"account,omitempty"`   // admin identity account
 	AdminNet string `json:"admin_net,omitempty"` // admin identity network
+	// partyline (cross-bot, cross-platform admin chat)
+	Text string `json:"text,omitempty"` // partyline message body / notice
+	Nick string `json:"nick,omitempty"` // originating member's display nick ("*" = system notice)
 }
 
 // Event type constants.
@@ -40,6 +43,7 @@ const (
 	EventQuoteDel    = "quote_del"
 	EventAdminAdd    = "admin_add"
 	EventAdminDel    = "admin_del"
+	EventPartyline   = "partyline"
 )
 
 // Bus is a publish/subscribe channel shared by all bots.
