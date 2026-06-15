@@ -82,6 +82,7 @@ type Manager struct {
 	quotes     map[string][]string  // runtime quotes, for persistence
 	sessions   map[string]time.Time // network|nick -> session expiry (password logins)
 	fails      map[string][]time.Time
+	party      map[string]partyMember // network|nick -> joined partyline member
 }
 
 // session/throttle tuning for the password fallback.
@@ -114,6 +115,7 @@ func New(bot string, cfg Config, password string, eng Quoter, ctl Control, bus b
 		quotes:     make(map[string][]string),
 		sessions:   make(map[string]time.Time),
 		fails:      make(map[string][]time.Time),
+		party:      make(map[string]partyMember),
 	}
 	for _, a := range cfg.Admins {
 		m.configKeys[key(a.Network, a.Account)] = true
@@ -265,6 +267,12 @@ func (m *Manager) Run(ctx context.Context) error {
 // onBusEvent applies admin changes from OTHER bots (skipping our own echoes and
 // non-admin event types).
 func (m *Manager) onBusEvent(e botnet.Event) {
+	// Partyline relays even our own bot's events are handled inside onPartyline
+	// (it drops self-echoes), so it must run before the general self-skip below.
+	if e.Type == botnet.EventPartyline {
+		m.onPartyline(e)
+		return
+	}
 	if e.From == m.bot {
 		return
 	}
