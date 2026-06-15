@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.4.0](https://github.com/IamMrCupp/annoybots/compare/v1.3.0...v1.4.0) (2026-06-15)
+
+
+### Features
+
+* **admin:** hostmask admin matching + host-bound login sessions ([fe035bb](https://github.com/IamMrCupp/annoybots/commit/fe035bb238b60a53bcea8aedd31b51c722ef4197))
+* **admin:** hostmask auth + host-bound sessions ([31b336f](https://github.com/IamMrCupp/annoybots/commit/31b336f6f07b9112137ffa2efbb616dc51b8af5a))
+* **admin:** tiered flag/access system (F2) ([e06fb25](https://github.com/IamMrCupp/annoybots/commit/e06fb2544f97743b6d53f283fd3f73bf8f0392ea))
+* **admin:** tiered flag/access system (F2) — owner/master/op/voice/friend ([fa74ada](https://github.com/IamMrCupp/annoybots/commit/fa74ada7a353ff7afa0afb69b853d9ded3efb6a7))
+* **games:** karma (name++/--), !karma, !top, !8ball, !roll ([a0b06b8](https://github.com/IamMrCupp/annoybots/commit/a0b06b8938985789e34f0db4e43cad01a7db8671))
+* **games:** karma + dice + magic 8-ball ([e8878fb](https://github.com/IamMrCupp/annoybots/commit/e8878fbe32171b821fe01cf46b89571b3b5373a1))
+* **tell:** !message &lt;nick&gt; — leave a note delivered on next join/activity ([ae84a1e](https://github.com/IamMrCupp/annoybots/commit/ae84a1e062a05c4c42a0a498a11649fdb94dc1bc))
+* **tell:** !message tell/memo on the F1 event hook ([d070d6b](https://github.com/IamMrCupp/annoybots/commit/d070d6bb8721ed135356ff8df18dcbdae9e86abc))
+
 ## [1.3.0](https://github.com/IamMrCupp/annoybots/compare/v1.2.0...v1.3.0) (2026-06-15)
 
 
