@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.3.0](https://github.com/IamMrCupp/annoybots/compare/v1.2.0...v1.3.0) (2026-06-15)
+
+
+### Features
+
+* **admin:** cross-platform partyline ([d7d93b4](https://github.com/IamMrCupp/annoybots/commit/d7d93b4f0ca978aabef439742737206ac4dfe5fa))
+* **admin:** cross-platform partyline (admin chat over the botnet bus) ([1d10777](https://github.com/IamMrCupp/annoybots/commit/1d107776a14d53a2b96471f44213f2680cc99fac))
+* **event:** event/hook dispatcher (F1 foundation) ([3bd137d](https://github.com/IamMrCupp/annoybots/commit/3bd137dfd7580958140b8ba3176c690544952242))
+* **event:** transport-agnostic event/hook dispatcher (F1) with IRC presence ([1688ca2](https://github.com/IamMrCupp/annoybots/commit/1688ca2d1ac8316a67fc61bd62fa3ed009b104d2))
+
 ## [1.2.0](https://github.com/IamMrCupp/annoybots/compare/v1.1.0...v1.2.0) (2026-06-14)
 
 
