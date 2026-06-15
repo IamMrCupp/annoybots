@@ -52,8 +52,8 @@ func (m *Manager) Handle(ctx context.Context, msg engine.Message) bool {
 		return true
 	}
 
-	if !m.isAdmin(msg) {
-		m.reply(msg, "you are not an admin. (try !login <password> if you have one)")
+	if need := requiredFlag(cmd); !m.has(msg, need) {
+		m.reply(msg, "you are not an admin for that. (need flag +"+string(need)+"; try !login <password>)")
 		return true
 	}
 	m.exec(ctx, msg, cmd, fields, text)
@@ -176,13 +176,14 @@ func (m *Manager) exec(_ context.Context, msg engine.Message, cmd string, fields
 
 	case "!addadmin":
 		if len(fields) < 3 {
-			m.reply(msg, "usage: !addadmin <network|*> <account>")
+			m.reply(msg, "usage: !addadmin <network|*> <account> [flags] (n/m/o/v/f; default o)")
 			return
 		}
-		id := Identity{Network: normNet(fields[1]), Account: fields[2]}
+		flags := normalizeFlags(strings.Join(fields[3:], ""), string(flagOp))
+		id := Identity{Network: normNet(fields[1]), Account: fields[2], Flags: flags}
 		if m.applyAdminAdd(id) {
-			m.publish(botnet.Event{Type: botnet.EventAdminAdd, AdminNet: id.Network, Account: id.Account})
-			m.reply(msg, "added admin "+id.Account+"@"+netOrAny(id.Network))
+			m.publish(botnet.Event{Type: botnet.EventAdminAdd, AdminNet: id.Network, Account: id.Account, Flags: flags})
+			m.reply(msg, "added "+id.Account+"@"+netOrAny(id.Network)+" (+"+flags+")")
 		} else {
 			m.reply(msg, "already an admin.")
 		}
@@ -252,7 +253,7 @@ func (m *Manager) applyAdminAdd(id Identity) bool {
 	}
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	if m.admins[key(id.Network, id.Account)] {
+	if _, ok := m.admins[key(id.Network, id.Account)]; ok {
 		return false
 	}
 	m.runtime = append(m.runtime, id)
@@ -265,7 +266,7 @@ func (m *Manager) applyAdminDel(id Identity) bool {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	k := key(id.Network, id.Account)
-	if m.configKeys[k] {
+	if _, ok := m.configKeys[k]; ok {
 		return false // config admins are not runtime-removable
 	}
 	removed := false
@@ -290,10 +291,10 @@ func (m *Manager) adminList() string {
 	defer m.mu.Unlock()
 	var parts []string
 	for _, a := range m.cfg.Admins {
-		parts = append(parts, a.Account+"@"+netOrAny(a.Network))
+		parts = append(parts, a.Account+"@"+netOrAny(a.Network)+"(+"+normalizeFlags(a.Flags, string(flagOwner))+")")
 	}
 	for _, a := range m.runtime {
-		parts = append(parts, a.Account+"@"+netOrAny(a.Network))
+		parts = append(parts, a.Account+"@"+netOrAny(a.Network)+"(+"+normalizeFlags(a.Flags, string(flagOp))+")")
 	}
 	if len(parts) == 0 {
 		return "(none)"

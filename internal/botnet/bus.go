@@ -30,6 +30,7 @@ type Event struct {
 	Line     string `json:"line,omitempty"`      // quote text
 	Account  string `json:"account,omitempty"`   // admin identity account
 	AdminNet string `json:"admin_net,omitempty"` // admin identity network
+	Flags    string `json:"flags,omitempty"`     // admin access flags (F2)
 	// partyline (cross-bot, cross-platform admin chat)
 	Text string `json:"text,omitempty"` // partyline message body / notice
 	Nick string `json:"nick,omitempty"` // originating member's display nick ("*" = system notice)

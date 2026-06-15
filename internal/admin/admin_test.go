@@ -253,9 +253,13 @@ func TestAdminPersistence(t *testing.T) {
 	m1 := New("arywen", cfg, "", &fakeQuoter{}, &fakeControl{}, nil, quietLog())
 	m1.Handle(context.Background(), dm("boss", "!addadmin testnet deputy"))
 
-	// A fresh manager loading the same state file should recognize the new admin.
+	// A fresh manager loading the same state file should recognize the new admin
+	// at its persisted flag level (runtime admins default to op).
 	m2 := New("arywen", cfg, "", &fakeQuoter{}, &fakeControl{}, nil, quietLog())
-	if !m2.isAdmin(dm("deputy", "!admins")) {
+	if !m2.has(dm("deputy", "!admins"), flagOp) {
 		t.Fatal("runtime-added admin should persist across restarts")
+	}
+	if m2.has(dm("deputy", "!admins"), flagOwner) {
+		t.Fatal("a default runtime admin should NOT have owner")
 	}
 }
