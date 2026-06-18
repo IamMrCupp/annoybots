@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.6.0](https://github.com/IamMrCupp/annoybots/compare/v1.5.0...v1.6.0) (2026-06-18)
+
+
+### Features
+
+* **idlerpg:** classic idle RPG on the F3 store (persistent, cross-bot) ([ab58c40](https://github.com/IamMrCupp/annoybots/commit/ab58c4051a5ac05927fc88f7a5821e6e7be02798))
+* **idlerpg:** the idle RPG (boss-level feature) ([00d7f4d](https://github.com/IamMrCupp/annoybots/commit/00d7f4d62ba3d7b13af795b6c0fde6296a854884))
+* **state:** F3 — shared Redis state store ([7149fe0](https://github.com/IamMrCupp/annoybots/commit/7149fe032220fcdd562b610b7a86e3fc917978f0))
+* **state:** F3 shared Redis state store; karma now persistent + cross-bot ([307acca](https://github.com/IamMrCupp/annoybots/commit/307acca2cf571362e44392f919994720a7e9f188))
+
 ## [1.5.0](https://github.com/IamMrCupp/annoybots/compare/v1.4.0...v1.5.0) (2026-06-18)
 
 
