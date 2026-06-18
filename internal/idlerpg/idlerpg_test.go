@@ -187,6 +187,31 @@ func TestHandOfGod(t *testing.T) {
 	}
 }
 
+func TestAlignAndClass(t *testing.T) {
+	m, r, _ := newMgr()
+	m.Handle(chanMsg("alice", "!rpg")) // enroll
+	m.Handle(chanMsg("alice", "!rpg align evil"))
+	if !r.has("is now evil") {
+		t.Fatalf("align failed: %v", r.lines)
+	}
+	m.Handle(chanMsg("alice", "!rpg class wizard"))
+	if !r.has("is now a wizard") {
+		t.Fatalf("class failed: %v", r.lines)
+	}
+	m.Handle(chanMsg("alice", "!rpg")) // status shows both
+	if !strings.Contains(r.last(), "the evil wizard") {
+		t.Fatalf("status = %q; want 'the evil wizard'", r.last())
+	}
+}
+
+func TestAlignRequiresEnroll(t *testing.T) {
+	m, r, _ := newMgr()
+	m.Handle(chanMsg("alice", "!rpg align good"))
+	if !r.has("not playing") {
+		t.Fatalf("expected not-playing, got %v", r.lines)
+	}
+}
+
 func TestLeaderboard(t *testing.T) {
 	m, r, _ := newMgr()
 	m.Handle(chanMsg("alice", "!rpg"))
