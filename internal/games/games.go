@@ -1,18 +1,20 @@
 // Package games adds lightweight, public channel toys — a magic 8-ball, dice,
 // and a karma/leaderboard system (`name++` / `name--`, `!karma`, `!top`). It is
-// a vertical slice of the eggdrop "fun scripts" layer and a first taste of the
-// per-user state the F3 store will later persist (for now, in-memory).
+// a vertical slice of the eggdrop "fun scripts" layer; karma rides the F3 state
+// store, so scores are persistent and shared across every bot on the botnet.
 package games
 
 import (
+	"context"
 	"fmt"
+	"log/slog"
 	"math/rand"
-	"sort"
 	"strconv"
 	"strings"
 	"sync"
 
 	"github.com/IamMrCupp/annoybots/internal/engine"
+	"github.com/IamMrCupp/annoybots/internal/state"
 )
 
 var eightBall = []string{
@@ -23,25 +25,27 @@ var eightBall = []string{
 	"my sources say no.", "outlook not so good.", "very doubtful.", "lol no.",
 }
 
-// Manager handles the toy commands and tracks karma per (network, nick).
+// Manager handles the toy commands; karma is persisted via the F3 state store.
 type Manager struct {
-	out engine.Sender
+	out   engine.Sender
+	store state.Store
+	log   *slog.Logger
 
 	mu  sync.Mutex
 	rng *rand.Rand
-	// karma[network][nick] = score
-	karma map[string]map[string]int
 }
 
 // New returns a Manager with a time-seeded RNG.
-func New(out engine.Sender) *Manager {
-	return NewWithRand(out, rand.New(rand.NewSource(rand.Int63())))
+func New(out engine.Sender, store state.Store, log *slog.Logger) *Manager {
+	return NewWithRand(out, store, rand.New(rand.NewSource(rand.Int63())), log)
 }
 
 // NewWithRand lets tests inject a deterministic RNG.
-func NewWithRand(out engine.Sender, rng *rand.Rand) *Manager {
-	return &Manager{out: out, rng: rng, karma: make(map[string]map[string]int)}
+func NewWithRand(out engine.Sender, store state.Store, rng *rand.Rand, log *slog.Logger) *Manager {
+	return &Manager{out: out, store: store, rng: rng, log: log}
 }
+
+func karmaKey(network string) string { return "karma:" + strings.ToLower(network) }
 
 // Handle processes a channel message. Returns true if it consumed it (a command
 // or a karma op), false to let normal chatter flow on to the engine.
@@ -93,59 +97,39 @@ func (m *Manager) maybeKarma(msg engine.Message, fields []string) bool {
 			acted = true
 			continue
 		}
-		score := m.adjust(msg.Network, target, delta)
+		score, err := m.store.ZIncr(context.Background(), karmaKey(msg.Network), strings.ToLower(target), int64(delta))
+		if err != nil {
+			m.log.Warn("karma store failed", "err", err)
+			m.out.Say(msg.Network, msg.Channel, "karma's having a moment, try later.")
+			return true
+		}
 		m.out.Say(msg.Network, msg.Channel, fmt.Sprintf("%s: %d", target, score))
 		acted = true
 	}
 	return acted
 }
 
-func (m *Manager) adjust(network, nick string, delta int) int {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	net := m.karma[strings.ToLower(network)]
-	if net == nil {
-		net = make(map[string]int)
-		m.karma[strings.ToLower(network)] = net
-	}
-	net[strings.ToLower(nick)] += delta
-	return net[strings.ToLower(nick)]
-}
-
 func (m *Manager) report(network, nick string) string {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	score := m.karma[strings.ToLower(network)][strings.ToLower(nick)]
+	score, err := m.store.ZScore(context.Background(), karmaKey(network), strings.ToLower(nick))
+	if err != nil {
+		m.log.Warn("karma report failed", "err", err)
+		return "can't reach the karma vault right now."
+	}
 	return fmt.Sprintf("%s has %d karma.", nick, score)
 }
 
 func (m *Manager) leaderboard(network string) string {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	net := m.karma[strings.ToLower(network)]
-	if len(net) == 0 {
+	top, err := m.store.ZTop(context.Background(), karmaKey(network), 5)
+	if err != nil {
+		m.log.Warn("karma leaderboard failed", "err", err)
+		return "can't reach the karma vault right now."
+	}
+	if len(top) == 0 {
 		return "no karma yet. get to it."
 	}
-	type kv struct {
-		nick  string
-		score int
-	}
-	rows := make([]kv, 0, len(net))
-	for n, s := range net {
-		rows = append(rows, kv{n, s})
-	}
-	sort.Slice(rows, func(i, j int) bool {
-		if rows[i].score != rows[j].score {
-			return rows[i].score > rows[j].score
-		}
-		return rows[i].nick < rows[j].nick
-	})
-	parts := make([]string, 0, 5)
-	for i, r := range rows {
-		if i >= 5 {
-			break
-		}
-		parts = append(parts, fmt.Sprintf("%s (%d)", r.nick, r.score))
+	parts := make([]string, 0, len(top))
+	for _, e := range top {
+		parts = append(parts, fmt.Sprintf("%s (%d)", e.Member, e.Score))
 	}
 	return "karma leaders: " + strings.Join(parts, ", ")
 }

@@ -24,6 +24,7 @@ import (
 	"github.com/IamMrCupp/annoybots/internal/health"
 	"github.com/IamMrCupp/annoybots/internal/irc"
 	"github.com/IamMrCupp/annoybots/internal/markov"
+	"github.com/IamMrCupp/annoybots/internal/state"
 	"github.com/IamMrCupp/annoybots/internal/tell"
 )
 
@@ -70,8 +71,17 @@ func main() {
 	// next activity/JOIN (the latter via the event dispatcher, wired below).
 	tellMgr := tell.New(router)
 
+	// F3 shared state store: Redis when the botnet is on (so karma/awards are
+	// network-wide + shared across bots/hosts), in-memory otherwise.
+	var store state.Store
+	if cfg.Botnet.Enabled {
+		store = state.NewRedis(cfg.Botnet.RedisAddr, os.Getenv(cfg.Botnet.RedisPasswordEnv), "annoybots:state:")
+	} else {
+		store = state.NewMem()
+	}
+
 	// Public channel toys: !8ball, !roll, karma (name++ / !karma / !top).
-	gamesMgr := games.New(router)
+	gamesMgr := games.New(router, store, log)
 
 	// Optional inter-bot bus + skit coordinator (the "botnet").
 	var coord *botnet.Coordinator
@@ -208,6 +218,7 @@ func main() {
 	if bus != nil {
 		_ = bus.Close()
 	}
+	_ = store.Close()
 	saveBrain(eng, cfg.Brain.Path, log)
 
 	shutCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
