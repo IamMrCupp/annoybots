@@ -128,6 +128,25 @@ func TestItemsCommand(t *testing.T) {
 	}
 }
 
+func TestBattleOnLevelUp(t *testing.T) {
+	m, r, _ := newMgr()
+	m.Handle(chanMsg("alice", "!rpg"))
+	m.Handle(chanMsg("bob", "!rpg"))
+	m.Tick() // both level up → each fights the other
+	if !r.has("in combat and") {
+		t.Fatalf("expected a battle on level-up, got %v", r.lines)
+	}
+}
+
+func TestNoBattleWhenSolo(t *testing.T) {
+	m, r, _ := newMgr()
+	m.Handle(chanMsg("alice", "!rpg"))
+	m.Tick() // levels up, but there's no one to fight
+	if r.has("in combat") {
+		t.Fatal("a solo player should not battle")
+	}
+}
+
 func TestLeaderboard(t *testing.T) {
 	m, r, _ := newMgr()
 	m.Handle(chanMsg("alice", "!rpg"))
