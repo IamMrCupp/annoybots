@@ -216,7 +216,59 @@ func (m *Manager) Tick() {
 		_, _ = m.store.ZIncr(ctx, boardKey(), p.key, 1)
 		m.out.Say(p.network, p.channel, fmt.Sprintf("✨ %s has attained level %d! the idle is strong with this one.", p.nick, lvl))
 		m.findItem(ctx, p, lvl)
+		m.battle(ctx, p, lvl)
 	}
+}
+
+const battleSec = 8 // seconds-per-level swing in a fight
+
+// battle pits the just-levelled player against a random other online player,
+// weighted by item power (idlerpg.net's level-up combat). Winner's clock speeds
+// up, loser's slows; small chance of a critical strike for a bigger swing.
+func (m *Manager) battle(ctx context.Context, p player, level int64) {
+	opp, ok := m.randomOpponent(p.key)
+	if !ok {
+		return // no one else to fight
+	}
+	mine, _ := m.store.HGetAll(ctx, sheetKey(p.key))
+	theirs, _ := m.store.HGetAll(ctx, sheetKey(opp.key))
+	myPow, oppPow := itemSum(mine), itemSum(theirs)
+
+	win := m.roll(int(myPow)+1) >= m.roll(int(oppPow)+1)
+	amt := int64(m.roll(int(level)+1)+1) * battleSec
+	crit := m.roll(10) == 0
+	if crit {
+		amt *= 5
+	}
+
+	verb, dir, sign := "won", "sooner", int64(-1)
+	if !win {
+		verb, dir, sign = "lost", "later", int64(1)
+	}
+	_, _ = m.store.HIncr(ctx, sheetKey(p.key), "ttl", sign*amt)
+
+	critStr := ""
+	if crit {
+		critStr = " a CRITICAL"
+	}
+	m.out.Say(p.network, p.channel, fmt.Sprintf("🗡️ %s [%d] challenged %s [%d] in combat and %s%s — %ds %s.",
+		p.nick, myPow, opp.nick, oppPow, verb, critStr, amt, dir))
+}
+
+// randomOpponent picks a random online player whose character differs from key.
+func (m *Manager) randomOpponent(key string) (player, bool) {
+	m.mu.Lock()
+	var others []player
+	for _, p := range m.online {
+		if p.key != key {
+			others = append(others, p)
+		}
+	}
+	m.mu.Unlock()
+	if len(others) == 0 {
+		return player{}, false
+	}
+	return others[m.roll(len(others))], true
 }
 
 // findItem rolls an item drop on level-up; equips + announces it only if it beats
