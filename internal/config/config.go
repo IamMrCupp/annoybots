@@ -30,6 +30,15 @@ type Config struct {
 	Skits       []botnet.Skit      `yaml:"-"` // loaded from SkitsFile
 	Admin       admin.Config       `yaml:"admin"`
 	ChanKeep    ChanKeep           `yaml:"chankeep"`
+	IdleRPG     IdleRPG            `yaml:"idlerpg"`
+}
+
+// IdleRPG configures the idle RPG (off by default). interval = tick period;
+// base_ttl = time to go from level 0 to 1 (grows ~1.16x per level after that).
+type IdleRPG struct {
+	Enabled  bool            `yaml:"enabled"`
+	Interval engine.Duration `yaml:"interval"`
+	BaseTTL  engine.Duration `yaml:"base_ttl"`
 }
 
 // ChanKeep configures eggdrop-style channel keeping (IRC only). Off by default:

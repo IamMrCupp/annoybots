@@ -7,6 +7,7 @@ package state
 import (
 	"context"
 	"sort"
+	"strconv"
 	"sync"
 	"time"
 
@@ -27,6 +28,10 @@ type Store interface {
 	ZIncr(ctx context.Context, key, member string, delta int64) (int64, error)
 	ZScore(ctx context.Context, key, member string) (int64, error)
 	ZTop(ctx context.Context, key string, n int) ([]Entry, error)
+	// Hash ops — structured per-entity records (e.g. an IdleRPG player sheet).
+	HIncr(ctx context.Context, key, field string, delta int64) (int64, error)
+	HSet(ctx context.Context, key, field string, value int64) error
+	HGetAll(ctx context.Context, key string) (map[string]int64, error)
 	Close() error
 }
 
@@ -105,6 +110,33 @@ func (s *redisStore) ZTop(ctx context.Context, key string, n int) ([]Entry, erro
 	return out, nil
 }
 
+func (s *redisStore) HIncr(ctx context.Context, key, field string, delta int64) (int64, error) {
+	ctx, cancel := s.ctx(ctx)
+	defer cancel()
+	return s.c.HIncrBy(ctx, s.k(key), field, delta).Result()
+}
+
+func (s *redisStore) HSet(ctx context.Context, key, field string, value int64) error {
+	ctx, cancel := s.ctx(ctx)
+	defer cancel()
+	return s.c.HSet(ctx, s.k(key), field, value).Err()
+}
+
+func (s *redisStore) HGetAll(ctx context.Context, key string) (map[string]int64, error) {
+	ctx, cancel := s.ctx(ctx)
+	defer cancel()
+	raw, err := s.c.HGetAll(ctx, s.k(key)).Result()
+	if err != nil {
+		return nil, err
+	}
+	out := make(map[string]int64, len(raw))
+	for f, v := range raw {
+		n, _ := strconv.ParseInt(v, 10, 64)
+		out[f] = n
+	}
+	return out, nil
+}
+
 func (s *redisStore) Close() error { return s.c.Close() }
 
 // --- In-memory fallback (single process; used when Redis is off, and in tests) ---
@@ -113,11 +145,16 @@ type memStore struct {
 	mu       sync.Mutex
 	counters map[string]int64
 	zsets    map[string]map[string]int64
+	hashes   map[string]map[string]int64
 }
 
 // NewMem returns an in-process Store.
 func NewMem() Store {
-	return &memStore{counters: map[string]int64{}, zsets: map[string]map[string]int64{}}
+	return &memStore{
+		counters: map[string]int64{},
+		zsets:    map[string]map[string]int64{},
+		hashes:   map[string]map[string]int64{},
+	}
 }
 
 func (m *memStore) Incr(_ context.Context, key string, delta int64) (int64, error) {
@@ -167,6 +204,40 @@ func (m *memStore) ZTop(_ context.Context, key string, n int) ([]Entry, error) {
 	})
 	if n > 0 && len(out) > n {
 		out = out[:n]
+	}
+	return out, nil
+}
+
+func (m *memStore) HIncr(_ context.Context, key, field string, delta int64) (int64, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	h := m.hashes[key]
+	if h == nil {
+		h = map[string]int64{}
+		m.hashes[key] = h
+	}
+	h[field] += delta
+	return h[field], nil
+}
+
+func (m *memStore) HSet(_ context.Context, key, field string, value int64) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	h := m.hashes[key]
+	if h == nil {
+		h = map[string]int64{}
+		m.hashes[key] = h
+	}
+	h[field] = value
+	return nil
+}
+
+func (m *memStore) HGetAll(_ context.Context, key string) (map[string]int64, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	out := make(map[string]int64, len(m.hashes[key]))
+	for f, v := range m.hashes[key] {
+		out[f] = v
 	}
 	return out, nil
 }

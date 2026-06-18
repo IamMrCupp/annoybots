@@ -48,6 +48,22 @@ func runContract(t *testing.T, s Store) {
 	if top[0].Member != "carol" || top[0].Score != 3 || top[1].Member != "bob" || top[1].Score != 2 {
 		t.Fatalf("ZTop ordering wrong: %#v", top)
 	}
+
+	// hash (player sheet)
+	if v, err := s.HIncr(ctx, "player:x", "level", 1); err != nil || v != 1 {
+		t.Fatalf("HIncr = %d, %v; want 1", v, err)
+	}
+	if err := s.HSet(ctx, "player:x", "ttl", 600); err != nil {
+		t.Fatalf("HSet: %v", err)
+	}
+	s.HIncr(ctx, "player:x", "ttl", -100) // ttl: 500
+	sheet, err := s.HGetAll(ctx, "player:x")
+	if err != nil || sheet["level"] != 1 || sheet["ttl"] != 500 {
+		t.Fatalf("HGetAll = %#v, %v; want level 1 ttl 500", sheet, err)
+	}
+	if got, _ := s.HGetAll(ctx, "player:none"); len(got) != 0 {
+		t.Fatalf("HGetAll missing = %#v; want empty", got)
+	}
 }
 
 func TestMemStore(t *testing.T) {
