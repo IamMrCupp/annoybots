@@ -198,6 +198,7 @@ func (m *Manager) Tick() {
 	if step < 1 {
 		step = 1
 	}
+	m.maybeEvent(context.Background())
 	for _, p := range m.snapshot() {
 		ctx := context.Background()
 		key := sheetKey(p.key)
@@ -253,6 +254,97 @@ func (m *Manager) battle(ctx context.Context, p player, level int64) {
 	}
 	m.out.Say(p.network, p.channel, fmt.Sprintf("🗡️ %s [%d] challenged %s [%d] in combat and %s%s — %ds %s.",
 		p.nick, myPow, opp.nick, oppPow, verb, critStr, amt, dir))
+}
+
+const eventOdds = 6 // ~1-in-N chance an event fires each tick
+
+// maybeEvent occasionally visits luck (good or bad) on a random online player —
+// idlerpg.net's godsends, calamities, and the Hand of God.
+func (m *Manager) maybeEvent(ctx context.Context) {
+	if m.roll(eventOdds) != 0 {
+		return
+	}
+	p, ok := m.randomOnline()
+	if !ok {
+		return
+	}
+	switch m.roll(3) {
+	case 0:
+		m.godsend(ctx, p)
+	case 1:
+		m.calamity(ctx, p)
+	default:
+		m.handOfGod(ctx, p)
+	}
+}
+
+// pctOfTTL returns lo..hi percent of the player's current time-to-level.
+func (m *Manager) pctOfTTL(ctx context.Context, key string, lo, hi int) int64 {
+	sheet, _ := m.store.HGetAll(ctx, sheetKey(key))
+	ttl := sheet["ttl"]
+	if ttl <= 0 {
+		return 0
+	}
+	pct := int64(lo + m.roll(hi-lo+1))
+	amt := ttl * pct / 100
+	if amt < 1 {
+		amt = 1
+	}
+	return amt
+}
+
+func (m *Manager) godsend(ctx context.Context, p player) {
+	amt := m.pctOfTTL(ctx, p.key, 5, 12)
+	_, _ = m.store.HIncr(ctx, sheetKey(p.key), "ttl", -amt)
+	m.out.Say(p.network, p.channel, fmt.Sprintf("🍀 godsend! the gods smile on %s — %ds closer to the next level.", p.nick, amt))
+}
+
+func (m *Manager) calamity(ctx context.Context, p player) {
+	// half the time it's lost time, half the time an item loses its luster.
+	if m.roll(2) == 0 {
+		sheet, _ := m.store.HGetAll(ctx, sheetKey(p.key))
+		var owned []string
+		for _, s := range itemSlots {
+			if sheet[itemField(s)] > 0 {
+				owned = append(owned, s)
+			}
+		}
+		if len(owned) > 0 {
+			slot := owned[m.roll(len(owned))]
+			nl := sheet[itemField(slot)] * 9 / 10
+			_ = m.store.HSet(ctx, sheetKey(p.key), itemField(slot), nl)
+			m.out.Say(p.network, p.channel, fmt.Sprintf("💀 calamity! %s's %s loses its luster — now level %d.", p.nick, slot, nl))
+			return
+		}
+	}
+	amt := m.pctOfTTL(ctx, p.key, 5, 12)
+	_, _ = m.store.HIncr(ctx, sheetKey(p.key), "ttl", amt)
+	m.out.Say(p.network, p.channel, fmt.Sprintf("💀 calamity! disaster befalls %s — %ds further from the next level.", p.nick, amt))
+}
+
+func (m *Manager) handOfGod(ctx context.Context, p player) {
+	amt := m.pctOfTTL(ctx, p.key, 15, 30)
+	if m.roll(2) == 0 {
+		_, _ = m.store.HIncr(ctx, sheetKey(p.key), "ttl", -amt)
+		m.out.Say(p.network, p.channel, fmt.Sprintf("✋ the Hand of God carries %s %ds forward!", p.nick, amt))
+		return
+	}
+	_, _ = m.store.HIncr(ctx, sheetKey(p.key), "ttl", amt)
+	m.out.Say(p.network, p.channel, fmt.Sprintf("✋ the Hand of God flings %s %ds backward!", p.nick, amt))
+}
+
+// randomOnline picks any online player.
+func (m *Manager) randomOnline() (player, bool) {
+	m.mu.Lock()
+	var all []player
+	for _, p := range m.online {
+		all = append(all, p)
+	}
+	m.mu.Unlock()
+	if len(all) == 0 {
+		return player{}, false
+	}
+	return all[m.roll(len(all))], true
 }
 
 // randomOpponent picks a random online player whose character differs from key.
