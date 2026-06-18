@@ -40,7 +40,8 @@ type conn struct {
 	limiter      *ratelimit.Limiter
 	out          chan outMsg
 	log          *slog.Logger
-	nickservPass string // if set, IDENTIFY to NickServ on connect (non-SASL networks)
+	nickservPass string      // if set, IDENTIFY to NickServ on connect (non-SASL networks)
+	keeper       *chankeeper // if set, eggdrop-style channel keeping (auto-op protected nicks)
 }
 
 // Manager owns all connections and implements engine.Sender.
@@ -57,6 +58,20 @@ type Manager struct {
 func (m *Manager) SetEventSink(fn func(event.Event)) {
 	if fn != nil {
 		m.emit = fn
+	}
+}
+
+// EnableChanKeep turns on eggdrop-style channel keeping on every IRC connection:
+// once opped, the bot keeps the protect nicks (typically the sibling bots) opped.
+func (m *Manager) EnableChanKeep(protect []string) {
+	for _, c := range m.conns {
+		cc := c
+		send := func(channel, modes, arg string) {
+			if err := cc.ic.Send("MODE", channel, modes, arg); err != nil {
+				cc.log.Warn("chankeep mode failed", "channel", channel, "err", err)
+			}
+		}
+		cc.keeper = newChankeeper(protect, cc.ic.CurrentNick, send, cc.log)
 	}
 }
 
@@ -190,6 +205,9 @@ func (m *Manager) bind(c *conn) {
 			Kind: event.Join, Network: c.cfg.Name, Channel: e.Params[0],
 			Nick: e.Nick(), Ident: ident, Host: host, Account: joinAccount(e),
 		})
+		if c.keeper != nil {
+			c.keeper.onJoin(e.Params[0], e.Nick())
+		}
 	})
 	ic.AddCallback("PART", func(e ircmsg.Message) {
 		if len(e.Params) < 1 {
@@ -200,6 +218,9 @@ func (m *Manager) bind(c *conn) {
 			Kind: event.Part, Network: c.cfg.Name, Channel: e.Params[0],
 			Nick: e.Nick(), Ident: ident, Host: host, Text: paramAt(e, 1),
 		})
+		if c.keeper != nil {
+			c.keeper.onLeave(e.Params[0], e.Nick())
+		}
 	})
 	ic.AddCallback("QUIT", func(e ircmsg.Message) {
 		ident, host := event.SplitUserHost(e.Source)
@@ -207,7 +228,83 @@ func (m *Manager) bind(c *conn) {
 			Kind: event.Quit, Network: c.cfg.Name,
 			Nick: e.Nick(), Ident: ident, Host: host, Text: paramAt(e, 0),
 		})
+		if c.keeper != nil {
+			c.keeper.onQuit(e.Nick())
+		}
 	})
+	ic.AddCallback("NICK", func(e ircmsg.Message) {
+		if c.keeper != nil && len(e.Params) >= 1 {
+			c.keeper.onNick(e.Nick(), e.Params[0])
+		}
+	})
+	ic.AddCallback("KICK", func(e ircmsg.Message) {
+		if c.keeper != nil && len(e.Params) >= 2 {
+			c.keeper.onLeave(e.Params[0], e.Params[1])
+		}
+	})
+	ic.AddCallback("MODE", func(e ircmsg.Message) {
+		if len(e.Params) < 2 || !isChannel(e.Params[0]) {
+			return
+		}
+		for _, ch := range opChanges(e.Params[1], e.Params[2:]) {
+			m.emit(event.Event{
+				Kind: event.Mode, Network: c.cfg.Name, Channel: e.Params[0],
+				Nick: ch.nick, Actor: e.Nick(), Text: modeStr(ch.add) + "o",
+			})
+			if c.keeper != nil {
+				c.keeper.onModeOp(e.Params[0], ch.nick, ch.add)
+			}
+		}
+	})
+	// RPL_NAMREPLY (353) and RPL_ENDOFNAMES (366) seed channel membership/op state.
+	ic.AddCallback("353", func(e ircmsg.Message) {
+		if c.keeper != nil && len(e.Params) >= 4 {
+			c.keeper.onNames(e.Params[2], e.Params[3])
+		}
+	})
+	ic.AddCallback("366", func(e ircmsg.Message) {
+		if c.keeper != nil && len(e.Params) >= 2 {
+			c.keeper.onEndNames(e.Params[1])
+		}
+	})
+}
+
+type opChange struct {
+	nick string
+	add  bool
+}
+
+func modeStr(add bool) string {
+	if add {
+		return "+"
+	}
+	return "-"
+}
+
+// opChanges parses a channel MODE change string + its args and returns the +o/-o
+// changes. Modes that consume an argument are skipped over so 'o' args line up.
+func opChanges(modes string, args []string) []opChange {
+	const argModes = "ovhaqbeIkfjl" // modes that take a parameter
+	var out []opChange
+	add, ai := true, 0
+	for i := 0; i < len(modes); i++ {
+		switch modes[i] {
+		case '+':
+			add = true
+		case '-':
+			add = false
+		default:
+			var arg string
+			if strings.IndexByte(argModes, modes[i]) >= 0 && ai < len(args) {
+				arg = args[ai]
+				ai++
+			}
+			if modes[i] == 'o' && arg != "" {
+				out = append(out, opChange{nick: arg, add: add})
+			}
+		}
+	}
+	return out
 }
 
 // joinAccount extracts the joiner's services account: from the account-tag if

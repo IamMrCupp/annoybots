@@ -29,6 +29,14 @@ type Config struct {
 	SkitsFile   string             `yaml:"skits_file"`
 	Skits       []botnet.Skit      `yaml:"-"` // loaded from SkitsFile
 	Admin       admin.Config       `yaml:"admin"`
+	ChanKeep    ChanKeep           `yaml:"chankeep"`
+}
+
+// ChanKeep configures eggdrop-style channel keeping (IRC only). Off by default:
+// when enabled, an opped bot keeps its sibling bots (and any Protect nicks) opped.
+type ChanKeep struct {
+	Enabled bool     `yaml:"enabled"`
+	Protect []string `yaml:"protect"` // extra nicks to auto-op, beyond the personality's siblings
 }
 
 // Botnet configures the inter-bot communication bus (Redis pub/sub).
