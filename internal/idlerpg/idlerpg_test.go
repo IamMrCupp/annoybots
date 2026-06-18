@@ -40,8 +40,8 @@ func newMgr() (*Manager, *recorder, state.Store) {
 	r := &recorder{}
 	st := state.NewMem()
 	log := slog.New(slog.NewTextHandler(io.Discard, nil))
-	// 1s tick, 1s base ttl → one quiet tick levels you up.
-	return New(st, r, time.Second, time.Second, log), r, st
+	// 1s tick, 1s base ttl → one quiet tick levels you up. nil resolver = key by network|nick.
+	return New(st, r, nil, time.Second, time.Second, log), r, st
 }
 
 func TestEnrollThenStatus(t *testing.T) {
@@ -65,7 +65,7 @@ func TestIdleLevelsUp(t *testing.T) {
 	if !r.has("attained level 1") {
 		t.Fatalf("expected level-up announcement, got %v", r.lines)
 	}
-	sheet, _ := st.HGetAll(context.Background(), sheetKey("net", "alice"))
+	sheet, _ := st.HGetAll(context.Background(), sheetKey("net|alice"))
 	if sheet["level"] != 1 {
 		t.Fatalf("level = %d; want 1", sheet["level"])
 	}
@@ -74,11 +74,11 @@ func TestIdleLevelsUp(t *testing.T) {
 func TestTalkingPenalizes(t *testing.T) {
 	m, _, st := newMgr()
 	m.Handle(chanMsg("alice", "!rpg")) // enroll, ttl=1
-	before, _ := st.HGetAll(context.Background(), sheetKey("net", "alice"))
+	before, _ := st.HGetAll(context.Background(), sheetKey("net|alice"))
 	if m.Handle(chanMsg("alice", "blah blah blah")) {
 		t.Fatal("normal chatter is not consumed")
 	}
-	after, _ := st.HGetAll(context.Background(), sheetKey("net", "alice"))
+	after, _ := st.HGetAll(context.Background(), sheetKey("net|alice"))
 	if after["ttl"] <= before["ttl"] {
 		t.Fatalf("talking should raise ttl: %d -> %d", before["ttl"], after["ttl"])
 	}
@@ -92,7 +92,7 @@ func TestLeavingStopsProgress(t *testing.T) {
 	if r.has("attained level") {
 		t.Fatal("an offline player must not level up")
 	}
-	sheet, _ := st.HGetAll(context.Background(), sheetKey("net", "alice"))
+	sheet, _ := st.HGetAll(context.Background(), sheetKey("net|alice"))
 	if sheet["level"] != 0 {
 		t.Fatalf("offline level = %d; want 0", sheet["level"])
 	}
