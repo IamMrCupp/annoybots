@@ -163,6 +163,11 @@ func main() {
 			os.Exit(1)
 		}
 		mgr.SetEventSink(disp.Emit)
+		if cfg.ChanKeep.Enabled {
+			protect := append(append([]string(nil), cfg.Personality.Siblings...), cfg.ChanKeep.Protect...)
+			mgr.EnableChanKeep(protect)
+			log.Info("channel keeping enabled", "protect", protect)
+		}
 		router.Add(mgr)
 	}
 	if len(discordNets) > 0 {
