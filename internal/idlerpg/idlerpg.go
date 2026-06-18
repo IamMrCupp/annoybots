@@ -131,6 +131,12 @@ func (m *Manager) command(msg engine.Message, fields []string) {
 		case "items", "gear":
 			m.out.Say(msg.Network, msg.Channel, m.items(msg))
 			return
+		case "align":
+			m.setAlign(msg, fields)
+			return
+		case "class":
+			m.setClass(msg, fields)
+			return
 		}
 	}
 	ctx := context.Background()
@@ -151,8 +157,88 @@ func (m *Manager) command(msg engine.Message, fields []string) {
 		return
 	}
 	m.setOnline(msg.Network, msg.Nick, msg.Channel, pkey)
-	m.out.Say(msg.Network, msg.Channel, fmt.Sprintf("%s — level %d, %s to the next. (stop talking, it hurts.)",
-		msg.Nick, sheet["level"], dur(sheet["ttl"])))
+	desc := alignName(sheet["align"])
+	if class, _ := m.store.GetStr(ctx, classKey(pkey)); class != "" {
+		desc += " " + class
+	}
+	m.out.Say(msg.Network, msg.Channel, fmt.Sprintf("%s the %s — level %d, %s to the next. (stop talking, it hurts.)",
+		msg.Nick, desc, sheet["level"], dur(sheet["ttl"])))
+}
+
+func classKey(player string) string { return "rpg:class:" + player }
+
+func alignName(v int64) string {
+	switch v {
+	case 1:
+		return "good"
+	case 2:
+		return "evil"
+	default:
+		return "neutral"
+	}
+}
+
+// setAlign sets the player's alignment: good fights at +11% power, evil crits
+// twice as often, neutral is baseline.
+func (m *Manager) setAlign(msg engine.Message, fields []string) {
+	if len(fields) < 3 {
+		m.out.Say(msg.Network, msg.Channel, "usage: !rpg align good|neutral|evil")
+		return
+	}
+	var v int64
+	switch strings.ToLower(fields[2]) {
+	case "good":
+		v = 1
+	case "evil":
+		v = 2
+	case "neutral":
+		v = 0
+	default:
+		m.out.Say(msg.Network, msg.Channel, "alignment is good, neutral, or evil.")
+		return
+	}
+	ctx := context.Background()
+	pkey := m.resolve(msg.Network, msg.Account, msg.Nick)
+	if sheet, _ := m.store.HGetAll(ctx, sheetKey(pkey)); len(sheet) == 0 {
+		m.out.Say(msg.Network, msg.Channel, "you're not playing. !rpg to start the grind.")
+		return
+	}
+	_ = m.store.HSet(ctx, sheetKey(pkey), "align", v)
+	m.out.Say(msg.Network, msg.Channel, msg.Nick+" is now "+alignName(v)+".")
+}
+
+// setClass sets the player's class (flavor text shown in status).
+func (m *Manager) setClass(msg engine.Message, fields []string) {
+	if len(fields) < 3 {
+		m.out.Say(msg.Network, msg.Channel, "usage: !rpg class <name>")
+		return
+	}
+	class := sanitizeClass(strings.Join(fields[2:], " "))
+	if class == "" {
+		m.out.Say(msg.Network, msg.Channel, "class name must be printable (<= 24 chars).")
+		return
+	}
+	ctx := context.Background()
+	pkey := m.resolve(msg.Network, msg.Account, msg.Nick)
+	if sheet, _ := m.store.HGetAll(ctx, sheetKey(pkey)); len(sheet) == 0 {
+		m.out.Say(msg.Network, msg.Channel, "you're not playing. !rpg to start the grind.")
+		return
+	}
+	_ = m.store.SetStr(ctx, classKey(pkey), class)
+	m.out.Say(msg.Network, msg.Channel, msg.Nick+" is now a "+class+".")
+}
+
+func sanitizeClass(s string) string {
+	s = strings.TrimSpace(s)
+	if len(s) > 24 {
+		s = s[:24]
+	}
+	for _, r := range s {
+		if r < 0x20 || r == 0x7f {
+			return ""
+		}
+	}
+	return s
 }
 
 func (m *Manager) leaderboard() string {
@@ -235,9 +321,18 @@ func (m *Manager) battle(ctx context.Context, p player, level int64) {
 	theirs, _ := m.store.HGetAll(ctx, sheetKey(opp.key))
 	myPow, oppPow := itemSum(mine), itemSum(theirs)
 
-	win := m.roll(int(myPow)+1) >= m.roll(int(oppPow)+1)
+	// Alignment: good is blessed in combat (+11%); evil is chaotic (crits 2× as often).
+	effPow := myPow
+	if mine["align"] == 1 {
+		effPow = myPow * 111 / 100
+	}
+	critOdds := 10
+	if mine["align"] == 2 {
+		critOdds = 5
+	}
+	win := m.roll(int(effPow)+1) >= m.roll(int(oppPow)+1)
 	amt := int64(m.roll(int(level)+1)+1) * battleSec
-	crit := m.roll(10) == 0
+	crit := m.roll(critOdds) == 0
 	if crit {
 		amt *= 5
 	}
