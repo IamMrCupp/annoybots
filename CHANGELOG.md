@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.8.0](https://github.com/IamMrCupp/annoybots/compare/v1.7.0...v1.8.0) (2026-06-18)
+
+
+### Features
+
+* **idlerpg:** alignment (good/neutral/evil) + classes ([fdd47fd](https://github.com/IamMrCupp/annoybots/commit/fdd47fdd7dae4e8f5e0d6e0656b8816b297e1478))
+* **idlerpg:** alignment + classes (parity [#4](https://github.com/IamMrCupp/annoybots/issues/4)) ([4ce3446](https://github.com/IamMrCupp/annoybots/commit/4ce34469d699d362024b1e046b0d65e864539eed))
+* **idlerpg:** battles (parity [#2](https://github.com/IamMrCupp/annoybots/issues/2)) ([101af42](https://github.com/IamMrCupp/annoybots/commit/101af42dad110752c6e8f00badf57ccf9cc0403d))
+* **idlerpg:** battles on level-up (power-weighted, crits, clock swings) ([dc146d0](https://github.com/IamMrCupp/annoybots/commit/dc146d05b0ff68777e732f45a367e2e56348d60d))
+* **idlerpg:** items & equipment (parity [#1](https://github.com/IamMrCupp/annoybots/issues/1)) ([d74359f](https://github.com/IamMrCupp/annoybots/commit/d74359f0ba7070193759c0a71d176ce7777b8dcf))
+* **idlerpg:** items/equipment — find on level-up, !rpg items, item power ([9ed47c5](https://github.com/IamMrCupp/annoybots/commit/9ed47c59c858624f8312d5bc1a58763b57dcc244))
+* **idlerpg:** random events — godsends, calamities, hand of god ([bdefc71](https://github.com/IamMrCupp/annoybots/commit/bdefc716c1ebb5633057972a9b74adb82a92c793))
+* **idlerpg:** random events (parity [#3](https://github.com/IamMrCupp/annoybots/issues/3)) ([e6b6a19](https://github.com/IamMrCupp/annoybots/commit/e6b6a1955e0bd954c18e90ab2a026300f6bcd15a))
+
 ## [1.7.0](https://github.com/IamMrCupp/annoybots/compare/v1.6.0...v1.7.0) (2026-06-18)
 
 
