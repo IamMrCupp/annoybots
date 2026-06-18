@@ -4,6 +4,7 @@ import (
 	"context"
 	"io"
 	"log/slog"
+	"math/rand"
 	"strings"
 	"testing"
 	"time"
@@ -41,7 +42,9 @@ func newMgr() (*Manager, *recorder, state.Store) {
 	st := state.NewMem()
 	log := slog.New(slog.NewTextHandler(io.Discard, nil))
 	// 1s tick, 1s base ttl → one quiet tick levels you up. nil resolver = key by network|nick.
-	return New(st, r, nil, time.Second, time.Second, log), r, st
+	m := New(st, r, nil, time.Second, time.Second, log)
+	m.rng = rand.New(rand.NewSource(1)) // deterministic for item rolls
+	return m, r, st
 }
 
 func TestEnrollThenStatus(t *testing.T) {
@@ -95,6 +98,33 @@ func TestLeavingStopsProgress(t *testing.T) {
 	sheet, _ := st.HGetAll(context.Background(), sheetKey("net|alice"))
 	if sheet["level"] != 0 {
 		t.Fatalf("offline level = %d; want 0", sheet["level"])
+	}
+}
+
+func TestFindsItemOnLevelUp(t *testing.T) {
+	m, r, st := newMgr()
+	m.Handle(chanMsg("alice", "!rpg")) // enroll, ttl=1
+	m.Tick()                           // level up → finds an item (empty slot, so always > 0)
+	if !r.has("found a level") {
+		t.Fatalf("expected an item find on level-up, got %v", r.lines)
+	}
+	sheet, _ := st.HGetAll(context.Background(), sheetKey("net|alice"))
+	if itemSum(sheet) <= 0 {
+		t.Fatalf("item sum should be positive after a find: %#v", sheet)
+	}
+}
+
+func TestItemsCommand(t *testing.T) {
+	m, r, _ := newMgr()
+	m.Handle(chanMsg("alice", "!rpg"))       // enroll, no items yet
+	m.Handle(chanMsg("alice", "!rpg items")) // power 0, nothing yet
+	if !strings.Contains(r.last(), "power 0") || !strings.Contains(r.last(), "nothing yet") {
+		t.Fatalf("fresh player items wrong: %q", r.last())
+	}
+	m.Tick()                                 // level up → item
+	m.Handle(chanMsg("alice", "!rpg items")) // now has gear
+	if strings.Contains(r.last(), "nothing yet") {
+		t.Fatalf("expected gear after a find, got %q", r.last())
 	}
 }
 
