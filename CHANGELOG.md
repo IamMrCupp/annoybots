@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.7.0](https://github.com/IamMrCupp/annoybots/compare/v1.6.0...v1.7.0) (2026-06-18)
+
+
+### Features
+
+* **account:** cross-network identity / account linking ([06ab0bb](https://github.com/IamMrCupp/annoybots/commit/06ab0bb48c9df6d9a8c5851f2c9aadb517652144))
+* **account:** cross-network identity linking; IdleRPG keyed by account ([75ee847](https://github.com/IamMrCupp/annoybots/commit/75ee847e4d38443164666c9816f48274b666ddf2))
+
 ## [1.6.0](https://github.com/IamMrCupp/annoybots/compare/v1.5.0...v1.6.0) (2026-06-18)
 
 
