@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.5.0](https://github.com/IamMrCupp/annoybots/compare/v1.4.0...v1.5.0) (2026-06-18)
+
+
+### Features
+
+* **irc:** channel keeping (auto-op siblings) ([f7ca6d7](https://github.com/IamMrCupp/annoybots/commit/f7ca6d75b15c1d4f0627c34c4011fdc54b03b1b1))
+* **irc:** eggdrop-style channel keeping (auto-op + re-op protected nicks) ([a0a464d](https://github.com/IamMrCupp/annoybots/commit/a0a464d472e72d08b2d8e116f98ebd3cc48a835a))
+
 ## [1.4.0](https://github.com/IamMrCupp/annoybots/compare/v1.3.0...v1.4.0) (2026-06-15)
 
 
