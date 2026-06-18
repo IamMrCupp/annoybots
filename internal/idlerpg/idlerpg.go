@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"log/slog"
 	"math"
+	"math/rand"
 	"strings"
 	"sync"
 	"time"
@@ -17,6 +18,12 @@ import (
 	"github.com/IamMrCupp/annoybots/internal/event"
 	"github.com/IamMrCupp/annoybots/internal/state"
 )
+
+// itemSlots are the 10 equipment slots (idlerpg.net). Each holds a level; the sum
+// is the character's power, used by battles. Stored as "item:<slot>" sheet fields.
+var itemSlots = []string{"ring", "amulet", "charm", "weapon", "helm", "tunic", "gloves", "leggings", "shield", "boots"}
+
+func itemField(slot string) string { return "item:" + slot }
 
 const (
 	growth     = 1.16           // time-to-level multiplier per level
@@ -48,6 +55,9 @@ type Manager struct {
 
 	mu     sync.Mutex
 	online map[string]player // network|nick -> online player
+
+	rmu sync.Mutex
+	rng *rand.Rand
 }
 
 // New builds a Manager. interval is the tick period; baseTTL is the level 0→1 time.
@@ -66,7 +76,18 @@ func New(store state.Store, out engine.Sender, resolve Resolver, interval, baseT
 		store: store, out: out, resolve: resolve, log: log,
 		interval: interval, baseTTL: baseTTL,
 		online: map[string]player{},
+		rng:    rand.New(rand.NewSource(time.Now().UnixNano())),
 	}
+}
+
+// roll returns a value in [0,n). Guarded so battles/events can roll concurrently.
+func (m *Manager) roll(n int) int {
+	if n <= 0 {
+		return 0
+	}
+	m.rmu.Lock()
+	defer m.rmu.Unlock()
+	return m.rng.Intn(n)
 }
 
 // Interval is how often the caller should invoke Tick.
@@ -102,9 +123,15 @@ func (m *Manager) Handle(msg engine.Message) bool {
 }
 
 func (m *Manager) command(msg engine.Message, fields []string) {
-	if len(fields) >= 2 && strings.ToLower(fields[1]) == "top" {
-		m.out.Say(msg.Network, msg.Channel, m.leaderboard())
-		return
+	if len(fields) >= 2 {
+		switch strings.ToLower(fields[1]) {
+		case "top":
+			m.out.Say(msg.Network, msg.Channel, m.leaderboard())
+			return
+		case "items", "gear":
+			m.out.Say(msg.Network, msg.Channel, m.items(msg))
+			return
+		}
 	}
 	ctx := context.Background()
 	pkey := m.resolve(msg.Network, msg.Account, msg.Nick)
@@ -188,7 +215,50 @@ func (m *Manager) Tick() {
 		_ = m.store.HSet(ctx, key, "ttl", m.ttlFor(lvl))
 		_, _ = m.store.ZIncr(ctx, boardKey(), p.key, 1)
 		m.out.Say(p.network, p.channel, fmt.Sprintf("✨ %s has attained level %d! the idle is strong with this one.", p.nick, lvl))
+		m.findItem(ctx, p, lvl)
 	}
+}
+
+// findItem rolls an item drop on level-up; equips + announces it only if it beats
+// what's in that slot (idlerpg.net behavior).
+func (m *Manager) findItem(ctx context.Context, p player, level int64) {
+	slot := itemSlots[m.roll(len(itemSlots))]
+	found := int64(m.roll(int(level)+1) + 1) // 1..level+1
+	sheet, _ := m.store.HGetAll(ctx, sheetKey(p.key))
+	if found <= sheet[itemField(slot)] {
+		return
+	}
+	_ = m.store.HSet(ctx, sheetKey(p.key), itemField(slot), found)
+	m.out.Say(p.network, p.channel, fmt.Sprintf("%s found a level %d %s!", p.nick, found, slot))
+}
+
+// itemSum is the character's total equipment power.
+func itemSum(sheet map[string]int64) int64 {
+	var sum int64
+	for _, s := range itemSlots {
+		sum += sheet[itemField(s)]
+	}
+	return sum
+}
+
+// items renders a player's equipment + power.
+func (m *Manager) items(msg engine.Message) string {
+	pkey := m.resolve(msg.Network, msg.Account, msg.Nick)
+	sheet, _ := m.store.HGetAll(context.Background(), sheetKey(pkey))
+	if _, ok := sheet["level"]; !ok {
+		return "you're not playing. !rpg to start the grind."
+	}
+	var parts []string
+	for _, s := range itemSlots {
+		if lvl := sheet[itemField(s)]; lvl > 0 {
+			parts = append(parts, fmt.Sprintf("%s %d", s, lvl))
+		}
+	}
+	gear := "nothing yet"
+	if len(parts) > 0 {
+		gear = strings.Join(parts, ", ")
+	}
+	return fmt.Sprintf("%s — power %d · %s", msg.Nick, itemSum(sheet), gear)
 }
 
 func (m *Manager) ttlFor(level int64) int64 {
