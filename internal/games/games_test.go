@@ -1,11 +1,14 @@
 package games
 
 import (
+	"io"
+	"log/slog"
 	"math/rand"
 	"strings"
 	"testing"
 
 	"github.com/IamMrCupp/annoybots/internal/engine"
+	"github.com/IamMrCupp/annoybots/internal/state"
 )
 
 type recorder struct{ lines []string }
@@ -24,7 +27,8 @@ func msg(nick, text string) engine.Message {
 }
 
 func newGames(r *recorder) *Manager {
-	return NewWithRand(r, rand.New(rand.NewSource(1)))
+	log := slog.New(slog.NewTextHandler(io.Discard, nil))
+	return NewWithRand(r, state.NewMem(), rand.New(rand.NewSource(1)), log)
 }
 
 func TestKarmaIncrementAndQuery(t *testing.T) {
