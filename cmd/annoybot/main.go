@@ -13,6 +13,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/IamMrCupp/annoybots/internal/account"
 	"github.com/IamMrCupp/annoybots/internal/admin"
 	"github.com/IamMrCupp/annoybots/internal/bot"
 	"github.com/IamMrCupp/annoybots/internal/botnet"
@@ -81,13 +82,17 @@ func main() {
 		store = state.NewMem()
 	}
 
+	// Account/identity linking — !register/!link/!whoami (DM); Resolve() maps a
+	// sender to their cross-network character key for IdleRPG (and future features).
+	acctMgr := account.New(store, router, log)
+
 	// Public channel toys: !8ball, !roll, karma (name++ / !karma / !top).
 	gamesMgr := games.New(router, store, log)
 
-	// IdleRPG — off by default; persists to the shared state store.
+	// IdleRPG — off by default; persists to the shared state store, keyed by account.
 	var rpgMgr *idlerpg.Manager
 	if cfg.IdleRPG.Enabled {
-		rpgMgr = idlerpg.New(store, router, cfg.IdleRPG.Interval.D(), cfg.IdleRPG.BaseTTL.D(), log)
+		rpgMgr = idlerpg.New(store, router, acctMgr.Resolve, cfg.IdleRPG.Interval.D(), cfg.IdleRPG.BaseTTL.D(), log)
 	}
 
 	// Optional inter-bot bus + skit coordinator (the "botnet").
@@ -136,6 +141,9 @@ func main() {
 		isOther := !strings.EqualFold(m.Nick, m.Self) && !eng.IsSibling(m.Nick)
 		// Admin commands (DM-only) are handled first and never reach the engine.
 		if adminMgr != nil && isOther && adminMgr.Handle(ctx, m) {
+			return
+		}
+		if isOther && acctMgr.Handle(m) {
 			return
 		}
 		if isOther && tellMgr.Handle(m) {

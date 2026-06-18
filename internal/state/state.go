@@ -32,6 +32,10 @@ type Store interface {
 	HIncr(ctx context.Context, key, field string, delta int64) (int64, error)
 	HSet(ctx context.Context, key, field string, value int64) error
 	HGetAll(ctx context.Context, key string) (map[string]int64, error)
+	// String ops — small text values (identity→account links, password hashes).
+	SetStr(ctx context.Context, key, value string) error
+	GetStr(ctx context.Context, key string) (string, error)
+	Del(ctx context.Context, key string) error
 	Close() error
 }
 
@@ -137,6 +141,28 @@ func (s *redisStore) HGetAll(ctx context.Context, key string) (map[string]int64,
 	return out, nil
 }
 
+func (s *redisStore) SetStr(ctx context.Context, key, value string) error {
+	ctx, cancel := s.ctx(ctx)
+	defer cancel()
+	return s.c.Set(ctx, s.k(key), value, 0).Err()
+}
+
+func (s *redisStore) GetStr(ctx context.Context, key string) (string, error) {
+	ctx, cancel := s.ctx(ctx)
+	defer cancel()
+	v, err := s.c.Get(ctx, s.k(key)).Result()
+	if err == redis.Nil {
+		return "", nil
+	}
+	return v, err
+}
+
+func (s *redisStore) Del(ctx context.Context, key string) error {
+	ctx, cancel := s.ctx(ctx)
+	defer cancel()
+	return s.c.Del(ctx, s.k(key)).Err()
+}
+
 func (s *redisStore) Close() error { return s.c.Close() }
 
 // --- In-memory fallback (single process; used when Redis is off, and in tests) ---
@@ -146,6 +172,7 @@ type memStore struct {
 	counters map[string]int64
 	zsets    map[string]map[string]int64
 	hashes   map[string]map[string]int64
+	strs     map[string]string
 }
 
 // NewMem returns an in-process Store.
@@ -154,6 +181,7 @@ func NewMem() Store {
 		counters: map[string]int64{},
 		zsets:    map[string]map[string]int64{},
 		hashes:   map[string]map[string]int64{},
+		strs:     map[string]string{},
 	}
 }
 
@@ -240,6 +268,29 @@ func (m *memStore) HGetAll(_ context.Context, key string) (map[string]int64, err
 		out[f] = v
 	}
 	return out, nil
+}
+
+func (m *memStore) SetStr(_ context.Context, key, value string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.strs[key] = value
+	return nil
+}
+
+func (m *memStore) GetStr(_ context.Context, key string) (string, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return m.strs[key], nil
+}
+
+func (m *memStore) Del(_ context.Context, key string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	delete(m.strs, key)
+	delete(m.counters, key)
+	delete(m.zsets, key)
+	delete(m.hashes, key)
+	return nil
 }
 
 func (m *memStore) Close() error { return nil }

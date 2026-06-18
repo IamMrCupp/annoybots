@@ -64,6 +64,23 @@ func runContract(t *testing.T, s Store) {
 	if got, _ := s.HGetAll(ctx, "player:none"); len(got) != 0 {
 		t.Fatalf("HGetAll missing = %#v; want empty", got)
 	}
+
+	// strings
+	if err := s.SetStr(ctx, "id:x", "account-bob"); err != nil {
+		t.Fatalf("SetStr: %v", err)
+	}
+	if v, _ := s.GetStr(ctx, "id:x"); v != "account-bob" {
+		t.Fatalf("GetStr = %q; want account-bob", v)
+	}
+	if v, _ := s.GetStr(ctx, "id:none"); v != "" {
+		t.Fatalf("GetStr missing = %q; want empty", v)
+	}
+	if err := s.Del(ctx, "id:x"); err != nil {
+		t.Fatalf("Del: %v", err)
+	}
+	if v, _ := s.GetStr(ctx, "id:x"); v != "" {
+		t.Fatalf("after Del, GetStr = %q; want empty", v)
+	}
 }
 
 func TestMemStore(t *testing.T) {

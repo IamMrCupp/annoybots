@@ -24,17 +24,24 @@ const (
 	talkCapSec = 60             // max penalty seconds for one message
 )
 
-// player is who's currently online (present + enrolled) and where to announce.
+// player is who's currently online (present + enrolled), where to announce, and
+// the canonical character key (an account if linked, else the network identity).
 type player struct {
 	network string
 	nick    string
 	channel string
+	key     string // resolved character key (state is stored under this)
 }
+
+// Resolver maps a sender's (network, account, nick) to their canonical player key
+// — the account/identity system, so a linked person is one character everywhere.
+type Resolver func(network, account, nick string) string
 
 // Manager runs the game for one bot.
 type Manager struct {
 	store    state.Store
 	out      engine.Sender
+	resolve  Resolver
 	log      *slog.Logger
 	interval time.Duration
 	baseTTL  time.Duration
@@ -44,15 +51,19 @@ type Manager struct {
 }
 
 // New builds a Manager. interval is the tick period; baseTTL is the level 0→1 time.
-func New(store state.Store, out engine.Sender, interval, baseTTL time.Duration, log *slog.Logger) *Manager {
+// resolve maps senders to canonical player keys (cross-network when linked).
+func New(store state.Store, out engine.Sender, resolve Resolver, interval, baseTTL time.Duration, log *slog.Logger) *Manager {
 	if interval <= 0 {
 		interval = 30 * time.Second
 	}
 	if baseTTL <= 0 {
 		baseTTL = 10 * time.Minute
 	}
+	if resolve == nil {
+		resolve = func(network, _, nick string) string { return strings.ToLower(network) + "|" + strings.ToLower(nick) }
+	}
 	return &Manager{
-		store: store, out: out, log: log,
+		store: store, out: out, resolve: resolve, log: log,
 		interval: interval, baseTTL: baseTTL,
 		online: map[string]player{},
 	}
@@ -62,10 +73,11 @@ func New(store state.Store, out engine.Sender, interval, baseTTL time.Duration, 
 func (m *Manager) Interval() time.Duration { return m.interval }
 
 func okey(network, nick string) string { return strings.ToLower(network) + "|" + strings.ToLower(nick) }
-func sheetKey(network, nick string) string {
-	return "rpg:" + strings.ToLower(network) + ":" + strings.ToLower(nick)
-}
-func boardKey(network string) string { return "rpg:lvl:" + strings.ToLower(network) }
+
+// sheetKey/boardKey are keyed by the resolved player key (account or identity),
+// so linked players share one character + one global leaderboard across networks.
+func sheetKey(player string) string { return "rpg:p:" + player }
+func boardKey() string              { return "rpg:lvl" }
 
 // Handle processes a channel message: !rpg commands, and a talk-penalty for
 // anyone currently in the game. Returns true only when it consumed a !rpg command.
@@ -79,23 +91,24 @@ func (m *Manager) Handle(msg engine.Message) bool {
 		return true
 	}
 	// Talking is the cardinal sin — penalize online players.
-	if m.isOnline(msg.Network, msg.Nick) {
+	if p, ok := m.onlinePlayer(msg.Network, msg.Nick); ok {
 		pen := int64(len(msg.Text))
 		if pen > talkCapSec {
 			pen = talkCapSec
 		}
-		_, _ = m.store.HIncr(context.Background(), sheetKey(msg.Network, msg.Nick), "ttl", pen)
+		_, _ = m.store.HIncr(context.Background(), sheetKey(p.key), "ttl", pen)
 	}
 	return false
 }
 
 func (m *Manager) command(msg engine.Message, fields []string) {
 	if len(fields) >= 2 && strings.ToLower(fields[1]) == "top" {
-		m.out.Say(msg.Network, msg.Channel, m.leaderboard(msg.Network))
+		m.out.Say(msg.Network, msg.Channel, m.leaderboard())
 		return
 	}
 	ctx := context.Background()
-	key := sheetKey(msg.Network, msg.Nick)
+	pkey := m.resolve(msg.Network, msg.Account, msg.Nick)
+	key := sheetKey(pkey)
 	sheet, err := m.store.HGetAll(ctx, key)
 	if err != nil {
 		m.log.Warn("idlerpg read failed", "err", err)
@@ -105,18 +118,18 @@ func (m *Manager) command(msg engine.Message, fields []string) {
 	if _, enrolled := sheet["level"]; !enrolled {
 		_ = m.store.HSet(ctx, key, "level", 0)
 		_ = m.store.HSet(ctx, key, "ttl", m.ttlFor(0))
-		_, _ = m.store.ZIncr(ctx, boardKey(msg.Network), strings.ToLower(msg.Nick), 0)
-		m.setOnline(msg.Network, msg.Nick, msg.Channel)
+		_, _ = m.store.ZIncr(ctx, boardKey(), pkey, 0)
+		m.setOnline(msg.Network, msg.Nick, msg.Channel, pkey)
 		m.out.Say(msg.Network, msg.Channel, "welcome to the grind, "+msg.Nick+". you're level 0 — now hush and idle.")
 		return
 	}
-	m.setOnline(msg.Network, msg.Nick, msg.Channel)
+	m.setOnline(msg.Network, msg.Nick, msg.Channel, pkey)
 	m.out.Say(msg.Network, msg.Channel, fmt.Sprintf("%s — level %d, %s to the next. (stop talking, it hurts.)",
 		msg.Nick, sheet["level"], dur(sheet["ttl"])))
 }
 
-func (m *Manager) leaderboard(network string) string {
-	top, err := m.store.ZTop(context.Background(), boardKey(network), 5)
+func (m *Manager) leaderboard() string {
+	top, err := m.store.ZTop(context.Background(), boardKey(), 5)
 	if err != nil {
 		return "the realm is unreachable right now."
 	}
@@ -135,12 +148,13 @@ func (m *Manager) OnJoin(ev event.Event) {
 	if ev.Kind != event.Join {
 		return
 	}
-	sheet, err := m.store.HGetAll(context.Background(), sheetKey(ev.Network, ev.Nick))
+	pkey := m.resolve(ev.Network, ev.Account, ev.Nick)
+	sheet, err := m.store.HGetAll(context.Background(), sheetKey(pkey))
 	if err != nil {
 		return
 	}
 	if _, enrolled := sheet["level"]; enrolled {
-		m.setOnline(ev.Network, ev.Nick, ev.Channel)
+		m.setOnline(ev.Network, ev.Nick, ev.Channel, pkey)
 	}
 }
 
@@ -159,7 +173,7 @@ func (m *Manager) Tick() {
 	}
 	for _, p := range m.snapshot() {
 		ctx := context.Background()
-		key := sheetKey(p.network, p.nick)
+		key := sheetKey(p.key)
 		ttl, err := m.store.HIncr(ctx, key, "ttl", -step)
 		if err != nil {
 			continue
@@ -172,7 +186,7 @@ func (m *Manager) Tick() {
 			continue
 		}
 		_ = m.store.HSet(ctx, key, "ttl", m.ttlFor(lvl))
-		_, _ = m.store.ZIncr(ctx, boardKey(p.network), strings.ToLower(p.nick), 1)
+		_, _ = m.store.ZIncr(ctx, boardKey(), p.key, 1)
 		m.out.Say(p.network, p.channel, fmt.Sprintf("✨ %s has attained level %d! the idle is strong with this one.", p.nick, lvl))
 	}
 }
@@ -185,17 +199,17 @@ func (m *Manager) ttlFor(level int64) int64 {
 	return int64(secs)
 }
 
-func (m *Manager) setOnline(network, nick, channel string) {
+func (m *Manager) setOnline(network, nick, channel, key string) {
 	m.mu.Lock()
-	m.online[okey(network, nick)] = player{network: network, nick: nick, channel: channel}
+	m.online[okey(network, nick)] = player{network: network, nick: nick, channel: channel, key: key}
 	m.mu.Unlock()
 }
 
-func (m *Manager) isOnline(network, nick string) bool {
+func (m *Manager) onlinePlayer(network, nick string) (player, bool) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	_, ok := m.online[okey(network, nick)]
-	return ok
+	p, ok := m.online[okey(network, nick)]
+	return p, ok
 }
 
 func (m *Manager) snapshot() []player {
