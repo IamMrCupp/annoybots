@@ -22,6 +22,7 @@ import (
 	"github.com/IamMrCupp/annoybots/internal/event"
 	"github.com/IamMrCupp/annoybots/internal/games"
 	"github.com/IamMrCupp/annoybots/internal/health"
+	"github.com/IamMrCupp/annoybots/internal/idlerpg"
 	"github.com/IamMrCupp/annoybots/internal/irc"
 	"github.com/IamMrCupp/annoybots/internal/markov"
 	"github.com/IamMrCupp/annoybots/internal/state"
@@ -83,6 +84,12 @@ func main() {
 	// Public channel toys: !8ball, !roll, karma (name++ / !karma / !top).
 	gamesMgr := games.New(router, store, log)
 
+	// IdleRPG — off by default; persists to the shared state store.
+	var rpgMgr *idlerpg.Manager
+	if cfg.IdleRPG.Enabled {
+		rpgMgr = idlerpg.New(store, router, cfg.IdleRPG.Interval.D(), cfg.IdleRPG.BaseTTL.D(), log)
+	}
+
 	// Optional inter-bot bus + skit coordinator (the "botnet").
 	var coord *botnet.Coordinator
 	var bus botnet.Bus // nil interface when botnet is disabled
@@ -137,6 +144,9 @@ func main() {
 		if isOther && gamesMgr.Handle(m) {
 			return
 		}
+		if rpgMgr != nil && isOther && rpgMgr.Handle(m) {
+			return
+		}
 		eng.Handle(m, router)
 		// Let humans (not the bots themselves) kick off coordinated skits.
 		if coord != nil && isOther {
@@ -165,6 +175,11 @@ func main() {
 	disp.On(event.Part, logPresence)
 	disp.On(event.Quit, logPresence)
 	disp.On(event.Join, tellMgr.OnJoin) // deliver pending !message notes on join
+	if rpgMgr != nil {
+		disp.On(event.Join, rpgMgr.OnJoin)
+		disp.On(event.Part, rpgMgr.OnLeave)
+		disp.On(event.Quit, rpgMgr.OnLeave)
+	}
 
 	if len(ircNets) > 0 {
 		mgr, merr := irc.NewManager(ircNets, handler, log, os.Getenv)
@@ -209,6 +224,12 @@ func main() {
 	if eng.AmbientEnabled() {
 		go ambientTicker(ctx, eng, router, eng.AmbientInterval())
 		log.Info("ambient timer enabled", "interval", eng.AmbientInterval().String())
+	}
+
+	// IdleRPG level ticks.
+	if rpgMgr != nil {
+		go rpgTicker(ctx, rpgMgr)
+		log.Info("idlerpg enabled", "interval", rpgMgr.Interval().String())
 	}
 
 	<-ctx.Done()
@@ -258,6 +279,20 @@ func ambientTicker(ctx context.Context, eng *engine.Engine, out engine.Sender, e
 			return
 		case <-t.C:
 			eng.Tick(out)
+		}
+	}
+}
+
+// rpgTicker drives IdleRPG level progression on a timer.
+func rpgTicker(ctx context.Context, m *idlerpg.Manager) {
+	t := time.NewTicker(m.Interval())
+	defer t.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-t.C:
+			m.Tick()
 		}
 	}
 }
