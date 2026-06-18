@@ -147,6 +147,46 @@ func TestNoBattleWhenSolo(t *testing.T) {
 	}
 }
 
+func TestGodsendAndCalamity(t *testing.T) {
+	m, r, st := newMgr()
+	ctx := context.Background()
+	m.Handle(chanMsg("alice", "!rpg"))
+	st.HSet(ctx, sheetKey("net|alice"), "ttl", 1000) // measurable %
+	p := player{network: "net", nick: "alice", channel: "#chan", key: "net|alice"}
+
+	m.godsend(ctx, p)
+	if !r.has("godsend") {
+		t.Fatalf("expected godsend, got %v", r.lines)
+	}
+	if s, _ := st.HGetAll(ctx, sheetKey("net|alice")); s["ttl"] >= 1000 {
+		t.Fatal("godsend should lower ttl")
+	}
+
+	st.HSet(ctx, sheetKey("net|alice"), "ttl", 1000)
+	m.calamity(ctx, p) // no items → time penalty
+	if !r.has("calamity") {
+		t.Fatalf("expected calamity, got %v", r.lines)
+	}
+	if s, _ := st.HGetAll(ctx, sheetKey("net|alice")); s["ttl"] <= 1000 {
+		t.Fatal("calamity (no items) should raise ttl")
+	}
+}
+
+func TestHandOfGod(t *testing.T) {
+	m, r, st := newMgr()
+	ctx := context.Background()
+	m.Handle(chanMsg("alice", "!rpg"))
+	st.HSet(ctx, sheetKey("net|alice"), "ttl", 1000)
+	p := player{network: "net", nick: "alice", channel: "#chan", key: "net|alice"}
+	m.handOfGod(ctx, p)
+	if !r.has("Hand of God") {
+		t.Fatalf("expected hand of god, got %v", r.lines)
+	}
+	if s, _ := st.HGetAll(ctx, sheetKey("net|alice")); s["ttl"] == 1000 {
+		t.Fatal("hand of god should move the clock")
+	}
+}
+
 func TestLeaderboard(t *testing.T) {
 	m, r, _ := newMgr()
 	m.Handle(chanMsg("alice", "!rpg"))
