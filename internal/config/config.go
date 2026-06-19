@@ -39,6 +39,12 @@ type IdleRPG struct {
 	Enabled  bool            `yaml:"enabled"`
 	Interval engine.Duration `yaml:"interval"`
 	BaseTTL  engine.Duration `yaml:"base_ttl"`
+
+	// Quests (idlerpg.net-style). The gods periodically draft idle players onto a
+	// timed quest; finishing it (without anyone talking/leaving) speeds everyone's
+	// clock, breaking it shoves them back. Zero values fall back to sane defaults.
+	QuestInterval engine.Duration `yaml:"quest_interval"` // avg time between quests (default 6h)
+	QuestDuration engine.Duration `yaml:"quest_duration"` // how long a quest runs (default 1h)
 }
 
 // ChanKeep configures eggdrop-style channel keeping (IRC only). Off by default:

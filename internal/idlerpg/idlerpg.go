@@ -53,31 +53,49 @@ type Manager struct {
 	interval time.Duration
 	baseTTL  time.Duration
 
+	questInterval time.Duration
+	questDuration time.Duration
+	now           func() time.Time // injectable clock (quest deadlines); time.Now in prod
+
 	mu     sync.Mutex
 	online map[string]player // network|nick -> online player
+
+	qmu   sync.Mutex
+	quest *quest // the active quest, nil when none
 
 	rmu sync.Mutex
 	rng *rand.Rand
 }
 
 // New builds a Manager. interval is the tick period; baseTTL is the level 0→1 time.
+// questInterval/questDuration tune the quest cadence (zero → sane defaults).
 // resolve maps senders to canonical player keys (cross-network when linked).
-func New(store state.Store, out engine.Sender, resolve Resolver, interval, baseTTL time.Duration, log *slog.Logger) *Manager {
+func New(store state.Store, out engine.Sender, resolve Resolver, interval, baseTTL, questInterval, questDuration time.Duration, log *slog.Logger) *Manager {
 	if interval <= 0 {
 		interval = 30 * time.Second
 	}
 	if baseTTL <= 0 {
 		baseTTL = 10 * time.Minute
 	}
+	if questInterval <= 0 {
+		questInterval = defaultQuestInterval
+	}
+	if questDuration <= 0 {
+		questDuration = defaultQuestDuration
+	}
 	if resolve == nil {
 		resolve = func(network, _, nick string) string { return strings.ToLower(network) + "|" + strings.ToLower(nick) }
 	}
-	return &Manager{
+	m := &Manager{
 		store: store, out: out, resolve: resolve, log: log,
 		interval: interval, baseTTL: baseTTL,
+		questInterval: questInterval, questDuration: questDuration,
+		now:    time.Now,
 		online: map[string]player{},
 		rng:    rand.New(rand.NewSource(time.Now().UnixNano())),
 	}
+	m.loadQuest(context.Background())
+	return m
 }
 
 // roll returns a value in [0,n). Guarded so battles/events can roll concurrently.
@@ -111,13 +129,15 @@ func (m *Manager) Handle(msg engine.Message) bool {
 		m.command(msg, fields)
 		return true
 	}
-	// Talking is the cardinal sin — penalize online players.
+	// Talking is the cardinal sin — penalize online players, and if they're on a
+	// quest, talking blows the whole quest.
 	if p, ok := m.onlinePlayer(msg.Network, msg.Nick); ok {
 		pen := int64(len(msg.Text))
 		if pen > talkCapSec {
 			pen = talkCapSec
 		}
 		_, _ = m.store.HIncr(context.Background(), sheetKey(p.key), "ttl", pen)
+		m.questViolation(context.Background(), p.key, p.nick, "spoke up")
 	}
 	return false
 }
@@ -302,10 +322,12 @@ func (m *Manager) penalizeOnline(network, nick string, secs int64) {
 	}
 }
 
-// OnPart / OnQuit / OnKick penalize then take the player offline.
+// OnPart / OnQuit / OnKick penalize, break any quest they were on, then take the
+// player offline.
 func (m *Manager) OnPart(ev event.Event) {
 	if ev.Kind == event.Part {
 		m.penalizeOnline(ev.Network, ev.Nick, partPenalty)
+		m.failQuestBy(ev.Network, ev.Nick, "abandoned the party")
 		m.OnLeave(ev)
 	}
 }
@@ -313,6 +335,7 @@ func (m *Manager) OnPart(ev event.Event) {
 func (m *Manager) OnQuit(ev event.Event) {
 	if ev.Kind == event.Quit {
 		m.penalizeOnline(ev.Network, ev.Nick, quitPenalty)
+		m.failQuestBy(ev.Network, ev.Nick, "vanished from the realm")
 		m.OnLeave(ev)
 	}
 }
@@ -320,16 +343,25 @@ func (m *Manager) OnQuit(ev event.Event) {
 func (m *Manager) OnKick(ev event.Event) {
 	if ev.Kind == event.Kick {
 		m.penalizeOnline(ev.Network, ev.Nick, kickPenalty)
+		m.failQuestBy(ev.Network, ev.Nick, "was hurled from the channel")
 		m.OnLeave(ev)
 	}
 }
 
-// OnNick penalizes a nick change and follows the player to their new nick.
+// failQuestBy ruins the active quest if (network, nick) resolves to a quester.
+func (m *Manager) failQuestBy(network, nick, reason string) {
+	key := m.resolve(network, "", nick)
+	m.questViolation(context.Background(), key, nick, reason)
+}
+
+// OnNick penalizes a nick change, breaks any quest, and follows the player to
+// their new nick.
 func (m *Manager) OnNick(ev event.Event) {
 	if ev.Kind != event.Nick {
 		return
 	}
 	m.penalizeOnline(ev.Network, ev.Nick, nickPenalty)
+	m.failQuestBy(ev.Network, ev.Nick, "slipped away under a new name")
 	m.mu.Lock()
 	if p, ok := m.online[okey(ev.Network, ev.Nick)]; ok {
 		delete(m.online, okey(ev.Network, ev.Nick))
@@ -353,6 +385,7 @@ func (m *Manager) Tick() {
 		step = 1
 	}
 	m.maybeEvent(context.Background())
+	m.questTick(context.Background())
 	for _, p := range m.snapshot() {
 		ctx := context.Background()
 		key := sheetKey(p.key)
