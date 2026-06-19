@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.11.0](https://github.com/IamMrCupp/annoybots/compare/v1.10.0...v1.11.0) (2026-06-19)
+
+
+### Features
+
+* **idlerpg:** !rpg info/quest/status commands (parity [#9](https://github.com/IamMrCupp/annoybots/issues/9)) ([7c2b331](https://github.com/IamMrCupp/annoybots/commit/7c2b331e73032959927c83b4b75ac76611050886))
+* **idlerpg:** !rpg info/quest/status read commands (parity [#9](https://github.com/IamMrCupp/annoybots/issues/9)) ([1825545](https://github.com/IamMrCupp/annoybots/commit/1825545beab613abde9740acf4f69e6b232ef0f6))
+
 ## [1.10.0](https://github.com/IamMrCupp/annoybots/compare/v1.9.0...v1.10.0) (2026-06-19)
 
 
