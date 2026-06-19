@@ -185,6 +185,7 @@ func main() {
 	disp.On(event.Join, tellMgr.OnJoin) // deliver pending !message notes on join
 	if rpgMgr != nil {
 		disp.On(event.Join, rpgMgr.OnJoin)
+		disp.On(event.Present, rpgMgr.OnPresent) // NAMES-seed idlers already in-channel
 		disp.On(event.Part, rpgMgr.OnPart)
 		disp.On(event.Quit, rpgMgr.OnQuit)
 		disp.On(event.Kick, rpgMgr.OnKick)
