@@ -1,0 +1,43 @@
+# A self-contained annoybots stack for anyone NOT running Kubernetes: one bot, the
+# shared Redis it uses for state (karma, accounts, IdleRPG) + bot-to-bot coms, and
+# the read-only IdleRPG web dashboard. Bring it up with:
+#
+#   cp .env.example .env        # then fill in your tokens
+#   docker compose up -d
+#
+# Edit bot.yaml to change the bot's personality, networks, and which features are
+# on. To run a second bot, copy the `bot` service, point it at its own config, and
+# list each in the others' personality.siblings.
+services:
+  redis:
+    image: redis:7-alpine
+    # Coordination + game state only; no durable data, so it runs without saving.
+    command: ["--save", "", "--appendonly", "no"]
+    restart: unless-stopped
+
+  bot:
+    image: ghcr.io/iammrcupp/annoybots:latest
+    depends_on: [redis]
+    # Secrets (oauth tokens, SASL/NickServ passwords) come from .env — never the
+    # config. Each *_env field in bot.yaml names one of these variables.
+    env_file: [.env]
+    volumes:
+      - ./bot.yaml:/config/bot.yaml:ro
+      - bot-data:/data # persists the Markov brain + admin/runtime state
+    restart: unless-stopped
+
+  dashboard:
+    image: ghcr.io/iammrcupp/annoybots:latest
+    # Same image, different entrypoint: a read-only web view of the IdleRPG realm.
+    command: ["/dashboard"]
+    depends_on: [redis]
+    environment:
+      DASHBOARD_ADDR: ":8080"
+      REDIS_ADDR: "redis:6379"
+      STATE_PREFIX: "annoybots:state:"
+    ports:
+      - "8080:8080" # browse http://localhost:8080
+    restart: unless-stopped
+
+volumes:
+  bot-data:

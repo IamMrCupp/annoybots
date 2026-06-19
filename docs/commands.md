@@ -1,0 +1,95 @@
+# Commands
+
+Every command works the same on IRC, Twitch, and Discord. On Discord a few are
+also exposed as slash commands (noted below); the `!`-prefixed forms work
+everywhere.
+
+Most public commands write to the shared state store. That state is **persistent
+and shared across bots only when Redis is on** (`botnet.enabled: true`); without
+it, it's in-memory and resets on restart.
+
+## Public — in a channel
+
+### Quotes
+
+| Command | What it does |
+|---|---|
+| `!quote [pack]` | Random quote, optionally from a named pack. Discord: `/quote`. |
+| `!packs` | List available quote packs. Discord: `/packs`. |
+
+### Games
+
+| Command | What it does |
+|---|---|
+| `name++` / `name--` | Bump someone's karma up or down. No self-karma. |
+| `!karma [name]` | Show karma for a name (or yourself). |
+| `!top` | The karma leaderboard. |
+| `!roll [NdM]` | Roll dice — `!roll` is `1d6`, `!roll 2d20` rolls two twenty-siders. |
+| `!8ball <question>` | A magic-8-ball answer. |
+
+### IdleRPG
+
+Opt in with `!rpg`, then "play" by being present and **quiet**. Full rules in
+[idlerpg.md](idlerpg.md).
+
+| Command | What it does |
+|---|---|
+| `!rpg` | Enroll, or show your character. |
+| `!rpg status [name]` | A character sheet — yours, or a named player's. |
+| `!rpg items` (`gear`) | Your equipped items and total power. |
+| `!rpg top` | The level leaderboard. |
+| `!rpg align good\|neutral\|evil` | Set your alignment (affects combat). |
+| `!rpg class <name>` | Set your class (flavor). |
+| `!rpg info` | Realm summary: idlers online, top player, active quest. |
+| `!rpg quest` | The active quest's party, objective, and time left. |
+
+### Leave a message
+
+| Command | What it does |
+|---|---|
+| `!message <nick> <text>` | Leave a note; it's delivered when that nick is next active or rejoins. |
+
+## Accounts — in a DM
+
+Link your identities across networks so you're one character everywhere (one
+IdleRPG hero whether you idle from IRC or Discord). See [accounts.md](accounts.md).
+
+| Command | What it does |
+|---|---|
+| `!register <name> <password>` | Create an account bound to your current identity. |
+| `!link <name> <password>` | Link your current identity to an existing account. |
+| `!whoami` | Show the account your current identity resolves to. |
+| `!unlink` | Detach your current identity from its account. |
+
+## Admin — in a DM
+
+Admins are matched by **verified identity** (an IRC services/NickServ account, a
+Discord user ID, or a Twitch login), never by spoofable nick, and admin commands
+are only honored in DMs. Access is tiered by flag — owner > master > op > voice >
+friend — and each command needs a minimum flag. Configure admins in the `admin:`
+block; send `!help` for the list your flags allow.
+
+| Command | Min flag | What it does |
+|---|---|---|
+| `!help` / `!admin` | friend | List commands / show your access. |
+| `!networks` | friend | Which networks the bot is connected to (connected/offline). |
+| `!party` / `!unparty` | friend | Join/leave the partyline (cross-bot operator chat). |
+| `!say <net> <target> <text>` | op | Puppet the bot. |
+| `!act <net> <target> <text>` | op | Puppet a `/me`. |
+| `!addquote <pack> <text>` | op | Add a runtime quote. |
+| `!delquote <pack> <text>` | op | Remove a runtime-added quote (file packs are immutable). |
+| `!join <net> <#chan>` / `!part <net> <#chan>` | master | Channel ops. |
+| `!invite <net> <#chan> <nick>` | master | IRC INVITE (needs ops on `+i` channels). |
+| `!admins` | master | List admins. |
+| `!reload` | master | Re-read quote packs + skits from disk (no restart). |
+| `!addadmin <net\|*> <account>` / `!deladmin …` | owner | Manage admins. |
+
+Quote and admin changes **sync to sibling bots over the botnet bus** and persist
+to the data volume, so you only have to DM one bot. Channel control and puppeting
+stay local to the bot you DM.
+
+**Password fallback.** If a network has no services (or someone isn't logged in),
+set `admin.password_env` and an admin can `!login <password>` in a DM for a
+time-limited session (`!logout` to end it). It's keyed by nick — spoofable, so
+weaker than identity auth — with a constant-time check and a failed-attempt
+throttle. Leave `password_env` unset to disable it.

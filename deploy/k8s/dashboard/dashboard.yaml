@@ -1,0 +1,79 @@
+# Read-only IdleRPG web dashboard. The same annoybots image with the entrypoint
+# overridden to /dashboard; it only reads the shared Redis (rankings + the active
+# quest), so it carries no secrets and runs with a read-only root filesystem.
+#
+# Reach it with a port-forward:
+#   kubectl -n annoybots port-forward svc/rpg-dashboard 8080:80
+# or point an Ingress at the Service if you want it public.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rpg-dashboard
+  labels:
+    app.kubernetes.io/name: annoybot-dashboard
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: annoybot-dashboard
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: annoybot-dashboard
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: dashboard
+          image: ghcr.io/iammrcupp/annoybots:latest
+          command: ["/dashboard"]
+          env:
+            - name: DASHBOARD_ADDR
+              value: ":8080"
+            - name: REDIS_ADDR
+              value: "redis:6379"
+            - name: STATE_PREFIX
+              value: "annoybots:state:"
+          ports:
+            - name: http
+              containerPort: 8080
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 3
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 3
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              cpu: 100m
+              memory: 64Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rpg-dashboard
+  labels:
+    app.kubernetes.io/name: annoybot-dashboard
+spec:
+  selector:
+    app.kubernetes.io/name: annoybot-dashboard
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
