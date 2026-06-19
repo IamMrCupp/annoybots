@@ -185,8 +185,10 @@ func main() {
 	disp.On(event.Join, tellMgr.OnJoin) // deliver pending !message notes on join
 	if rpgMgr != nil {
 		disp.On(event.Join, rpgMgr.OnJoin)
-		disp.On(event.Part, rpgMgr.OnLeave)
-		disp.On(event.Quit, rpgMgr.OnLeave)
+		disp.On(event.Part, rpgMgr.OnPart)
+		disp.On(event.Quit, rpgMgr.OnQuit)
+		disp.On(event.Kick, rpgMgr.OnKick)
+		disp.On(event.Nick, rpgMgr.OnNick)
 	}
 
 	if len(ircNets) > 0 {
