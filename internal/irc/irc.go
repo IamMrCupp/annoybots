@@ -428,6 +428,17 @@ func (m *Manager) Wait() { m.wg.Wait() }
 // Networks returns the names of the networks this transport owns.
 func (m *Manager) Networks() []string { return m.order }
 
+// NetworkStatus reports each network's live connection state.
+func (m *Manager) NetworkStatus() map[string]bool {
+	out := make(map[string]bool, len(m.order))
+	for _, name := range m.order {
+		if c, ok := m.conns[name]; ok {
+			out[name] = c.ic.Connected()
+		}
+	}
+	return out
+}
+
 // Join makes the bot join a channel on the given network.
 func (m *Manager) Join(network, channel string) {
 	if c, ok := m.conns[network]; ok {

@@ -97,7 +97,7 @@ func (m *Manager) has(msg engine.Message, flag byte) bool {
 // commands default to master.
 var cmdFlags = map[string]byte{
 	"!help": flagFriend, "!admin": flagFriend,
-	"!party": flagFriend, "!unparty": flagFriend,
+	"!party": flagFriend, "!unparty": flagFriend, "!networks": flagFriend,
 	"!say": flagOp, "!act": flagOp,
 	"!addquote": flagOp, "!delquote": flagOp,
 	"!join": flagMaster, "!part": flagMaster, "!invite": flagMaster,

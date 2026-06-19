@@ -44,6 +44,9 @@ func (f *fakeControl) Action(n, t, x string)    { f.record("ACT " + n + " " + t 
 func (f *fakeControl) Join(n, c string)         { f.record("JOIN " + n + " " + c) }
 func (f *fakeControl) Part(n, c string)         { f.record("PART " + n + " " + c) }
 func (f *fakeControl) Invite(n, nick, c string) { f.record("INVITE " + n + " " + nick + " " + c) }
+func (f *fakeControl) NetworkStatus() map[string]bool {
+	return map[string]bool{"testnet": true, "discord": false}
+}
 func (f *fakeControl) last() string {
 	f.mu.Lock()
 	defer f.mu.Unlock()
@@ -96,6 +99,15 @@ func TestPublicCommandIgnored(t *testing.T) {
 	pub.Private = false
 	if m.Handle(context.Background(), pub) {
 		t.Fatal("admin commands must be ignored outside DMs")
+	}
+}
+
+func TestNetworksCommand(t *testing.T) {
+	c := &fakeControl{}
+	m := New("arywen", bossConfig(), "", &fakeQuoter{}, c, nil, quietLog())
+	m.Handle(context.Background(), dm("boss", "!networks"))
+	if !strings.Contains(c.last(), "testnet (connected)") || !strings.Contains(c.last(), "discord (offline)") {
+		t.Fatalf("expected network status, got %q", c.last())
 	}
 }
 

@@ -20,6 +20,7 @@ type Transport interface {
 	Part(network, channel string)
 	Invite(network, nick, channel string)
 	Networks() []string
+	NetworkStatus() map[string]bool // network -> connected
 	Run(ctx context.Context)
 	Quit()
 	Wait()
@@ -107,6 +108,17 @@ func (r *Router) Wait() {
 	for _, t := range r.transports {
 		t.Wait()
 	}
+}
+
+// NetworkStatus aggregates every network's connection state across transports.
+func (r *Router) NetworkStatus() map[string]bool {
+	out := map[string]bool{}
+	for _, t := range r.transports {
+		for n, up := range t.NetworkStatus() {
+			out[n] = up
+		}
+	}
+	return out
 }
 
 // AnyConnected reports whether any transport has a live connection.
