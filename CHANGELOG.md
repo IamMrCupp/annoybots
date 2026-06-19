@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.9.0](https://github.com/IamMrCupp/annoybots/compare/v1.8.0...v1.9.0) (2026-06-19)
+
+
+### Features
+
+* **admin:** !networks — show connected networks + status ([0b72a48](https://github.com/IamMrCupp/annoybots/commit/0b72a48d5b9322c6abff13f7f5c1bfebebe7c039))
+* **admin:** !networks command ([744f26d](https://github.com/IamMrCupp/annoybots/commit/744f26dda4b354d8e855f0a8a699ac55afac81e4))
+* **idlerpg:** leave penalties (parity [#5](https://github.com/IamMrCupp/annoybots/issues/5)) ([6375009](https://github.com/IamMrCupp/annoybots/commit/6375009ce2188f461ac1f171b2eca93d65916170))
+* **idlerpg:** part/quit/nick/kick penalties (+ dispatch NICK/KICK events) ([799157f](https://github.com/IamMrCupp/annoybots/commit/799157f4e25c6255e924b3d95d22bae77075e496))
+
 ## [1.8.0](https://github.com/IamMrCupp/annoybots/compare/v1.7.0...v1.8.0) (2026-06-18)
 
 
