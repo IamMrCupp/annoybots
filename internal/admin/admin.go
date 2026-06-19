@@ -31,6 +31,7 @@ type Control interface {
 	Join(network, channel string)
 	Part(network, channel string)
 	Invite(network, nick, channel string)
+	NetworkStatus() map[string]bool
 }
 
 // Identity is an admin's verified identity on a network. A blank Network matches

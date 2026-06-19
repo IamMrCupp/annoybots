@@ -3,6 +3,7 @@ package admin
 import (
 	"context"
 	"crypto/subtle"
+	"sort"
 	"strings"
 
 	"github.com/IamMrCupp/annoybots/internal/botnet"
@@ -20,6 +21,7 @@ var adminCommands = map[string]bool{
 	"!addadmin": true, "!deladmin": true, "!admins": true,
 	"!reload": true,
 	"!party":  true, "!unparty": true,
+	"!networks": true,
 }
 
 // Handle processes a potential admin command. It only acts on DMs. Returns true
@@ -203,6 +205,27 @@ func (m *Manager) exec(_ context.Context, msg engine.Message, cmd string, fields
 
 	case "!admins":
 		m.reply(msg, "admins: "+m.adminList())
+
+	case "!networks":
+		st := m.ctl.NetworkStatus()
+		if len(st) == 0 {
+			m.reply(msg, "no networks configured.")
+			return
+		}
+		names := make([]string, 0, len(st))
+		for n := range st {
+			names = append(names, n)
+		}
+		sort.Strings(names)
+		parts := make([]string, 0, len(names))
+		for _, n := range names {
+			status := "offline"
+			if st[n] {
+				status = "connected"
+			}
+			parts = append(parts, n+" ("+status+")")
+		}
+		m.reply(msg, "networks: "+strings.Join(parts, ", "))
 
 	case "!reload":
 		if m.reload == nil {

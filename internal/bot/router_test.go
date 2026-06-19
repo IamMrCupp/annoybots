@@ -32,6 +32,13 @@ func (f *fakeTransport) Run(context.Context) {}
 func (f *fakeTransport) Quit()               {}
 func (f *fakeTransport) Wait()               {}
 func (f *fakeTransport) AnyConnected() bool  { return f.connected }
+func (f *fakeTransport) NetworkStatus() map[string]bool {
+	out := map[string]bool{}
+	for _, n := range f.networks {
+		out[n] = f.connected
+	}
+	return out
+}
 
 func TestRouterDispatchesByNetwork(t *testing.T) {
 	ircT := &fakeTransport{networks: []string{"libera", "testnet"}}

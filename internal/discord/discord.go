@@ -173,6 +173,17 @@ func (c *Client) Action(network, target, text string) {
 // Networks returns the names of the Discord networks this client owns.
 func (c *Client) Networks() []string { return c.order }
 
+// NetworkStatus reports each Discord network's session-ready state.
+func (c *Client) NetworkStatus() map[string]bool {
+	out := make(map[string]bool, len(c.order))
+	for _, name := range c.order {
+		if s, ok := c.sessions[name]; ok {
+			out[name] = s.dg.DataReady
+		}
+	}
+	return out
+}
+
 // Join is not applicable on Discord (the bot is present in channels of guilds it
 // was invited to); it logs and no-ops so the Transport interface is satisfied.
 func (c *Client) Join(network, channel string) { c.unsupported(network, "join", channel) }
