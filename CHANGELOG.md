@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.10.0](https://github.com/IamMrCupp/annoybots/compare/v1.9.0...v1.10.0) (2026-06-19)
+
+
+### Features
+
+* **idlerpg:** NAMES-seed presence (parity [#6](https://github.com/IamMrCupp/annoybots/issues/6)) ([16de217](https://github.com/IamMrCupp/annoybots/commit/16de217d99eca8dc2ffb344a33b5fe7cef0a652c))
+* **idlerpg:** NAMES-seed presence so idlers resume after a bot restart ([81bfb36](https://github.com/IamMrCupp/annoybots/commit/81bfb36cb0cb4b614832f82a36ab453fdbf173c6))
+* **idlerpg:** timed quests — gods draft idlers; talk/leave ruins it (parity [#7](https://github.com/IamMrCupp/annoybots/issues/7)) ([32251b1](https://github.com/IamMrCupp/annoybots/commit/32251b1159fb48d99deb758176c54ba70d92c012))
+* **idlerpg:** timed quests (parity [#7](https://github.com/IamMrCupp/annoybots/issues/7)) ([e2fc675](https://github.com/IamMrCupp/annoybots/commit/e2fc67578be2e3eb75cc71a4b3ccc5c2f198f5ca))
+
 ## [1.9.0](https://github.com/IamMrCupp/annoybots/compare/v1.8.0...v1.9.0) (2026-06-19)
 
 
