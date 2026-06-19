@@ -396,6 +396,57 @@ func TestQuestRehydratesAcrossRestart(t *testing.T) {
 	}
 }
 
+func TestInfoCommand(t *testing.T) {
+	m, r, _ := newMgr()
+	enrollOnline(m, "alice")
+	m.Handle(chanMsg("alice", "!rpg info"))
+	if !strings.Contains(r.last(), "idling now") || !strings.Contains(r.last(), "no quest") {
+		t.Fatalf("info should summarize the realm, got %q", r.last())
+	}
+	m.startQuest(context.Background()) // needs 2 — won't start with one
+	enrollOnline(m, "bob")             // now two online
+	m.startQuest(context.Background()) // start a real quest
+	m.Handle(chanMsg("bob", "!rpg info"))
+	if !strings.Contains(r.last(), "quest is underway") {
+		t.Fatalf("info should report the active quest, got %q", r.last())
+	}
+}
+
+func TestQuestStatusCommand(t *testing.T) {
+	m, r, _ := newMgr()
+	m.Handle(chanMsg("alice", "!rpg quest"))
+	if !strings.Contains(r.last(), "no quest underway") {
+		t.Fatalf("expected no-quest reply, got %q", r.last())
+	}
+	enrollOnline(m, "alice")
+	enrollOnline(m, "bob")
+	m.startQuest(context.Background())
+	m.Handle(chanMsg("alice", "!rpg quest"))
+	if !strings.Contains(r.last(), "quest in progress") {
+		t.Fatalf("expected active-quest detail, got %q", r.last())
+	}
+}
+
+func TestStatusCommand(t *testing.T) {
+	m, r, _ := newMgr()
+	enrollOnline(m, "alice")
+	// self
+	m.Handle(chanMsg("alice", "!rpg status"))
+	if !strings.Contains(r.last(), "alice the") || !strings.Contains(r.last(), "power 0") {
+		t.Fatalf("self status wrong: %q", r.last())
+	}
+	// a named other
+	m.Handle(chanMsg("bob", "!rpg status alice"))
+	if !strings.Contains(r.last(), "alice the") {
+		t.Fatalf("named status wrong: %q", r.last())
+	}
+	// an unknown player
+	m.Handle(chanMsg("bob", "!rpg status ghost"))
+	if !strings.Contains(r.last(), "isn't playing") {
+		t.Fatalf("unknown status should say not playing, got %q", r.last())
+	}
+}
+
 func TestLeaderboard(t *testing.T) {
 	m, r, _ := newMgr()
 	m.Handle(chanMsg("alice", "!rpg"))

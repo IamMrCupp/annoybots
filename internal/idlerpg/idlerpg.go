@@ -157,6 +157,15 @@ func (m *Manager) command(msg engine.Message, fields []string) {
 		case "class":
 			m.setClass(msg, fields)
 			return
+		case "info":
+			m.out.Say(msg.Network, msg.Channel, m.info())
+			return
+		case "quest":
+			m.out.Say(msg.Network, msg.Channel, m.questStatus())
+			return
+		case "status":
+			m.out.Say(msg.Network, msg.Channel, m.status(msg, fields))
+			return
 		}
 	}
 	ctx := context.Background()
@@ -274,6 +283,68 @@ func (m *Manager) leaderboard() string {
 		parts = append(parts, fmt.Sprintf("%s (lvl %d)", e.Member, e.Score))
 	}
 	return "top idlers: " + strings.Join(parts, ", ")
+}
+
+// info renders a one-line realm summary: how many idlers are online, who's on
+// top, and whether a quest is afoot.
+func (m *Manager) info() string {
+	m.mu.Lock()
+	online := len(m.online)
+	m.mu.Unlock()
+
+	lead := "nobody yet"
+	if top, err := m.store.ZTop(context.Background(), boardKey(), 1); err == nil && len(top) > 0 {
+		lead = fmt.Sprintf("%s (lvl %d)", top[0].Member, top[0].Score)
+	}
+
+	quest := "no quest underway"
+	m.qmu.Lock()
+	if q := m.quest; q != nil {
+		left := q.Deadline - m.now().Unix()
+		quest = fmt.Sprintf("a quest is underway — %d on it, %s left", len(q.Members), dur(left))
+	}
+	m.qmu.Unlock()
+
+	return fmt.Sprintf("the realm: %d idling now · top idler %s · %s.", online, lead, quest)
+}
+
+// questStatus describes the active quest, or says there isn't one.
+func (m *Manager) questStatus() string {
+	m.qmu.Lock()
+	q := m.quest
+	m.qmu.Unlock()
+	if q == nil {
+		return "no quest underway. keep idling — the gods call the worthy when they please."
+	}
+	left := q.Deadline - m.now().Unix()
+	return fmt.Sprintf("⚔️ quest in progress: %s must %s. %s remaining — one peep or departure and it's ruined.",
+		strings.Join(questNicks(q), ", "), q.Desc, dur(left))
+}
+
+// status reports a player's sheet — the sender's own, or a named other's.
+func (m *Manager) status(msg engine.Message, fields []string) string {
+	ctx := context.Background()
+	name := msg.Nick
+	var pkey string
+	if len(fields) >= 3 {
+		name = fields[2]
+		pkey = m.resolve(msg.Network, "", name) // a named other: resolve by nick
+	} else {
+		pkey = m.resolve(msg.Network, msg.Account, msg.Nick) // self
+	}
+	sheet, err := m.store.HGetAll(ctx, sheetKey(pkey))
+	if err != nil {
+		return "the realm is unreachable right now."
+	}
+	if _, ok := sheet["level"]; !ok {
+		return name + " isn't playing. !rpg to start the grind."
+	}
+	desc := alignName(sheet["align"])
+	if class, _ := m.store.GetStr(ctx, classKey(pkey)); class != "" {
+		desc += " " + class
+	}
+	return fmt.Sprintf("%s the %s — level %d, %s to the next · power %d.",
+		name, desc, sheet["level"], dur(sheet["ttl"]), itemSum(sheet))
 }
 
 // OnJoin marks an enrolled player online when they (re)appear in a channel.
