@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.12.0](https://github.com/IamMrCupp/annoybots/compare/v1.11.0...v1.12.0) (2026-06-19)
+
+
+### Features
+
+* **idlerpg:** read-only web dashboard — rankings + live quest (parity [#10](https://github.com/IamMrCupp/annoybots/issues/10)) ([1b7f397](https://github.com/IamMrCupp/annoybots/commit/1b7f3974c0c4a797e3f107cb879d320a944ba021))
+* **idlerpg:** read-only web dashboard (parity [#10](https://github.com/IamMrCupp/annoybots/issues/10)) ([5645adb](https://github.com/IamMrCupp/annoybots/commit/5645adb65301f578e56697c87363ae2ef66d0422))
+
 ## [1.11.0](https://github.com/IamMrCupp/annoybots/compare/v1.10.0...v1.11.0) (2026-06-19)
 
 
