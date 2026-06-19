@@ -42,7 +42,8 @@ func newMgr() (*Manager, *recorder, state.Store) {
 	st := state.NewMem()
 	log := slog.New(slog.NewTextHandler(io.Discard, nil))
 	// 1s tick, 1s base ttl → one quiet tick levels you up. nil resolver = key by network|nick.
-	m := New(st, r, nil, time.Second, time.Second, log)
+	// Long quest interval so quests never start unless a test forces one.
+	m := New(st, r, nil, time.Second, time.Second, time.Hour, time.Hour, log)
 	m.rng = rand.New(rand.NewSource(1)) // deterministic for item rolls
 	return m, r, st
 }
@@ -282,6 +283,116 @@ func TestPresenceIgnoresUnenrolled(t *testing.T) {
 	m.OnPresent(event.Event{Kind: event.Present, Network: "net", Channel: "#chan", Nick: "stranger"})
 	if _, ok := m.onlinePlayer("net", "stranger"); ok {
 		t.Fatal("a non-enrolled nick must not be marked online by a NAMES seed")
+	}
+}
+
+// enrollOnline enrolls a player and leaves them online (via the !rpg path).
+func enrollOnline(m *Manager, nick string) { m.Handle(chanMsg(nick, "!rpg")) }
+
+func TestQuestStartAndComplete(t *testing.T) {
+	m, r, st := newMgr()
+	ctx := context.Background()
+	base := time.Unix(1000, 0)
+	m.now = func() time.Time { return base }
+	enrollOnline(m, "alice")
+	enrollOnline(m, "bob")
+
+	m.startQuest(ctx)
+	if m.quest == nil {
+		t.Fatal("a quest should have started with two idlers online")
+	}
+	if !r.has("a quest begins") {
+		t.Fatalf("expected quest announcement, got %v", r.lines)
+	}
+	st.HSet(ctx, sheetKey("net|alice"), "ttl", 1000)
+	st.HSet(ctx, sheetKey("net|bob"), "ttl", 1000)
+
+	// Roll the clock past the deadline; the tick completes the quest.
+	m.now = func() time.Time { return base.Add(2 * time.Hour) }
+	m.questTick(ctx)
+	if m.quest != nil {
+		t.Fatal("quest should be cleared after completion")
+	}
+	if !r.has("quest is complete") {
+		t.Fatalf("expected completion announcement, got %v", r.lines)
+	}
+	if s, _ := st.HGetAll(ctx, sheetKey("net|alice")); s["ttl"] >= 1000 {
+		t.Fatalf("completing a quest should lower ttl, got %d", s["ttl"])
+	}
+}
+
+func TestQuestFailsOnTalk(t *testing.T) {
+	m, r, st := newMgr()
+	ctx := context.Background()
+	enrollOnline(m, "alice")
+	enrollOnline(m, "bob")
+	m.startQuest(ctx)
+	st.HSet(ctx, sheetKey("net|bob"), "ttl", 1000)
+
+	if m.Handle(chanMsg("alice", "oops I talked")) {
+		t.Fatal("chatter is not a consumed command")
+	}
+	if m.quest != nil {
+		t.Fatal("talking during a quest must ruin it")
+	}
+	if !r.has("quest is RUINED") {
+		t.Fatalf("expected ruin announcement, got %v", r.lines)
+	}
+	// The silent partner still eats the party-wide penalty.
+	if s, _ := st.HGetAll(ctx, sheetKey("net|bob")); s["ttl"] <= 1000 {
+		t.Fatalf("a ruined quest should push the whole party back, bob ttl=%d", s["ttl"])
+	}
+}
+
+func TestQuestFailsOnPart(t *testing.T) {
+	m, _, _ := newMgr()
+	ctx := context.Background()
+	enrollOnline(m, "alice")
+	enrollOnline(m, "bob")
+	m.startQuest(ctx)
+	m.OnPart(event.Event{Kind: event.Part, Network: "net", Nick: "alice"})
+	if m.quest != nil {
+		t.Fatal("a quester parting must ruin the quest")
+	}
+}
+
+func TestQuestNeedsAParty(t *testing.T) {
+	m, _, _ := newMgr()
+	enrollOnline(m, "alice") // only one idler online
+	m.startQuest(context.Background())
+	if m.quest != nil {
+		t.Fatal("a quest should not start with fewer than two idlers")
+	}
+}
+
+func TestQuestTickStartsOnOdds(t *testing.T) {
+	m, _, _ := newMgr()
+	m.questInterval = m.interval // denom == 1 → a start is attempted every tick
+	enrollOnline(m, "alice")
+	enrollOnline(m, "bob")
+	m.questTick(context.Background())
+	if m.quest == nil {
+		t.Fatal("questTick should start a quest when the odds guarantee it")
+	}
+}
+
+func TestQuestRehydratesAcrossRestart(t *testing.T) {
+	m1, _, st := newMgr()
+	ctx := context.Background()
+	enrollOnline(m1, "alice")
+	enrollOnline(m1, "bob")
+	m1.startQuest(ctx)
+	if m1.quest == nil {
+		t.Fatal("setup: quest should be active")
+	}
+	// A fresh manager on the same store must recover the in-flight quest.
+	log := slog.New(slog.NewTextHandler(io.Discard, nil))
+	m2 := New(st, &recorder{}, nil, time.Second, time.Second, time.Hour, time.Hour, log)
+	if m2.quest == nil {
+		t.Fatal("quest should rehydrate from the store after a restart")
+	}
+	if len(m2.quest.Members) != 2 {
+		t.Fatalf("recovered party size = %d; want 2", len(m2.quest.Members))
 	}
 }
 

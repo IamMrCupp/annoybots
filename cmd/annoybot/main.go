@@ -92,7 +92,8 @@ func main() {
 	// IdleRPG — off by default; persists to the shared state store, keyed by account.
 	var rpgMgr *idlerpg.Manager
 	if cfg.IdleRPG.Enabled {
-		rpgMgr = idlerpg.New(store, router, acctMgr.Resolve, cfg.IdleRPG.Interval.D(), cfg.IdleRPG.BaseTTL.D(), log)
+		rpgMgr = idlerpg.New(store, router, acctMgr.Resolve, cfg.IdleRPG.Interval.D(), cfg.IdleRPG.BaseTTL.D(),
+			cfg.IdleRPG.QuestInterval.D(), cfg.IdleRPG.QuestDuration.D(), log)
 	}
 
 	// Optional inter-bot bus + skit coordinator (the "botnet").
