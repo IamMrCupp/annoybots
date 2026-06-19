@@ -212,6 +212,54 @@ func TestAlignRequiresEnroll(t *testing.T) {
 	}
 }
 
+func TestLeavePenalties(t *testing.T) {
+	cases := []struct {
+		name    string
+		ev      event.Event
+		penalty int64
+	}{
+		{"part", event.Event{Kind: event.Part, Network: "net", Nick: "alice"}, partPenalty},
+		{"quit", event.Event{Kind: event.Quit, Network: "net", Nick: "alice"}, quitPenalty},
+		{"kick", event.Event{Kind: event.Kick, Network: "net", Nick: "alice"}, kickPenalty},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			m, _, st := newMgr()
+			ctx := context.Background()
+			m.Handle(chanMsg("alice", "!rpg"))
+			st.HSet(ctx, sheetKey("net|alice"), "ttl", 1000)
+			switch c.ev.Kind {
+			case event.Part:
+				m.OnPart(c.ev)
+			case event.Quit:
+				m.OnQuit(c.ev)
+			case event.Kick:
+				m.OnKick(c.ev)
+			}
+			if s, _ := st.HGetAll(ctx, sheetKey("net|alice")); s["ttl"] != 1000+c.penalty {
+				t.Fatalf("%s: ttl = %d; want %d", c.name, s["ttl"], 1000+c.penalty)
+			}
+		})
+	}
+}
+
+func TestNickPenaltyAndFollow(t *testing.T) {
+	m, _, st := newMgr()
+	ctx := context.Background()
+	m.Handle(chanMsg("alice", "!rpg"))
+	st.HSet(ctx, sheetKey("net|alice"), "ttl", 1000)
+	m.OnNick(event.Event{Kind: event.Nick, Network: "net", Nick: "alice", Text: "alice2"})
+	if s, _ := st.HGetAll(ctx, sheetKey("net|alice")); s["ttl"] != 1000+nickPenalty {
+		t.Fatalf("nick penalty: ttl = %d; want %d", s["ttl"], 1000+nickPenalty)
+	}
+	if _, ok := m.onlinePlayer("net", "alice2"); !ok {
+		t.Fatal("player should follow to the new nick")
+	}
+	if _, ok := m.onlinePlayer("net", "alice"); ok {
+		t.Fatal("old nick should no longer be online")
+	}
+}
+
 func TestLeaderboard(t *testing.T) {
 	m, r, _ := newMgr()
 	m.Handle(chanMsg("alice", "!rpg"))

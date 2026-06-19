@@ -271,7 +271,59 @@ func (m *Manager) OnJoin(ev event.Event) {
 	}
 }
 
-// OnLeave takes a player offline (they stop progressing) on part/quit.
+// Penalties (seconds added to time-to-level) for abandoning the idle, idlerpg.net-style.
+const (
+	partPenalty = 200
+	quitPenalty = 20
+	nickPenalty = 30
+	kickPenalty = 250
+)
+
+// penalizeOnline adds secs to an online player's clock.
+func (m *Manager) penalizeOnline(network, nick string, secs int64) {
+	if p, ok := m.onlinePlayer(network, nick); ok {
+		_, _ = m.store.HIncr(context.Background(), sheetKey(p.key), "ttl", secs)
+	}
+}
+
+// OnPart / OnQuit / OnKick penalize then take the player offline.
+func (m *Manager) OnPart(ev event.Event) {
+	if ev.Kind == event.Part {
+		m.penalizeOnline(ev.Network, ev.Nick, partPenalty)
+		m.OnLeave(ev)
+	}
+}
+
+func (m *Manager) OnQuit(ev event.Event) {
+	if ev.Kind == event.Quit {
+		m.penalizeOnline(ev.Network, ev.Nick, quitPenalty)
+		m.OnLeave(ev)
+	}
+}
+
+func (m *Manager) OnKick(ev event.Event) {
+	if ev.Kind == event.Kick {
+		m.penalizeOnline(ev.Network, ev.Nick, kickPenalty)
+		m.OnLeave(ev)
+	}
+}
+
+// OnNick penalizes a nick change and follows the player to their new nick.
+func (m *Manager) OnNick(ev event.Event) {
+	if ev.Kind != event.Nick {
+		return
+	}
+	m.penalizeOnline(ev.Network, ev.Nick, nickPenalty)
+	m.mu.Lock()
+	if p, ok := m.online[okey(ev.Network, ev.Nick)]; ok {
+		delete(m.online, okey(ev.Network, ev.Nick))
+		p.nick = ev.Text
+		m.online[okey(ev.Network, ev.Text)] = p
+	}
+	m.mu.Unlock()
+}
+
+// OnLeave takes a player offline (they stop progressing) without a penalty.
 func (m *Manager) OnLeave(ev event.Event) {
 	m.mu.Lock()
 	delete(m.online, okey(ev.Network, ev.Nick))

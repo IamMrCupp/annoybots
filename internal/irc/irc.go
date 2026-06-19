@@ -233,11 +233,17 @@ func (m *Manager) bind(c *conn) {
 		}
 	})
 	ic.AddCallback("NICK", func(e ircmsg.Message) {
+		if len(e.Params) >= 1 {
+			m.emit(event.Event{Kind: event.Nick, Network: c.cfg.Name, Nick: e.Nick(), Text: e.Params[0]})
+		}
 		if c.keeper != nil && len(e.Params) >= 1 {
 			c.keeper.onNick(e.Nick(), e.Params[0])
 		}
 	})
 	ic.AddCallback("KICK", func(e ircmsg.Message) {
+		if len(e.Params) >= 2 {
+			m.emit(event.Event{Kind: event.Kick, Network: c.cfg.Name, Channel: e.Params[0], Nick: e.Params[1], Actor: e.Nick()})
+		}
 		if c.keeper != nil && len(e.Params) >= 2 {
 			c.keeper.onLeave(e.Params[0], e.Params[1])
 		}
