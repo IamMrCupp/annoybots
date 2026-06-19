@@ -1,0 +1,98 @@
+# A minimal, working single-bot config for the Docker Compose stack. It turns on
+# the shared Redis state store (so karma, accounts, and IdleRPG persist and survive
+# restarts), the IdleRPG game, and the admin console. Trim or extend to taste.
+#
+# Secrets are NEVER stored here — each *_env field names a variable from .env.
+# For the full set of options, see ../../configs/echo.yaml (every feature, all
+# three platforms) and ../../docs/.
+
+bot: annoybot
+
+health:
+  addr: ":8080"
+
+brain:
+  path: "/data/brain.gob"
+  save_every: "5m"
+
+# Redis powers two things: the bot-to-bot bus AND the shared state store that
+# karma/accounts/IdleRPG persist to. With this enabled they're durable and shared
+# across bots; disable it and that state falls back to in-memory (lost on restart).
+botnet:
+  enabled: true
+  redis_addr: "redis:6379"
+  redis_password_env: "REDIS_PASSWORD" # unset in .env for the bundled auth-less Redis
+  channel: "annoybots"
+
+# IdleRPG — the idle game. Players opt in with !rpg, then "play" by staying present
+# and quiet. See ../../docs/idlerpg.md. The dashboard service renders the realm.
+idlerpg:
+  enabled: true
+  interval: "60s"        # how often the game ticks
+  base_ttl: "5m"         # time from level 0 to 1 (grows ~1.16x per level)
+  quest_interval: "6h"   # average gap between quests (drop to ~15m to watch one fire)
+  quest_duration: "1h"   # how long a quest runs
+
+# Chat admin console. DM the bot to run commands (!help). Admins are matched by
+# VERIFIED identity (services account / Discord user ID / Twitch login), never by
+# spoofable nick, and only in DMs.
+admin:
+  enabled: true
+  state_path: "/data/admin.json"
+  password_env: "ADMIN_PASSWORD" # optional !login fallback; unset to disable
+  session_ttl: "30m"
+  admins:
+    - network: libera
+      account: "YOUR_NICKSERV_ACCOUNT"
+    - network: discord
+      account: "YOUR_DISCORD_USER_ID"
+
+networks:
+  # An IRC network with SASL. Delete or duplicate as needed.
+  - name: libera
+    server: "irc.libera.chat:6697"
+    tls: true
+    nick: "annoybot"
+    sasl: true
+    sasl_user: "annoybot"
+    sasl_pass_env: "LIBERA_SASL"
+    channels: ["#yourchannel"]
+
+  # Discord. Bot token only (no nick/server). Needs the MESSAGE CONTENT intent.
+  - name: discord
+    kind: discord
+    password_env: "DISCORD_TOKEN"
+    guilds: ["YOUR_GUILD_ID"] # for instant slash commands
+    channels: []              # empty = everywhere it can see
+
+personality:
+  name: "annoybot"
+  commands: true
+  siblings: [] # list other bots here if you run more than one
+
+  triggers:
+    - name: greeting
+      pattern: "(?i)\\b(hello|hi|hey)\\b"
+      chance: 0.4
+      cooldown: "45s"
+      responses:
+        - "hey {nick}."
+        - "oh good, {nick} is here."
+
+  interjections:
+    enabled: true
+    chance: 0.03
+    cooldown: "3m"
+    lines:
+      - "is this thing on?"
+      - "carry on."
+
+  quotes:
+    enabled: true
+    command: true # !quote / !packs (starter packs are baked into the image)
+
+  markov:
+    enabled: true
+    learn: true
+    order: 2
+    max_words: 30

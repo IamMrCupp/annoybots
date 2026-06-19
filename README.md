@@ -19,17 +19,33 @@ triggers, and voice. The repo ships two example personalities, **Echo** and
 - **A learning "brain"** — an order-N Markov chain that learns from channel chatter and babbles it back, mangled. It persists to disk so learning survives restarts (just like the BMotion babble everyone remembers, minus the abandoned TCL stack).
 - **Multi-network in one process** — IRC + Twitch share the same wire protocol; Twitch just needs CAP negotiation, an `oauth:` token, and tighter rate limits, all handled automatically. Discord rides alongside on the same engine.
 - **Many bots, one binary** — personality is config, not code, so a new bot is a new YAML file (and a pod), never a fork.
+- **Games & toys** — karma (`name++` / `name--` / `!karma` / `!top`), `!roll`, `!8ball`, and a full **[IdleRPG](docs/idlerpg.md)** (idle to level, items, battles, random events, alignment/classes, and timed party **quests**) with a read-only **web dashboard**.
+- **Cross-network accounts** — `!register` / `!link` so one person is one identity (and one IdleRPG hero) whether they're on IRC or Discord. See [docs/accounts.md](docs/accounts.md).
+- **Leave a message** — `!message <nick> <text>`, delivered when they're next around.
+- **Channel keeping** — eggdrop-style: an opped bot keeps its sibling bots opped.
+- **Chat admin console** — DM the bot to puppet it, edit quotes, manage channels and admins; identity-authenticated, tiered by access flag.
+
+For the full command list see **[docs/commands.md](docs/commands.md)**.
 
 ## Layout
 
 ```
 cmd/annoybot         entrypoint
+cmd/dashboard        read-only IdleRPG web dashboard (separate binary, same image)
 internal/engine      annoyance engine (triggers, interjections, quotes, commands)
 internal/markov      persistent Markov "brain"
 internal/bot         transport router (fans replies back to the right platform)
 internal/botnet      inter-bot bus (Redis pub/sub) + skit coordinator
+internal/event       transport-agnostic event dispatcher (joins/parts/quits/…)
+internal/state       shared state store (Redis or in-memory) for karma/accounts/IdleRPG
 internal/irc         IRC/Twitch transport (ergochat/irc-go) + per-network rate limiting
 internal/discord     Discord transport (bwmarrin/discordgo) + slash commands
+internal/admin       chat admin console (identity auth, access flags, partyline)
+internal/games       karma, !roll, !8ball
+internal/idlerpg     the IdleRPG game
+internal/rpgweb      HTML rendering for the dashboard
+internal/account     cross-network identity linking
+internal/tell        "!message <nick>" deferred delivery
 internal/ratelimit   token-bucket limiter (Twitch-aware)
 internal/cooldown    per-channel cooldown tracking
 internal/config      YAML config loading, validation, quote-pack loading
@@ -37,10 +53,27 @@ internal/health      /healthz + /readyz for Kubernetes probes
 configs/             echo.yaml, mimic.yaml — example personalities (+ networks)
 data/quotes/         starter quote packs
 data/skits.yaml      shared multi-bot skit scripts
-deploy/k8s/          kustomize base + per-bot overlays
+deploy/compose/      Docker Compose stack (no Kubernetes needed)
+deploy/k8s/          kustomize base + per-bot overlays + the dashboard
+docs/                command, IdleRPG, and accounts reference
 ```
 
-## Run locally
+## Quick start (Docker Compose)
+
+No Kubernetes required. The [`deploy/compose`](deploy/compose) stack runs a bot,
+the Redis it uses for state, and the IdleRPG dashboard:
+
+```sh
+cd deploy/compose
+cp .env.example .env          # fill in your tokens
+$EDITOR bot.yaml              # set your networks, channels, admins
+docker compose up -d
+```
+
+The dashboard comes up at <http://localhost:8080>. See
+[`deploy/compose/README.md`](deploy/compose/README.md) for the details.
+
+## Run locally (from source)
 
 ```sh
 # Export the secrets your config references first, e.g.:
@@ -62,6 +95,12 @@ stored in the config** — each `*_env` field names an environment variable
 (populated from a Kubernetes Secret) that holds the actual token or password.
 Start from `configs/echo.yaml` or `configs/mimic.yaml`; both exercise every
 feature and all three platforms.
+
+**State persistence.** Karma, accounts, and IdleRPG live in a shared state store.
+That store is **Redis when `botnet.enabled: true`** — so state persists across
+restarts and is shared across all your bots — and **in-memory otherwise** (handy
+for a quick local run, but it resets when the process stops). The Docker Compose
+stack and the k8s `deploy/k8s/redis` both stand Redis up for you.
 
 ### Add a bot
 
@@ -145,8 +184,9 @@ IRC services/NickServ account, a Discord user ID, or a Twitch login — never by
 spoofable nick, and commands are only honored in DMs. Configure admins in the
 `admin:` block of each bot's config.
 
-Commands (send `!help` for the list):
+Commands (send `!help` for the list; full reference in [docs/commands.md](docs/commands.md)):
 
+- `!networks` — which networks the bot is currently connected to
 - `!join <net> <#chan>` / `!part <net> <#chan>` — channel ops
 - `!invite <net> <#chan> <nick>` — IRC INVITE (bot needs ops on `+i` channels)
 - `!say <net> <target> <text>` / `!act <net> <target> <text>` — puppet the bot
@@ -178,7 +218,21 @@ are optional); quote/skit content is served from ConfigMaps so edits go live via
 full wiring (Kustomizations, image automation, and the optional SOPS/age setup).
 
 Each bot deploys as a single-replica StatefulSet with its own PVC for the Markov
-brain; Redis (the botnet bus) deploys once from `deploy/k8s/redis`.
+brain; Redis (the botnet bus *and* the shared state store for karma/accounts/
+IdleRPG) deploys once from `deploy/k8s/redis`.
+
+### IdleRPG web dashboard
+
+If you run [IdleRPG](docs/idlerpg.md), deploy the read-only dashboard:
+
+```sh
+kubectl apply -k deploy/k8s/dashboard -n annoybots
+kubectl -n annoybots port-forward svc/rpg-dashboard 8080:80   # then open http://localhost:8080
+```
+
+It's the same image with the `/dashboard` entrypoint, reads the shared Redis only
+(no secrets), and shows the rankings and any active quest. Point an Ingress at the
+`rpg-dashboard` Service to make it public.
 
 ### Manual apply (no Flux)
 

@@ -50,6 +50,24 @@ admin:
     - network: twitch
       account: "your_twitch_login"
 
+# Channel keeping (IRC only, off by default). Once the bot is opped, it keeps its
+# sibling bots — and any extra `protect` nicks — opped automatically. Eggdrop-style.
+# chankeep:
+#   enabled: true
+#   protect: ["Mimic"]   # beyond personality.siblings, which are protected anyway
+
+# IdleRPG — the idle game (off by default). Players opt in with !rpg and "play" by
+# staying present and quiet. State persists to the shared store (Redis when the
+# botnet is enabled), so characters survive restarts and are shared across bots.
+# The dashboard service (deploy/k8s/dashboard or the compose stack) renders it.
+# See docs/idlerpg.md.
+# idlerpg:
+#   enabled: true
+#   interval: "60s"        # how often the game ticks
+#   base_ttl: "5m"         # time from level 0 to 1 (grows ~1.16x per level after)
+#   quest_interval: "6h"   # average gap between quests (try 15m on a test channel)
+#   quest_duration: "1h"   # how long a quest runs
+
 # ---------------------------------------------------------------------------
 # Networks. The same process holds all of these connections at once. Edit
 # servers/channels to taste, or delete any block you don't use. Twitch needs an
