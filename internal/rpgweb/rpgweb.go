@@ -1,0 +1,152 @@
+// Package rpgweb is a tiny read-only web view of the IdleRPG world. It reads the
+// shared Redis state the bots already fill (rankings, the active quest) and
+// renders a single status page — idlerpg.net's XPM map, reimagined as HTML over
+// the F3 store. It never writes, so it can run anywhere with read access to Redis.
+package rpgweb
+
+import (
+	"context"
+	"html/template"
+	"net/http"
+	"time"
+
+	"github.com/IamMrCupp/annoybots/internal/idlerpg"
+	"github.com/IamMrCupp/annoybots/internal/state"
+)
+
+const boardSize = 25
+
+// Server renders the dashboard from a read-only view of the state store.
+type Server struct {
+	store state.Store
+	tmpl  *template.Template
+	now   func() time.Time
+}
+
+var tmplFuncs = template.FuncMap{
+	"add": func(a, b int) int { return a + b },
+	"dur": func(secs int64) string {
+		if secs < 0 {
+			secs = 0
+		}
+		return (time.Duration(secs) * time.Second).Round(time.Second).String()
+	},
+}
+
+// New builds a Server over store.
+func New(store state.Store) *Server {
+	return &Server{
+		store: store,
+		tmpl:  template.Must(template.New("index").Funcs(tmplFuncs).Parse(indexTmpl)),
+		now:   time.Now,
+	}
+}
+
+// Handler returns the HTTP routes: the dashboard at / and a liveness probe.
+func (s *Server) Handler() http.Handler {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/", s.index)
+	mux.HandleFunc("/healthz", func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte("ok"))
+	})
+	return mux
+}
+
+// pageData is the template's view model.
+type pageData struct {
+	Board     []idlerpg.CharView
+	Quest     *idlerpg.QuestView
+	QuestLeft string
+}
+
+func (s *Server) index(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path != "/" {
+		http.NotFound(w, r)
+		return
+	}
+	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
+	defer cancel()
+
+	board, err := idlerpg.ReadLeaderboard(ctx, s.store, boardSize)
+	if err != nil {
+		http.Error(w, "the realm is unreachable right now.", http.StatusServiceUnavailable)
+		return
+	}
+	quest, _ := idlerpg.ReadQuest(ctx, s.store)
+
+	data := pageData{Board: board, Quest: quest}
+	if quest != nil {
+		data.QuestLeft = humanLeft(quest.Deadline - s.now().Unix())
+	}
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	_ = s.tmpl.Execute(w, data)
+}
+
+// humanLeft renders a remaining-seconds count, clamped at zero.
+func humanLeft(secs int64) string {
+	if secs < 0 {
+		secs = 0
+	}
+	return (time.Duration(secs) * time.Second).Round(time.Second).String()
+}
+
+const indexTmpl = `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="refresh" content="30">
+<title>annoybots · idle realm</title>
+<style>
+  :root { color-scheme: dark; }
+  body { background:#0e0f13; color:#d6d8de; font:15px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace; margin:0; padding:2rem; }
+  h1 { font-size:1.4rem; margin:0 0 1rem; color:#e9b949; letter-spacing:.04em; }
+  h2 { font-size:1rem; color:#8aa0c6; margin:1.5rem 0 .5rem; }
+  table { border-collapse:collapse; width:100%; max-width:760px; }
+  th,td { text-align:left; padding:.35rem .75rem; border-bottom:1px solid #20232b; }
+  th { color:#7c8290; font-weight:600; }
+  tr:hover td { background:#15171d; }
+  .rank { color:#7c8290; width:2.5rem; }
+  .lvl { color:#7fd1a8; }
+  .evil { color:#e06c75; } .good { color:#61afef; } .neutral { color:#abb2bf; }
+  .quest { max-width:760px; background:#1a160c; border:1px solid #4a3c14; border-radius:8px; padding:1rem 1.25rem; margin:0 0 1rem; }
+  .quest .obj { color:#e9b949; }
+  .muted { color:#6b7280; }
+  footer { margin-top:2rem; color:#4b5563; font-size:.8rem; }
+</style>
+</head>
+<body>
+<h1>⚔ the idle realm</h1>
+{{if .Quest}}
+<div class="quest">
+  <strong>A quest is underway.</strong>
+  <span class="muted">({{.QuestLeft}} left)</span><br>
+  {{range $i, $m := .Quest.Members}}{{if $i}}, {{end}}{{$m}}{{end}}
+  must <span class="obj">{{.Quest.Desc}}</span>.
+  <div class="muted">One word or departure and the whole party is flung backward.</div>
+</div>
+{{else}}
+<p class="muted">No quest underway. The gods are watching.</p>
+{{end}}
+
+<h2>top idlers</h2>
+<table>
+  <tr><th class="rank">#</th><th>name</th><th>lvl</th><th>next</th><th>power</th><th>creed</th></tr>
+  {{range $i, $c := .Board}}
+  <tr>
+    <td class="rank">{{add $i 1}}</td>
+    <td>{{$c.Name}}</td>
+    <td class="lvl">{{$c.Level}}</td>
+    <td class="muted">{{dur $c.TTL}}</td>
+    <td>{{$c.Power}}</td>
+    <td class="{{$c.Align}}">{{$c.Align}}{{if $c.Class}} {{$c.Class}}{{end}}</td>
+  </tr>
+  {{else}}
+  <tr><td colspan="6" class="muted">No idlers yet.</td></tr>
+  {{end}}
+</table>
+
+<footer>annoybots · auto-refreshes every 30s · read-only view of the shared realm</footer>
+</body>
+</html>`
