@@ -261,6 +261,22 @@ func (m *Manager) OnJoin(ev event.Event) {
 	if ev.Kind != event.Join {
 		return
 	}
+	m.markPresent(ev)
+}
+
+// OnPresent seeds an enrolled player online from a NAMES sweep (e.g. after a bot
+// restart), so idlers already sitting in the channel keep progressing without
+// having to rejoin or speak. NAMES carries no account tag, but linked players
+// linked by nick, so the resolver still finds their character.
+func (m *Manager) OnPresent(ev event.Event) {
+	if ev.Kind != event.Present {
+		return
+	}
+	m.markPresent(ev)
+}
+
+// markPresent marks the event's subject online iff they're an enrolled character.
+func (m *Manager) markPresent(ev event.Event) {
 	pkey := m.resolve(ev.Network, ev.Account, ev.Nick)
 	sheet, err := m.store.HGetAll(context.Background(), sheetKey(pkey))
 	if err != nil {

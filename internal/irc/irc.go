@@ -264,8 +264,19 @@ func (m *Manager) bind(c *conn) {
 	})
 	// RPL_NAMREPLY (353) and RPL_ENDOFNAMES (366) seed channel membership/op state.
 	ic.AddCallback("353", func(e ircmsg.Message) {
-		if c.keeper != nil && len(e.Params) >= 4 {
+		if len(e.Params) < 4 {
+			return
+		}
+		if c.keeper != nil {
 			c.keeper.onNames(e.Params[2], e.Params[3])
+		}
+		// Seed presence for already-present members (e.g. after a bot restart):
+		// idlerpg marks enrolled idlers online without waiting for them to rejoin.
+		channel := e.Params[2]
+		for _, raw := range strings.Fields(e.Params[3]) {
+			if nick := stripPrefixes(raw); nick != "" {
+				m.emit(event.Event{Kind: event.Present, Network: c.cfg.Name, Channel: channel, Nick: nick})
+			}
 		}
 	})
 	ic.AddCallback("366", func(e ircmsg.Message) {
@@ -311,6 +322,16 @@ func opChanges(modes string, args []string) []opChange {
 		}
 	}
 	return out
+}
+
+// stripPrefixes removes leading membership-prefix sigils (@&~+%) from a NAMES
+// entry, returning the bare nick.
+func stripPrefixes(raw string) string {
+	i := 0
+	for i < len(raw) && strings.IndexByte("@&~+%", raw[i]) >= 0 {
+		i++
+	}
+	return raw[i:]
 }
 
 // joinAccount extracts the joiner's services account: from the account-tag if

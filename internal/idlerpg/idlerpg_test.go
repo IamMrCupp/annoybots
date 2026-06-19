@@ -260,6 +260,31 @@ func TestNickPenaltyAndFollow(t *testing.T) {
 	}
 }
 
+func TestPresenceSeedsOnline(t *testing.T) {
+	m, r, _ := newMgr()
+	m.Handle(chanMsg("alice", "!rpg")) // enroll alice
+	m.OnLeave(event.Event{Network: "net", Nick: "alice"})
+	m.Tick() // offline → no progress
+	if r.has("attained level") {
+		t.Fatal("alice should not progress while offline")
+	}
+	// A NAMES sweep re-seeds her as present without a rejoin or a message.
+	m.OnPresent(event.Event{Kind: event.Present, Network: "net", Channel: "#chan", Nick: "alice"})
+	m.Tick() // now online → levels up
+	if !r.has("attained level 1") {
+		t.Fatalf("presence-seeded idler should resume progress, got %v", r.lines)
+	}
+}
+
+func TestPresenceIgnoresUnenrolled(t *testing.T) {
+	m, _, _ := newMgr()
+	// nobody enrolled; a NAMES sweep must not online a non-player.
+	m.OnPresent(event.Event{Kind: event.Present, Network: "net", Channel: "#chan", Nick: "stranger"})
+	if _, ok := m.onlinePlayer("net", "stranger"); ok {
+		t.Fatal("a non-enrolled nick must not be marked online by a NAMES seed")
+	}
+}
+
 func TestLeaderboard(t *testing.T) {
 	m, r, _ := newMgr()
 	m.Handle(chanMsg("alice", "!rpg"))

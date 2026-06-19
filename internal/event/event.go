@@ -22,6 +22,7 @@ const (
 	Nick                // someone changed nick
 	Mode                // a channel/user mode change
 	Kick                // someone was kicked from a channel
+	Present             // someone observed already in a channel (NAMES seed, not a fresh join)
 )
 
 // String renders the kind for logs.
@@ -41,6 +42,8 @@ func (k Kind) String() string {
 		return "mode"
 	case Kick:
 		return "kick"
+	case Present:
+		return "present"
 	default:
 		return "unknown"
 	}
