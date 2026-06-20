@@ -40,7 +40,11 @@ the NAMES list — you don't have to rejoin or speak to resume progress.
   **power**. `!rpg items` shows your kit.
 - **Battles.** Leveling up pits you against a random online player, weighted by
   power, with a chance of a critical hit. Win and your clock speeds up; lose and
-  it slows.
+  it slows (and takes HP).
+- **Monster encounters.** At random a wandering idler runs into a level-scaled
+  monster (giant rat → young dragon) and a quick d20 fight resolves — attack rolls
+  vs AC, damage both ways. **Works solo** (unlike PvP battles). Win → time toward
+  your next level, **gold**, a kill, maybe loot; lose → bloodied, or downed.
 - **Events.** At random the gods intervene — a **godsend** (time forward), a
   **calamity** (time back, or an item loses its luster), or the **Hand of God**
   (a big swing either way).
