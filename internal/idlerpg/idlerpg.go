@@ -260,12 +260,12 @@ func (m *Manager) setAlign(msg engine.Message, fields []string) {
 // setClass sets the player's class (flavor text shown in status).
 func (m *Manager) setClass(msg engine.Message, fields []string) {
 	if len(fields) < 3 {
-		m.out.Say(msg.Network, msg.Channel, "usage: !rpg class <name>")
+		m.out.Say(msg.Network, msg.Channel, "usage: !rpg class <"+strings.Join(classNames(), "|")+">")
 		return
 	}
-	class := sanitizeClass(strings.Join(fields[2:], " "))
-	if class == "" {
-		m.out.Say(msg.Network, msg.Channel, "class name must be printable (<= 24 chars).")
+	c, ok := classOf(fields[2])
+	if !ok {
+		m.out.Say(msg.Network, msg.Channel, "no such class. pick one: "+strings.Join(classNames(), ", "))
 		return
 	}
 	ctx := context.Background()
@@ -274,21 +274,8 @@ func (m *Manager) setClass(msg engine.Message, fields []string) {
 		m.out.Say(msg.Network, msg.Channel, "you're not playing. !rpg to start the grind.")
 		return
 	}
-	_ = m.store.SetStr(ctx, classKey(pkey), class)
-	m.out.Say(msg.Network, msg.Channel, msg.Nick+" is now a "+class+".")
-}
-
-func sanitizeClass(s string) string {
-	s = strings.TrimSpace(s)
-	if len(s) > 24 {
-		s = s[:24]
-	}
-	for _, r := range s {
-		if r < 0x20 || r == 0x7f {
-			return ""
-		}
-	}
-	return s
+	_ = m.store.SetStr(ctx, classKey(pkey), c.Name)
+	m.out.Say(msg.Network, msg.Channel, msg.Nick+" is now a "+c.Name+" — "+c.Blurb+".")
 }
 
 func (m *Manager) leaderboard() string {
@@ -608,6 +595,13 @@ func (m *Manager) battle(ctx context.Context, p player, level int64) {
 	effPow := myPow
 	if mine["align"] == 1 {
 		effPow = myPow * 111 / 100
+	}
+	// Class: your primary ability's modifier sharpens (or dulls) your attack.
+	if cls, _ := m.store.GetStr(ctx, classKey(p.key)); cls != "" {
+		effPow += classAttackMod(mine, cls)
+	}
+	if effPow < 0 {
+		effPow = 0
 	}
 	critOdds := 10
 	if mine["align"] == 2 {

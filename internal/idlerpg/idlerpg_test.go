@@ -512,6 +512,32 @@ func TestStatusCommand(t *testing.T) {
 	}
 }
 
+func TestClassMustBeCanonical(t *testing.T) {
+	m, r, _ := newMgr()
+	m.Handle(chanMsg("alice", "!rpg"))
+	m.Handle(chanMsg("alice", "!rpg class paladin")) // not in the canonical set
+	if !r.has("no such class") {
+		t.Fatalf("a non-canonical class should be rejected, got %q", r.last())
+	}
+	m.Handle(chanMsg("alice", "!rpg class fighter"))
+	if !r.has("is now a fighter") {
+		t.Fatalf("fighter should be accepted, got %q", r.last())
+	}
+}
+
+func TestClassAttackMod(t *testing.T) {
+	sheet := map[string]int64{"str": 16, "dex": 8, "int": 10}
+	if got := classAttackMod(sheet, "fighter"); got != 3 { // STR 16 → +3
+		t.Fatalf("fighter STR16 attack mod = %d; want 3", got)
+	}
+	if got := classAttackMod(sheet, "rogue"); got != -1 { // DEX 8 → -1
+		t.Fatalf("rogue DEX8 attack mod = %d; want -1", got)
+	}
+	if got := classAttackMod(sheet, "wanderer"); got != 0 { // legacy/unknown → 0
+		t.Fatalf("unknown class attack mod = %d; want 0", got)
+	}
+}
+
 func TestAbilityScoresRolledOnEnroll(t *testing.T) {
 	m, r, st := newMgr()
 	m.Handle(chanMsg("alice", "!rpg"))
