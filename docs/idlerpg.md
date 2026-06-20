@@ -67,6 +67,30 @@ identities (see [accounts.md](accounts.md)) and you're a single hero whether you
 idle from IRC or Discord — something the original idlerpg never did. Unlinked, you
 get a per-network character, which is fine too.
 
+## A dedicated IdleRPG bot
+
+Want a "legit" game bot that *only* runs IdleRPG — no triggers, no ambient
+chatter, no Markov babble, no karma/dice/8-ball, no quotes? You can carve all of
+that away. Two switches do it:
+
+1. **Turn off the optional command subsystems.** Each defaults on; set it off:
+
+   ```yaml
+   games:    { enabled: false }   # name++ / !karma / !roll / !8ball
+   tell:     { enabled: false }   # !message <nick> …
+   accounts: { enabled: true }    # keep — it's how a player is one character everywhere
+   idlerpg:  { enabled: true }
+   ```
+
+2. **Leave the personality empty / disabled** so the engine never speaks — no
+   triggers, and `enabled: false` on interjections, quotes, banter, and Markov,
+   plus `commands: false`.
+
+The result reacts to `!rpg` and nothing else. A complete, ready-to-edit example
+is in [`configs/idlerpg.yaml`](../configs/idlerpg.yaml) — copy it, point it at
+your network, and run it like any other bot (or as a service in the Compose
+stack). It still needs Redis for game state.
+
 ## The web dashboard
 
 A separate read-only service renders the realm as a web page — the top idlers and

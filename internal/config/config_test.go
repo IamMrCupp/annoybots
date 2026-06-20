@@ -52,6 +52,64 @@ personality:
 	}
 }
 
+func TestFeatureTogglesDefaultOn(t *testing.T) {
+	dir := t.TempDir()
+	// A config that mentions none of the feature blocks: everything should be on.
+	cfg := writeFile(t, dir, "bot.yaml", `
+bot: arywen
+networks:
+  - name: testnet
+    server: irc.example.org:6697
+    tls: true
+    nick: Arywen
+    channels: ["#lobby"]
+personality:
+  name: Arywen
+`)
+	c, err := Load(cfg, "", "")
+	if err != nil {
+		t.Fatalf("load: %v", err)
+	}
+	if !c.Games.On() || !c.Tell.On() || !c.Accounts.On() {
+		t.Fatalf("absent feature blocks must default ON: games=%v tell=%v accounts=%v",
+			c.Games.On(), c.Tell.On(), c.Accounts.On())
+	}
+}
+
+func TestFeatureTogglesCanBeDisabled(t *testing.T) {
+	dir := t.TempDir()
+	// A single-purpose IdleRPG bot: silence everything but the game.
+	cfg := writeFile(t, dir, "bot.yaml", `
+bot: idlerpg
+networks:
+  - name: testnet
+    server: irc.example.org:6697
+    tls: true
+    nick: idlerpg
+    channels: ["#rpg"]
+personality:
+  name: idlerpg
+games:
+  enabled: false
+tell:
+  enabled: false
+accounts:
+  enabled: true
+idlerpg:
+  enabled: true
+`)
+	c, err := Load(cfg, "", "")
+	if err != nil {
+		t.Fatalf("load: %v", err)
+	}
+	if c.Games.On() || c.Tell.On() {
+		t.Fatalf("games/tell should be off: games=%v tell=%v", c.Games.On(), c.Tell.On())
+	}
+	if !c.Accounts.On() || !c.IdleRPG.Enabled {
+		t.Fatalf("accounts + idlerpg should be on: accounts=%v idlerpg=%v", c.Accounts.On(), c.IdleRPG.Enabled)
+	}
+}
+
 func TestLoadQuotePackFromFile(t *testing.T) {
 	dir := t.TempDir()
 	writeFile(t, dir, "rm.txt", "# rick and morty\nWubba lubba dub dub\n\nGet schwifty\n")
