@@ -370,11 +370,13 @@ func (m *Manager) sheet(msg engine.Message, fields []string) string {
 	}
 	m.ensureAbilities(ctx, pkey)
 	sheet, _ := m.store.HGetAll(ctx, sheetKey(pkey))
+	class, _ := m.store.GetStr(ctx, classKey(pkey))
 	desc := alignName(sheet["align"])
-	if class, _ := m.store.GetStr(ctx, classKey(pkey)); class != "" {
+	if class != "" {
 		desc += " " + class
 	}
-	return fmt.Sprintf("%s the %s (lvl %d) — %s", name, desc, sheet["level"], abilityLine(sheet))
+	return fmt.Sprintf("%s the %s (lvl %d) — HP %d/%d · %s",
+		name, desc, sheet["level"], curHP(sheet, class), maxHP(sheet, class), abilityLine(sheet))
 }
 
 // adminVerb handles the privileged !rpg commands (pause/resume/push/hog). They are
@@ -558,6 +560,9 @@ func (m *Manager) Tick() {
 		ctx := context.Background()
 		key := sheetKey(p.key)
 		m.moveOnMap(ctx, p.key) // wander the world map (cosmetic; happens every tick)
+		if m.tickHP(ctx, p.key) {
+			continue // downed and recovering — no progress this tick
+		}
 		ttl, err := m.store.HIncr(ctx, key, "ttl", -step)
 		if err != nil {
 			continue
@@ -597,9 +602,8 @@ func (m *Manager) battle(ctx context.Context, p player, level int64) {
 		effPow = myPow * 111 / 100
 	}
 	// Class: your primary ability's modifier sharpens (or dulls) your attack.
-	if cls, _ := m.store.GetStr(ctx, classKey(p.key)); cls != "" {
-		effPow += classAttackMod(mine, cls)
-	}
+	myClass, _ := m.store.GetStr(ctx, classKey(p.key))
+	effPow += classAttackMod(mine, myClass)
 	if effPow < 0 {
 		effPow = 0
 	}
@@ -615,8 +619,17 @@ func (m *Manager) battle(ctx context.Context, p player, level int64) {
 	}
 
 	verb, dir, sign := "won", "sooner", int64(-1)
+	downed := false
 	if !win {
 		verb, dir, sign = "lost", "later", int64(1)
+		// Losing the bout also costs blood — and can leave you downed.
+		hurt := int64(m.roll(int(level)+3) + 2)
+		if crit {
+			hurt *= 2
+		}
+		m.damage(ctx, p.key, hurt)
+		after, _ := m.store.HGetAll(ctx, sheetKey(p.key))
+		downed = isDowned(after, myClass)
 	}
 	_, _ = m.store.HIncr(ctx, sheetKey(p.key), "ttl", sign*amt)
 
@@ -626,6 +639,9 @@ func (m *Manager) battle(ctx context.Context, p player, level int64) {
 	}
 	m.out.Say(p.network, p.channel, fmt.Sprintf("🗡️ %s [%d] challenged %s [%d] in combat and %s%s — %ds %s.",
 		p.nick, myPow, opp.nick, oppPow, verb, critStr, amt, dir))
+	if downed {
+		m.out.Say(p.network, p.channel, fmt.Sprintf("💢 %s is beaten down to 0 HP and must recover before pressing on.", p.nick))
+	}
 }
 
 const eventOdds = 6 // ~1-in-N chance an event fires each tick

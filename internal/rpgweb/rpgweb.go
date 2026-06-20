@@ -246,6 +246,7 @@ const charTmpl = `<!doctype html>
 
 <table>
   <tr><td class="k">level</td><td class="lvl">{{.Level}}</td></tr>
+  <tr><td class="k">hp</td><td>{{.HP}} <span class="muted">/ {{.MaxHP}}</span></td></tr>
   <tr><td class="k">time to next</td><td class="muted">{{dur .TTL}}</td></tr>
   <tr><td class="k">power</td><td>{{.Power}}</td></tr>
 </table>
