@@ -55,6 +55,19 @@ func ReadLeaderboard(ctx context.Context, store state.Store, n int) ([]CharView,
 	return out, nil
 }
 
+// ReadChar returns one character's view by its canonical key, and whether that
+// character is enrolled (the dashboard links leaderboard rows to /p/<key>).
+func ReadChar(ctx context.Context, store state.Store, key string) (CharView, bool) {
+	sheet, err := store.HGetAll(ctx, sheetKey(key))
+	if err != nil {
+		return CharView{}, false
+	}
+	if _, ok := sheet["level"]; !ok {
+		return CharView{}, false
+	}
+	return readChar(ctx, store, key), true
+}
+
 func readChar(ctx context.Context, store state.Store, key string) CharView {
 	sheet, _ := store.HGetAll(ctx, sheetKey(key))
 	class, _ := store.GetStr(ctx, classKey(key))

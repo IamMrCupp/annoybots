@@ -186,6 +186,14 @@ func (m *Manager) isAdmin(msg engine.Message) bool {
 	return m.has(msg, flagMaster)
 }
 
+// IsAdmin is the exported authorization hook other features use to gate their own
+// privileged commands (e.g. IdleRPG's !rpg pause). It reports whether the sender
+// holds at least op access — works for in-channel messages too, since it matches
+// the sender's verified identity, not the channel.
+func (m *Manager) IsAdmin(msg engine.Message) bool {
+	return m.has(msg, flagOp)
+}
+
 // grantSession records a password-login session for the sender.
 func (m *Manager) grantSession(msg engine.Message) {
 	m.mu.Lock()

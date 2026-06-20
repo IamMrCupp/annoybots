@@ -42,6 +42,12 @@ Opt in with `!rpg`, then "play" by being present and **quiet**. Full rules in
 | `!rpg class <name>` | Set your class (flavor). |
 | `!rpg info` | Realm summary: idlers online, top player, active quest. |
 | `!rpg quest` | The active quest's party, objective, and time left. |
+| `!rpg pause` / `!rpg resume` | (admin) Freeze or resume the whole game. |
+| `!rpg push <name> <secs>` | (admin) Move a player's clock — negative is toward the next level. |
+| `!rpg hog [name]` | (admin) Invoke the Hand of God on a named player or a random one. |
+
+Admin `!rpg` verbs use the same identity authorization as the admin console (op flag).
+The web dashboard also links each leaderboard name to a per-character page at `/p/<name>`.
 
 ### Leave a message
 

@@ -8,6 +8,8 @@ import (
 	"context"
 	"html/template"
 	"net/http"
+	"net/url"
+	"strings"
 	"time"
 
 	"github.com/IamMrCupp/annoybots/internal/idlerpg"
@@ -18,9 +20,10 @@ const boardSize = 25
 
 // Server renders the dashboard from a read-only view of the state store.
 type Server struct {
-	store state.Store
-	tmpl  *template.Template
-	now   func() time.Time
+	store    state.Store
+	tmpl     *template.Template
+	charTmpl *template.Template
+	now      func() time.Time
 }
 
 var tmplFuncs = template.FuncMap{
@@ -31,21 +34,24 @@ var tmplFuncs = template.FuncMap{
 		}
 		return (time.Duration(secs) * time.Second).Round(time.Second).String()
 	},
+	"pathesc": url.PathEscape,
 }
 
 // New builds a Server over store.
 func New(store state.Store) *Server {
 	return &Server{
-		store: store,
-		tmpl:  template.Must(template.New("index").Funcs(tmplFuncs).Parse(indexTmpl)),
-		now:   time.Now,
+		store:    store,
+		tmpl:     template.Must(template.New("index").Funcs(tmplFuncs).Parse(indexTmpl)),
+		charTmpl: template.Must(template.New("char").Funcs(tmplFuncs).Parse(charTmpl)),
+		now:      time.Now,
 	}
 }
 
-// Handler returns the HTTP routes: the dashboard at / and a liveness probe.
+// Handler returns the HTTP routes: the dashboard, per-character pages, and a probe.
 func (s *Server) Handler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", s.index)
+	mux.HandleFunc("/p/", s.char)
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte("ok"))
@@ -81,6 +87,26 @@ func (s *Server) index(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	_ = s.tmpl.Execute(w, data)
+}
+
+// char renders one character's sheet at /p/<key>.
+func (s *Server) char(w http.ResponseWriter, r *http.Request) {
+	key := strings.TrimPrefix(r.URL.Path, "/p/")
+	key, err := url.PathUnescape(key)
+	if key == "" || err != nil {
+		http.NotFound(w, r)
+		return
+	}
+	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
+	defer cancel()
+
+	cv, ok := idlerpg.ReadChar(ctx, s.store, key)
+	if !ok {
+		http.NotFound(w, r)
+		return
+	}
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	_ = s.charTmpl.Execute(w, cv)
 }
 
 // humanLeft renders a remaining-seconds count, clamped at zero.
@@ -121,6 +147,8 @@ const indexTmpl = `<!doctype html>
   .wp-end { stroke:#e9b949; }
   .party { fill:#7fd1a8; stroke:#0e0f13; stroke-width:3; }
   .muted { color:#6b7280; }
+  a { color:#7fd1a8; text-decoration:none; }
+  a:hover { text-decoration:underline; }
   footer { margin-top:2rem; color:#4b5563; font-size:.8rem; }
 </style>
 </head>
@@ -155,7 +183,7 @@ const indexTmpl = `<!doctype html>
   {{range $i, $c := .Board}}
   <tr>
     <td class="rank">{{add $i 1}}</td>
-    <td>{{$c.Name}}</td>
+    <td><a href="/p/{{pathesc $c.Key}}">{{$c.Name}}</a></td>
     <td class="lvl">{{$c.Level}}</td>
     <td class="muted">{{dur $c.TTL}}</td>
     <td>{{$c.Power}}</td>
@@ -167,5 +195,48 @@ const indexTmpl = `<!doctype html>
 </table>
 
 <footer>annoybots · auto-refreshes every 30s · read-only view of the shared realm</footer>
+</body>
+</html>`
+
+const charTmpl = `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>annoybots · {{.Name}}</title>
+<style>
+  :root { color-scheme: dark; }
+  body { background:#0e0f13; color:#d6d8de; font:15px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace; margin:0; padding:2rem; }
+  h1 { font-size:1.4rem; margin:0 0 .25rem; color:#e9b949; }
+  .sub { color:#8aa0c6; margin:0 0 1.5rem; }
+  table { border-collapse:collapse; max-width:480px; width:100%; }
+  th,td { text-align:left; padding:.35rem .75rem; border-bottom:1px solid #20232b; }
+  th { color:#7c8290; }
+  .k { color:#7c8290; width:9rem; }
+  .lvl { color:#7fd1a8; }
+  .evil { color:#e06c75; } .good { color:#61afef; } .neutral { color:#abb2bf; }
+  .muted { color:#6b7280; }
+  a { color:#7fd1a8; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  footer { margin-top:2rem; color:#4b5563; font-size:.8rem; }
+</style>
+</head>
+<body>
+<h1>{{.Name}}</h1>
+<p class="sub">the <span class="{{.Align}}">{{.Align}}{{if .Class}} {{.Class}}{{end}}</span></p>
+
+<table>
+  <tr><td class="k">level</td><td class="lvl">{{.Level}}</td></tr>
+  <tr><td class="k">time to next</td><td class="muted">{{dur .TTL}}</td></tr>
+  <tr><td class="k">power</td><td>{{.Power}}</td></tr>
+</table>
+
+<h2 style="font-size:1rem;color:#8aa0c6;margin:1.5rem 0 .5rem;">equipment</h2>
+<table>
+  {{range $slot, $lvl := .Items}}<tr><td class="k">{{$slot}}</td><td>{{$lvl}}</td></tr>
+  {{else}}<tr><td colspan="2" class="muted">nothing equipped yet.</td></tr>{{end}}
+</table>
+
+<footer><a href="/">&larr; back to the realm</a></footer>
 </body>
 </html>`
