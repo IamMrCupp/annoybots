@@ -101,9 +101,10 @@ stack). It still needs Redis for game state.
 
 ## The web dashboard
 
-A separate read-only service renders the realm as a web page — the top idlers and
-the active quest, auto-refreshing. It reads the same Redis the bots write, so it's
-just a view; it never touches the game.
+A separate read-only service renders the realm as a web page — the top idlers, the
+active quest, per-character pages (`/p/<name>`), and a **world map** (`/map`) where
+every player wanders as a dot and the towns are marked. It reads the same Redis the
+bots write, so it's just a view; it never touches the game. Auto-refreshes.
 
 - **Docker Compose:** it's the `dashboard` service — browse <http://localhost:8080>.
 - **Kubernetes:** `kubectl apply -k deploy/k8s/dashboard -n annoybots`, then

@@ -40,6 +40,30 @@ func TestReadLeaderboard(t *testing.T) {
 	}
 }
 
+func TestReadWorld(t *testing.T) {
+	m, _, st := newMgr()
+	ctx := context.Background()
+	m.Handle(chanMsg("alice", "!rpg"))
+	m.Tick() // places alice on the map
+
+	w, err := ReadWorld(ctx, st, 50)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(w.Towns) == 0 || w.Size != worldSize {
+		t.Fatalf("world should carry towns + size, got %d towns size %d", len(w.Towns), w.Size)
+	}
+	found := false
+	for _, p := range w.Players {
+		if p.Name == "alice" {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatalf("alice should be on the map, got %+v", w.Players)
+	}
+}
+
 func TestReadChar(t *testing.T) {
 	m, _, st := newMgr()
 	ctx := context.Background()

@@ -106,6 +106,26 @@ func TestCharPage(t *testing.T) {
 	}
 }
 
+func TestWorldMapPage(t *testing.T) {
+	st := state.NewMem()
+	log := slog.New(slog.NewTextHandler(io.Discard, nil))
+	m := idlerpg.New(st, noopSender{}, nil, time.Second, time.Second, time.Hour, time.Hour, log)
+	m.Handle(engine.Message{Network: "net", Channel: "#c", Nick: "alice", Text: "!rpg"})
+	m.Tick() // places alice on the map
+
+	rr := httptest.NewRecorder()
+	New(st).Handler().ServeHTTP(rr, httptest.NewRequest(http.MethodGet, "/map", nil))
+	if rr.Code != http.StatusOK {
+		t.Fatalf("map status = %d; want 200", rr.Code)
+	}
+	body := rr.Body.String()
+	for _, want := range []string{"<svg", "alice", "Idlecrest", "back to the realm"} {
+		if !strings.Contains(body, want) {
+			t.Fatalf("world map missing %q\n%s", want, body)
+		}
+	}
+}
+
 func TestHealthz(t *testing.T) {
 	rr := httptest.NewRecorder()
 	New(state.NewMem()).Handler().ServeHTTP(rr, httptest.NewRequest(http.MethodGet, "/healthz", nil))
