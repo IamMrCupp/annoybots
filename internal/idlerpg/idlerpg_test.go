@@ -512,6 +512,49 @@ func TestStatusCommand(t *testing.T) {
 	}
 }
 
+func TestAbilityScoresRolledOnEnroll(t *testing.T) {
+	m, r, st := newMgr()
+	m.Handle(chanMsg("alice", "!rpg"))
+	sheet, _ := st.HGetAll(context.Background(), sheetKey("net|alice"))
+	for _, a := range abilities {
+		if sheet[a] < 3 || sheet[a] > 18 {
+			t.Fatalf("ability %s = %d, out of 3–18", a, sheet[a])
+		}
+	}
+	if !r.has("roll for stats") {
+		t.Fatalf("enroll should mention stats, got %v", r.lines)
+	}
+}
+
+func TestAbilityMod(t *testing.T) {
+	for score, want := range map[int64]int64{3: -4, 7: -2, 8: -1, 9: -1, 10: 0, 11: 0, 12: 1, 14: 2, 18: 4} {
+		if got := abilityMod(score); got != want {
+			t.Errorf("abilityMod(%d) = %d; want %d", score, got, want)
+		}
+	}
+}
+
+func TestSheetCommand(t *testing.T) {
+	m, r, _ := newMgr()
+	m.Handle(chanMsg("alice", "!rpg"))
+	m.Handle(chanMsg("alice", "!rpg sheet"))
+	if !strings.Contains(r.last(), "STR") || !strings.Contains(r.last(), "CHA") {
+		t.Fatalf("!rpg sheet should show the ability block, got %q", r.last())
+	}
+}
+
+func TestSheetLazyRollsLegacyChar(t *testing.T) {
+	m, _, st := newMgr()
+	ctx := context.Background()
+	// A character enrolled before abilities existed (level set, no scores).
+	st.HSet(ctx, sheetKey("net|bob"), "level", 5)
+	st.ZIncr(ctx, boardKey(), "net|bob", 5)
+	m.Handle(chanMsg("bob", "!rpg sheet"))
+	if s, _ := st.HGetAll(ctx, sheetKey("net|bob")); s["str"] < 3 {
+		t.Fatalf("a legacy character should roll abilities on sheet view, str=%d", s["str"])
+	}
+}
+
 func TestWorldMapMovement(t *testing.T) {
 	m, _, st := newMgr()
 	ctx := context.Background()

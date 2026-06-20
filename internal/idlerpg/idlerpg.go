@@ -180,6 +180,9 @@ func (m *Manager) command(msg engine.Message, fields []string) {
 		case "status":
 			m.out.Say(msg.Network, msg.Channel, m.status(msg, fields))
 			return
+		case "sheet", "stats":
+			m.out.Say(msg.Network, msg.Channel, m.sheet(msg, fields))
+			return
 		case "pause", "resume", "push", "hog":
 			m.adminVerb(msg, fields)
 			return
@@ -198,8 +201,9 @@ func (m *Manager) command(msg engine.Message, fields []string) {
 		_ = m.store.HSet(ctx, key, "level", 0)
 		_ = m.store.HSet(ctx, key, "ttl", m.ttlFor(0))
 		_, _ = m.store.ZIncr(ctx, boardKey(), pkey, 0)
+		m.ensureAbilities(ctx, pkey) // roll the D&D ability scores at creation
 		m.setOnline(msg.Network, msg.Nick, msg.Channel, pkey)
-		m.out.Say(msg.Network, msg.Channel, "welcome to the grind, "+msg.Nick+". you're level 0 — now hush and idle.")
+		m.out.Say(msg.Network, msg.Channel, "welcome to the grind, "+msg.Nick+". you're level 0 — roll for stats and hush. (!rpg sheet)")
 		return
 	}
 	m.setOnline(msg.Network, msg.Nick, msg.Channel, pkey)
@@ -362,6 +366,28 @@ func (m *Manager) status(msg engine.Message, fields []string) string {
 	}
 	return fmt.Sprintf("%s the %s — level %d, %s to the next · power %d.",
 		name, desc, sheet["level"], dur(sheet["ttl"]), itemSum(sheet))
+}
+
+// sheet renders a character's D&D ability block — the sender's own or a named
+// other's. Lazily rolls scores for characters created before abilities existed.
+func (m *Manager) sheet(msg engine.Message, fields []string) string {
+	ctx := context.Background()
+	name := msg.Nick
+	pkey := m.resolve(msg.Network, msg.Account, msg.Nick)
+	if len(fields) >= 3 {
+		name = fields[2]
+		pkey = m.resolve(msg.Network, "", name)
+	}
+	if s, _ := m.store.HGetAll(ctx, sheetKey(pkey)); len(s) == 0 {
+		return name + " isn't playing. !rpg to start the grind."
+	}
+	m.ensureAbilities(ctx, pkey)
+	sheet, _ := m.store.HGetAll(ctx, sheetKey(pkey))
+	desc := alignName(sheet["align"])
+	if class, _ := m.store.GetStr(ctx, classKey(pkey)); class != "" {
+		desc += " " + class
+	}
+	return fmt.Sprintf("%s the %s (lvl %d) — %s", name, desc, sheet["level"], abilityLine(sheet))
 }
 
 // adminVerb handles the privileged !rpg commands (pause/resume/push/hog). They are
