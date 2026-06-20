@@ -258,6 +258,11 @@ allowed), reference it in a bot's `personality.quotes.packs`, and list it in the
 overlay's `bot-quotes` `configMapGenerator`. With Flux, commit it and `!reload`;
 otherwise rebuild the image (packs are also baked in at `/quotes` as a fallback).
 
+Some bundled packs are pop-culture one-liners (Futurama, South Park, …) in the
+old BMotion tradition — credited, with their rights-holder note, in
+[`data/quotes/CREDITS.md`](data/quotes/CREDITS.md). They're examples; swap in your
+own if you'd rather not redistribute them.
+
 ## Develop
 
 ```sh
@@ -265,3 +270,28 @@ make test     # go test ./...
 make lint     # golangci-lint
 make docker   # build the image
 ```
+
+## Acknowledgments
+
+annoybots stands on the shoulders of the IRC bots that annoyed channels before it.
+None of their code is used here — this is a clean-room rewrite in Go — but the
+ideas, and a lot of the fun, are theirs:
+
+- **[eggdrop](https://www.eggheads.org/)** — the original scriptable IRC bot; the
+  flag/access model, partyline, and channel-keeping all trace back to it.
+- **[BMotion](http://bmotion.sourceforge.net/)** — the eggdrop TCL framework whose
+  ambient "the bot just talks" behavior, banter, and quote packs this is a love
+  letter to.
+- **[IdleRPG](http://idlerpg.net/)** (and the [falsovsky PHP fork](https://github.com/falsovsky/idlerpg))
+  — the idle game reimagined in [`internal/idlerpg`](internal/idlerpg).
+
+Built on [ergochat/irc-go](https://github.com/ergochat/irc-go),
+[bwmarrin/discordgo](https://github.com/bwmarrin/discordgo), and
+[redis/go-redis](https://github.com/redis/go-redis), among others — all permissively
+licensed (MIT/BSD/Apache).
+
+## License
+
+[MIT](LICENSE) — do whatever you want, no warranty. The bundled pop-culture quote
+packs are the exception: they belong to their respective rights holders and are
+**not** covered by this license (see [`data/quotes/CREDITS.md`](data/quotes/CREDITS.md)).
