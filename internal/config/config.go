@@ -31,7 +31,23 @@ type Config struct {
 	Admin       admin.Config       `yaml:"admin"`
 	ChanKeep    ChanKeep           `yaml:"chankeep"`
 	IdleRPG     IdleRPG            `yaml:"idlerpg"`
+
+	// Optional command subsystems. All default ON — a bot does everything unless
+	// told otherwise — so set enabled: false to carve one out. A dedicated IdleRPG
+	// bot, for instance, turns games and tell off and leaves only the game.
+	Games    Feature `yaml:"games"`
+	Tell     Feature `yaml:"tell"`
+	Accounts Feature `yaml:"accounts"`
 }
+
+// Feature is an on/off toggle that defaults to ON when omitted, so existing
+// configs keep every feature without having to opt in.
+type Feature struct {
+	Enabled *bool `yaml:"enabled"`
+}
+
+// On reports whether the feature is enabled (absent/nil counts as enabled).
+func (f Feature) On() bool { return f.Enabled == nil || *f.Enabled }
 
 // IdleRPG configures the idle RPG (off by default). interval = tick period;
 // base_ttl = time to go from level 0 to 1 (grows ~1.16x per level after that).

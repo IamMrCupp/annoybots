@@ -1,0 +1,83 @@
+# A single-purpose IdleRPG bot — a "legit" game bot and nothing else. It runs the
+# idle game (and the cross-network accounts that back it) but stays silent on
+# everything else: no triggers, no ambient chatter, no Markov babble, no quotes,
+# no karma/dice/8-ball, no banter. Drop it in a channel and it just runs the game.
+#
+# The trick is two parts:
+#   1. Turn the optional command subsystems off (games:, tell: below).
+#   2. Leave the personality empty / disabled so the engine never speaks.
+#
+# Secrets are NEVER stored here — each *_env field names an environment variable.
+
+bot: idlerpg
+
+health:
+  addr: ":8080"
+
+# Redis is required: the game state (and accounts) live in the shared store, and
+# this is also what the web dashboard reads. Without it, state is in-memory and
+# resets on restart. No skits/banter fire as long as you don't define any.
+botnet:
+  enabled: true
+  redis_addr: "redis:6379"
+  redis_password_env: "REDIS_PASSWORD"
+  channel: "annoybots"
+
+# The game itself. See docs/idlerpg.md.
+idlerpg:
+  enabled: true
+  interval: "60s"
+  base_ttl: "5m"
+  quest_interval: "6h"
+  quest_duration: "1h"
+
+# --- Carve out everything that ISN'T the game --------------------------------
+# Public toys (name++ / !karma / !roll / !8ball) — off.
+games:
+  enabled: false
+# "!message <nick> …" deferred delivery — off.
+tell:
+  enabled: false
+# Cross-network identity linking (!register/!link) — KEEP this on: it's how a
+# player is one character whether they idle from IRC or Discord. Set false for
+# plain per-network characters.
+accounts:
+  enabled: true
+
+# Admin console stays useful for running the bot (!networks, !join/!part, the
+# game admin bits). Drop this block to disable it entirely.
+admin:
+  enabled: true
+  state_path: "/data/idlerpg-admin.json"
+  admins:
+    - network: testnet
+      account: "YOUR_NICKSERV_ACCOUNT"
+
+networks:
+  - name: testnet
+    server: "irc.example-test.net:6697"
+    tls: true
+    nick: "idlerpg"
+    sasl: true
+    sasl_user: "idlerpg"
+    sasl_pass_env: "IDLERPG_SASL"
+    channels: ["#rpg"]
+
+# The personality is deliberately bare: a name, no triggers, and every speaking
+# feature disabled. This is what keeps the bot quiet — it reacts to !rpg and
+# nothing else. `commands: false` also suppresses the built-in !quote/!packs.
+personality:
+  name: "idlerpg"
+  commands: false
+  siblings: []
+  triggers: []
+  interjections:
+    enabled: false
+  quotes:
+    enabled: false
+    command: false
+  banter:
+    enabled: false
+  markov:
+    enabled: false
+    learn: false

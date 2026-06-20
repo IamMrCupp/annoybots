@@ -96,6 +96,13 @@ stored in the config** — each `*_env` field names an environment variable
 Start from `configs/echo.yaml` or `configs/mimic.yaml`; both exercise every
 feature and all three platforms.
 
+**Feature toggles.** The optional command subsystems — `games` (karma/dice/8-ball),
+`tell` (`!message`), and `accounts` — each default **on**; set `enabled: false` on
+any to carve it out. Combined with an empty/disabled personality, that's how you
+run a single-purpose bot: [`configs/idlerpg.yaml`](configs/idlerpg.yaml) is a
+ready-made **IdleRPG-only** bot that runs the game and stays silent on everything
+else. See [docs/idlerpg.md](docs/idlerpg.md#a-dedicated-idlerpg-bot).
+
 **State persistence.** Karma, accounts, and IdleRPG live in a shared state store.
 That store is **Redis when `botnet.enabled: true`** — so state persists across
 restarts and is shared across all your bots — and **in-memory otherwise** (handy

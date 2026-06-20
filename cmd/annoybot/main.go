@@ -69,10 +69,6 @@ func main() {
 	// arrived on. Every transport feeds inbound messages through the handler.
 	router := bot.NewRouter()
 
-	// "Leave a message for someone" — !message <nick> <text>, delivered on their
-	// next activity/JOIN (the latter via the event dispatcher, wired below).
-	tellMgr := tell.New(router)
-
 	// F3 shared state store: Redis when the botnet is on (so karma/awards are
 	// network-wide + shared across bots/hosts), in-memory otherwise.
 	var store state.Store
@@ -82,19 +78,44 @@ func main() {
 		store = state.NewMem()
 	}
 
+	// Optional command subsystems. Each defaults on; a dedicated bot (e.g. an
+	// IdleRPG-only one) can switch any off in config. A nil manager means "not
+	// running" and is skipped in the handler.
+
+	// "Leave a message for someone" — !message <nick> <text>, delivered on their
+	// next activity/JOIN (the latter via the event dispatcher, wired below).
+	var tellMgr *tell.Manager
+	if cfg.Tell.On() {
+		tellMgr = tell.New(router)
+	}
+
 	// Account/identity linking — !register/!link/!whoami (DM); Resolve() maps a
 	// sender to their cross-network character key for IdleRPG (and future features).
-	acctMgr := account.New(store, router, log)
+	var acctMgr *account.Manager
+	if cfg.Accounts.On() {
+		acctMgr = account.New(store, router, log)
+	}
 
 	// Public channel toys: !8ball, !roll, karma (name++ / !karma / !top).
-	gamesMgr := games.New(router, store, log)
+	var gamesMgr *games.Manager
+	if cfg.Games.On() {
+		gamesMgr = games.New(router, store, log)
+	}
 
-	// IdleRPG — off by default; persists to the shared state store, keyed by account.
+	// IdleRPG — off by default; persists to the shared state store, keyed by
+	// account when accounts are on, else by network identity.
 	var rpgMgr *idlerpg.Manager
 	if cfg.IdleRPG.Enabled {
-		rpgMgr = idlerpg.New(store, router, acctMgr.Resolve, cfg.IdleRPG.Interval.D(), cfg.IdleRPG.BaseTTL.D(),
+		var resolve idlerpg.Resolver
+		if acctMgr != nil {
+			resolve = acctMgr.Resolve
+		}
+		rpgMgr = idlerpg.New(store, router, resolve, cfg.IdleRPG.Interval.D(), cfg.IdleRPG.BaseTTL.D(),
 			cfg.IdleRPG.QuestInterval.D(), cfg.IdleRPG.QuestDuration.D(), log)
 	}
+
+	log.Info("features", "games", gamesMgr != nil, "tell", tellMgr != nil,
+		"accounts", acctMgr != nil, "idlerpg", rpgMgr != nil)
 
 	// Optional inter-bot bus + skit coordinator (the "botnet").
 	var coord *botnet.Coordinator
@@ -144,13 +165,13 @@ func main() {
 		if adminMgr != nil && isOther && adminMgr.Handle(ctx, m) {
 			return
 		}
-		if isOther && acctMgr.Handle(m) {
+		if acctMgr != nil && isOther && acctMgr.Handle(m) {
 			return
 		}
-		if isOther && tellMgr.Handle(m) {
+		if tellMgr != nil && isOther && tellMgr.Handle(m) {
 			return
 		}
-		if isOther && gamesMgr.Handle(m) {
+		if gamesMgr != nil && isOther && gamesMgr.Handle(m) {
 			return
 		}
 		if rpgMgr != nil && isOther && rpgMgr.Handle(m) {
@@ -183,7 +204,9 @@ func main() {
 	disp.On(event.Join, logPresence)
 	disp.On(event.Part, logPresence)
 	disp.On(event.Quit, logPresence)
-	disp.On(event.Join, tellMgr.OnJoin) // deliver pending !message notes on join
+	if tellMgr != nil {
+		disp.On(event.Join, tellMgr.OnJoin) // deliver pending !message notes on join
+	}
 	if rpgMgr != nil {
 		disp.On(event.Join, rpgMgr.OnJoin)
 		disp.On(event.Present, rpgMgr.OnPresent) // NAMES-seed idlers already in-channel
