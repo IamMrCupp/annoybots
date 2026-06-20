@@ -512,6 +512,20 @@ func TestStatusCommand(t *testing.T) {
 	}
 }
 
+func TestWorldMapMovement(t *testing.T) {
+	m, _, st := newMgr()
+	ctx := context.Background()
+	m.Handle(chanMsg("alice", "!rpg")) // enroll + online
+	if s, _ := st.HGetAll(ctx, sheetKey("net|alice")); s["mx"] != 0 {
+		t.Fatal("a fresh player should start unplaced (mx=0)")
+	}
+	m.Tick() // moves (places) alice
+	s, _ := st.HGetAll(ctx, sheetKey("net|alice"))
+	if s["mx"] < 1 || s["mx"] > worldSize || s["my"] < 1 || s["my"] > worldSize {
+		t.Fatalf("alice should be placed in-bounds, got (%d,%d)", s["mx"], s["my"])
+	}
+}
+
 func allowAll(engine.Message) bool { return true }
 
 func TestAdminVerbsRequireAuthz(t *testing.T) {

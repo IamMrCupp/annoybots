@@ -18,11 +18,14 @@ import (
 
 const boardSize = 25
 
+const worldDots = 200 // most players to plot on the world map
+
 // Server renders the dashboard from a read-only view of the state store.
 type Server struct {
 	store    state.Store
 	tmpl     *template.Template
 	charTmpl *template.Template
+	mapTmpl  *template.Template
 	now      func() time.Time
 }
 
@@ -43,6 +46,7 @@ func New(store state.Store) *Server {
 		store:    store,
 		tmpl:     template.Must(template.New("index").Funcs(tmplFuncs).Parse(indexTmpl)),
 		charTmpl: template.Must(template.New("char").Funcs(tmplFuncs).Parse(charTmpl)),
+		mapTmpl:  template.Must(template.New("map").Funcs(tmplFuncs).Parse(mapTmpl)),
 		now:      time.Now,
 	}
 }
@@ -51,6 +55,7 @@ func New(store state.Store) *Server {
 func (s *Server) Handler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", s.index)
+	mux.HandleFunc("/map", s.worldMap)
 	mux.HandleFunc("/p/", s.char)
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
@@ -87,6 +92,19 @@ func (s *Server) index(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	_ = s.tmpl.Execute(w, data)
+}
+
+// worldMap renders the persistent world map: every placed player + the towns.
+func (s *Server) worldMap(w http.ResponseWriter, r *http.Request) {
+	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
+	defer cancel()
+	world, err := idlerpg.ReadWorld(ctx, s.store, worldDots)
+	if err != nil {
+		http.Error(w, "the realm is unreachable right now.", http.StatusServiceUnavailable)
+		return
+	}
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	_ = s.mapTmpl.Execute(w, world)
 }
 
 // char renders one character's sheet at /p/<key>.
@@ -154,6 +172,7 @@ const indexTmpl = `<!doctype html>
 </head>
 <body>
 <h1>⚔ the idle realm</h1>
+<p class="muted"><a href="/map">🗺 the realm map</a> — see where everyone's wandering.</p>
 {{if .Quest}}
 <div class="quest">
   <strong>A quest is underway.</strong>
@@ -238,5 +257,48 @@ const charTmpl = `<!doctype html>
 </table>
 
 <footer><a href="/">&larr; back to the realm</a></footer>
+</body>
+</html>`
+
+const mapTmpl = `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="refresh" content="30">
+<title>annoybots · the realm map</title>
+<style>
+  :root { color-scheme: dark; }
+  body { background:#0e0f13; color:#d6d8de; font:15px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace; margin:0; padding:2rem; }
+  h1 { font-size:1.4rem; margin:0 0 .25rem; color:#e9b949; }
+  .sub { color:#8aa0c6; margin:0 0 1rem; }
+  .world { display:block; width:100%; max-width:680px; margin:0 auto; background:#0b0c10; border:1px solid #2a2f3a; border-radius:8px; }
+  .town { fill:#4a3c14; stroke:#e9b949; stroke-width:2; }
+  .town-l { fill:#b9912f; font-size:11px; }
+  .dot { fill:#7fd1a8; stroke:#0e0f13; stroke-width:1.5; }
+  .dot-l { fill:#9aa0ac; font-size:9px; }
+  .muted { color:#6b7280; }
+  a { color:#7fd1a8; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  footer { margin-top:1.5rem; color:#4b5563; font-size:.8rem; text-align:center; }
+</style>
+</head>
+<body>
+<h1>🗺 the realm map</h1>
+<p class="sub">{{len .Players}} adventurers roaming · towns in gold</p>
+<svg class="world" viewBox="-12 -12 {{add .Size 24}} {{add .Size 24}}" role="img" aria-label="world map of player positions">
+  <rect x="0" y="0" width="{{.Size}}" height="{{.Size}}" fill="#0b0c10" stroke="#20232b" stroke-width="1"/>
+  {{range .Towns}}
+  <rect x="{{add .X -5}}" y="{{add .Y -5}}" width="10" height="10" class="town"/>
+  <text x="{{add .X 9}}" y="{{add .Y 4}}" class="town-l">{{.Name}}</text>
+  {{end}}
+  {{range .Players}}
+  <circle cx="{{.X}}" cy="{{.Y}}" r="4" class="dot"/>
+  <text x="{{add .X 6}}" y="{{add .Y 3}}" class="dot-l">{{.Name}}</text>
+  {{else}}
+  <text x="{{add .Size -250}}" y="250" class="dot-l">no one has wandered onto the map yet.</text>
+  {{end}}
+</svg>
+<footer><a href="/">&larr; back to the realm</a> · auto-refreshes every 30s</footer>
 </body>
 </html>`

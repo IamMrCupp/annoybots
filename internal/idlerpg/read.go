@@ -42,6 +42,49 @@ type QuestView struct {
 	MapSize int
 }
 
+// MapDot is a player's position on the world map.
+type MapDot struct {
+	Name  string
+	X, Y  int
+	Level int64
+}
+
+// Town is a named landmark on the world map.
+type Town struct {
+	Name string
+	X, Y int
+}
+
+// WorldView is everything the dashboard needs to draw the world map: every placed
+// player's position and the static towns.
+type WorldView struct {
+	Players []MapDot
+	Towns   []Town
+	Size    int
+}
+
+// ReadWorld returns the world map — up to limit placed players plus the towns.
+func ReadWorld(ctx context.Context, store state.Store, limit int) (WorldView, error) {
+	top, err := store.ZTop(ctx, boardKey(), limit)
+	if err != nil {
+		return WorldView{}, err
+	}
+	w := WorldView{Size: worldSize}
+	for _, e := range towns {
+		w.Towns = append(w.Towns, Town(e))
+	}
+	for _, e := range top {
+		sheet, _ := store.HGetAll(ctx, sheetKey(e.Member))
+		if sheet["mx"] == 0 || sheet["my"] == 0 {
+			continue // not placed on the map yet
+		}
+		w.Players = append(w.Players, MapDot{
+			Name: displayName(e.Member), X: int(sheet["mx"]), Y: int(sheet["my"]), Level: sheet["level"],
+		})
+	}
+	return w, nil
+}
+
 // ReadLeaderboard returns up to n characters ranked by level (highest first).
 func ReadLeaderboard(ctx context.Context, store state.Store, n int) ([]CharView, error) {
 	top, err := store.ZTop(ctx, boardKey(), n)

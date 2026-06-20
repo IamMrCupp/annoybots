@@ -544,6 +544,7 @@ func (m *Manager) Tick() {
 	for _, p := range m.snapshot() {
 		ctx := context.Background()
 		key := sheetKey(p.key)
+		m.moveOnMap(ctx, p.key) // wander the world map (cosmetic; happens every tick)
 		ttl, err := m.store.HIncr(ctx, key, "ttl", -step)
 		if err != nil {
 			continue
