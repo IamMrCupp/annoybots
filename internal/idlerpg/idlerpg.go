@@ -803,35 +803,63 @@ func (m *Manager) randomOpponent(key string) (player, bool) {
 func (m *Manager) findItem(ctx context.Context, p player, level int64) {
 	slot := itemSlots[m.roll(len(itemSlots))]
 	found := int64(m.roll(int(level)+1) + 1) // 1..level+1
+	rIdx := int64(m.pickRarity(level))
+	newPow := found * rarityMult(rIdx) / 100
+
 	sheet, _ := m.store.HGetAll(ctx, sheetKey(p.key))
-	if found <= sheet[itemField(slot)] {
-		return
+	curPow := sheet[itemField(slot)] * rarityMult(sheet[rarityField(slot)]) / 100
+	if newPow <= curPow {
+		return // the find isn't an upgrade
 	}
 	_ = m.store.HSet(ctx, sheetKey(p.key), itemField(slot), found)
-	m.out.Say(p.network, p.channel, fmt.Sprintf("%s found a level %d %s!", p.nick, found, slot))
+	_ = m.store.HSet(ctx, sheetKey(p.key), rarityField(slot), rIdx)
+
+	name := ""
+	if rarities[rIdx].named {
+		name = legendaryNames[m.roll(len(legendaryNames))]
+		_ = m.store.SetStr(ctx, nameKey(p.key, slot), name)
+	} else {
+		_ = m.store.Del(ctx, nameKey(p.key, slot)) // clear any prior name on replace
+	}
+
+	label := rarityName(rIdx)
+	out := fmt.Sprintf("%s found %s %s level %d %s", p.nick, article(label), label, found, slot)
+	if name != "" {
+		out += " — “" + name + "”"
+	}
+	m.out.Say(p.network, p.channel, out+"!")
 }
 
 // itemSum is the character's total equipment power.
 func itemSum(sheet map[string]int64) int64 {
 	var sum int64
 	for _, s := range itemSlots {
-		sum += sheet[itemField(s)]
+		if lvl := sheet[itemField(s)]; lvl > 0 {
+			sum += lvl * rarityMult(sheet[rarityField(s)]) / 100
+		}
 	}
 	return sum
 }
 
 // items renders a player's equipment + power.
 func (m *Manager) items(msg engine.Message) string {
+	ctx := context.Background()
 	pkey := m.resolve(msg.Network, msg.Account, msg.Nick)
-	sheet, _ := m.store.HGetAll(context.Background(), sheetKey(pkey))
+	sheet, _ := m.store.HGetAll(ctx, sheetKey(pkey))
 	if _, ok := sheet["level"]; !ok {
 		return "you're not playing. !rpg to start the grind."
 	}
 	var parts []string
 	for _, s := range itemSlots {
-		if lvl := sheet[itemField(s)]; lvl > 0 {
-			parts = append(parts, fmt.Sprintf("%s %d", s, lvl))
+		lvl := sheet[itemField(s)]
+		if lvl <= 0 {
+			continue
 		}
+		part := fmt.Sprintf("%s %s %d", rarityName(sheet[rarityField(s)]), s, lvl)
+		if name, _ := m.store.GetStr(ctx, nameKey(pkey, s)); name != "" {
+			part += " “" + name + "”"
+		}
+		parts = append(parts, part)
 	}
 	gear := "nothing yet"
 	if len(parts) > 0 {

@@ -263,7 +263,7 @@ const charTmpl = `<!doctype html>
 
 <h2 style="font-size:1rem;color:#8aa0c6;margin:1.5rem 0 .5rem;">equipment</h2>
 <table>
-  {{range $slot, $lvl := .Items}}<tr><td class="k">{{$slot}}</td><td>{{$lvl}}</td></tr>
+  {{range .Items}}<tr><td class="k">{{.Slot}}</td><td>{{.Rarity}} lvl {{.Level}}{{if .Name}} <span class="muted">“{{.Name}}”</span>{{end}}</td></tr>
   {{else}}<tr><td colspan="2" class="muted">nothing equipped yet.</td></tr>{{end}}
 </table>
 

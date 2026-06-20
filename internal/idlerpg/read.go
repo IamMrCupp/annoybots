@@ -21,22 +21,30 @@ type Ability struct {
 	Mod   int64
 }
 
+// ItemView is one equipped item, for display.
+type ItemView struct {
+	Slot   string
+	Level  int64
+	Rarity string // "common" … "legendary"
+	Name   string // magic-item name, empty if unnamed
+}
+
 // CharView is a read-only snapshot of one character's sheet.
 type CharView struct {
-	Key       string           // canonical character key (network|nick, or a linked account)
-	Name      string           // display name: the key with any "network|" prefix stripped
-	Level     int64            // current level
-	HP        int64            // current hit points
-	MaxHP     int64            // hit-point ceiling
-	Gold      int64            // coin from monster kills
-	Kills     int64            // monsters slain
-	TTL       int64            // seconds to the next level
-	Power     int64            // total equipment power (sum of item levels)
-	Align     string           // "good" / "neutral" / "evil"
-	Race      string           // chosen race, empty if unset
-	Class     string           // class, empty if unset
-	Items     map[string]int64 // equipped slots → level (only non-empty slots)
-	Abilities []Ability        // the six ability scores, in canonical order (empty if unrolled)
+	Key       string     // canonical character key (network|nick, or a linked account)
+	Name      string     // display name: the key with any "network|" prefix stripped
+	Level     int64      // current level
+	HP        int64      // current hit points
+	MaxHP     int64      // hit-point ceiling
+	Gold      int64      // coin from monster kills
+	Kills     int64      // monsters slain
+	TTL       int64      // seconds to the next level
+	Power     int64      // total equipment power (sum of item levels)
+	Align     string     // "good" / "neutral" / "evil"
+	Race      string     // chosen race, empty if unset
+	Class     string     // class, empty if unset
+	Items     []ItemView // equipped items (only non-empty slots), in slot order
+	Abilities []Ability  // the six ability scores, in canonical order (empty if unrolled)
 }
 
 // QuestView is a read-only snapshot of the active quest.
@@ -128,11 +136,16 @@ func readChar(ctx context.Context, store state.Store, key string) CharView {
 	sheet, _ := store.HGetAll(ctx, sheetKey(key))
 	class, _ := store.GetStr(ctx, classKey(key))
 	race, _ := store.GetStr(ctx, raceKey(key))
-	items := map[string]int64{}
+	var items []ItemView
 	for _, s := range itemSlots {
-		if v := sheet[itemField(s)]; v > 0 {
-			items[s] = v
+		lvl := sheet[itemField(s)]
+		if lvl <= 0 {
+			continue
 		}
+		name, _ := store.GetStr(ctx, nameKey(key, s))
+		items = append(items, ItemView{
+			Slot: s, Level: lvl, Rarity: rarityName(sheet[rarityField(s)]), Name: name,
+		})
 	}
 	var abil []Ability
 	if sheet["str"] != 0 { // scores rolled
