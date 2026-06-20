@@ -376,6 +376,71 @@ func TestQuestTickStartsOnOdds(t *testing.T) {
 	}
 }
 
+func TestMapQuestTravelsAndCompletes(t *testing.T) {
+	m, r, st := newMgr()
+	ctx := context.Background()
+	enrollOnline(m, "alice")
+	enrollOnline(m, "bob")
+	m.startMapQuest(ctx, m.draftParty())
+	if m.quest == nil || m.quest.Kind != "map" {
+		t.Fatalf("a map quest should be active, got %#v", m.quest)
+	}
+	if !r.has("a quest begins") {
+		t.Fatalf("expected a map-quest announcement, got %v", r.lines)
+	}
+	st.HSet(ctx, sheetKey("net|alice"), "ttl", 1000)
+	st.HSet(ctx, sheetKey("net|bob"), "ttl", 1000)
+
+	// Two legs across a 500-grid at 70/tick finish well within 100 ticks.
+	sawWaypoint := false
+	for i := 0; i < 100 && m.quest != nil; i++ {
+		m.advanceMapQuest(ctx)
+		if r.has("first waypoint") {
+			sawWaypoint = true
+		}
+	}
+	if m.quest != nil {
+		t.Fatal("a map quest must complete within a bounded number of ticks")
+	}
+	if !sawWaypoint {
+		t.Fatal("the party should announce reaching the first waypoint")
+	}
+	if !r.has("reached its destination") {
+		t.Fatalf("expected an arrival announcement, got %v", r.lines)
+	}
+	if s, _ := st.HGetAll(ctx, sheetKey("net|alice")); s["ttl"] >= 1000 {
+		t.Fatalf("finishing should lower ttl, got %d", s["ttl"])
+	}
+}
+
+func TestMapQuestFailsOnTalk(t *testing.T) {
+	m, r, _ := newMgr()
+	ctx := context.Background()
+	enrollOnline(m, "alice")
+	enrollOnline(m, "bob")
+	m.startMapQuest(ctx, m.draftParty())
+	if m.Handle(chanMsg("alice", "are we there yet")) {
+		t.Fatal("chatter is not a consumed command")
+	}
+	if m.quest != nil {
+		t.Fatal("talking mid-journey must ruin the map quest")
+	}
+	if !r.has("RUINED") {
+		t.Fatalf("expected a ruin announcement, got %v", r.lines)
+	}
+}
+
+func TestStepTowardArrives(t *testing.T) {
+	// A single step larger than the distance snaps onto the target.
+	if x, y, reached := stepToward(0, 0, 30, 40, 100); !reached || x != 30 || y != 40 {
+		t.Fatalf("expected arrival at (30,40), got (%d,%d) reached=%v", x, y, reached)
+	}
+	// A step short of the target moves toward it without arriving.
+	if x, y, reached := stepToward(0, 0, 0, 100, 40); reached || y != 40 || x != 0 {
+		t.Fatalf("expected (0,40) not reached, got (%d,%d) reached=%v", x, y, reached)
+	}
+}
+
 func TestQuestRehydratesAcrossRestart(t *testing.T) {
 	m1, _, st := newMgr()
 	ctx := context.Background()

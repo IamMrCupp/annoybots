@@ -76,7 +76,7 @@ func (s *Server) index(w http.ResponseWriter, r *http.Request) {
 	quest, _ := idlerpg.ReadQuest(ctx, s.store)
 
 	data := pageData{Board: board, Quest: quest}
-	if quest != nil {
+	if quest != nil && quest.Kind != "map" {
 		data.QuestLeft = humanLeft(quest.Deadline - s.now().Unix())
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
@@ -112,6 +112,14 @@ const indexTmpl = `<!doctype html>
   .evil { color:#e06c75; } .good { color:#61afef; } .neutral { color:#abb2bf; }
   .quest { max-width:760px; background:#1a160c; border:1px solid #4a3c14; border-radius:8px; padding:1rem 1.25rem; margin:0 0 1rem; }
   .quest .obj { color:#e9b949; }
+  .map { display:block; width:100%; max-width:420px; margin:1rem 0 .25rem; }
+  .map-bg { fill:#0e0f13; stroke:#2a2f3a; stroke-width:2; }
+  .leg { stroke-width:3; fill:none; }
+  .leg1 { stroke:#61afef; }
+  .leg2 { stroke:#4a3c14; stroke-dasharray:10 8; }
+  .wp { fill:#3a3f4b; stroke:#8aa0c6; stroke-width:2; }
+  .wp-end { stroke:#e9b949; }
+  .party { fill:#7fd1a8; stroke:#0e0f13; stroke-width:3; }
   .muted { color:#6b7280; }
   footer { margin-top:2rem; color:#4b5563; font-size:.8rem; }
 </style>
@@ -121,10 +129,21 @@ const indexTmpl = `<!doctype html>
 {{if .Quest}}
 <div class="quest">
   <strong>A quest is underway.</strong>
-  <span class="muted">({{.QuestLeft}} left)</span><br>
+  {{if eq .Quest.Kind "map"}}<span class="muted">(leg {{add .Quest.Stage 1}} of 2)</span>
+  {{else}}<span class="muted">({{.QuestLeft}} left)</span>{{end}}<br>
   {{range $i, $m := .Quest.Members}}{{if $i}}, {{end}}{{$m}}{{end}}
   must <span class="obj">{{.Quest.Desc}}</span>.
   <div class="muted">One word or departure and the whole party is flung backward.</div>
+  {{if eq .Quest.Kind "map"}}
+  <svg class="map" viewBox="-20 -20 {{add .Quest.MapSize 40}} {{add .Quest.MapSize 40}}" role="img" aria-label="quest map">
+    <rect x="0" y="0" width="{{.Quest.MapSize}}" height="{{.Quest.MapSize}}" class="map-bg"/>
+    <line x1="{{.Quest.X}}" y1="{{.Quest.Y}}" x2="{{.Quest.X1}}" y2="{{.Quest.Y1}}" class="leg leg1"/>
+    <line x1="{{.Quest.X1}}" y1="{{.Quest.Y1}}" x2="{{.Quest.X2}}" y2="{{.Quest.Y2}}" class="leg leg2"/>
+    <circle cx="{{.Quest.X1}}" cy="{{.Quest.Y1}}" r="9" class="wp"/>
+    <circle cx="{{.Quest.X2}}" cy="{{.Quest.Y2}}" r="9" class="wp wp-end"/>
+    <circle cx="{{.Quest.X}}" cy="{{.Quest.Y}}" r="13" class="party"/>
+  </svg>
+  {{end}}
 </div>
 {{else}}
 <p class="muted">No quest underway. The gods are watching.</p>
