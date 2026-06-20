@@ -32,7 +32,7 @@ func TestReadLeaderboard(t *testing.T) {
 	if a.Name != "alice" || a.Level != 5 || a.Power != 7 || a.Align != "evil" || a.Class != "wizard" {
 		t.Fatalf("alice view wrong: %#v", a)
 	}
-	if a.Items["weapon"] != 7 {
+	if len(a.Items) != 1 || a.Items[0].Slot != "weapon" || a.Items[0].Level != 7 {
 		t.Fatalf("alice items wrong: %#v", a.Items)
 	}
 	if board[1].Name != "bob" {

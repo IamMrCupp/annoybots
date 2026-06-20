@@ -106,7 +106,7 @@ func TestFindsItemOnLevelUp(t *testing.T) {
 	m, r, st := newMgr()
 	m.Handle(chanMsg("alice", "!rpg")) // enroll, ttl=1
 	m.Tick()                           // level up → finds an item (empty slot, so always > 0)
-	if !r.has("found a level") {
+	if !r.has("found a") {
 		t.Fatalf("expected an item find on level-up, got %v", r.lines)
 	}
 	sheet, _ := st.HGetAll(context.Background(), sheetKey("net|alice"))
@@ -765,5 +765,37 @@ func TestRaceRejectsUnknown(t *testing.T) {
 	m.Handle(chanMsg("alice", "!rpg race wookiee"))
 	if !r.has("no such race") {
 		t.Fatalf("unknown race should be rejected, got %q", r.last())
+	}
+}
+
+func TestItemSumRarity(t *testing.T) {
+	sheet := map[string]int64{
+		itemField("weapon"): 10, rarityField("weapon"): 2, // rare → 170%
+		itemField("helm"): 5, // common (unset rarity → 100%)
+	}
+	if got := itemSum(sheet); got != 22 { // 10*1.7=17 + 5
+		t.Fatalf("itemSum with rarity = %d; want 22", got)
+	}
+}
+
+func TestPickRarityInRange(t *testing.T) {
+	m, _, _ := newMgr()
+	for lvl := 0; lvl < 100; lvl++ {
+		if idx := m.pickRarity(int64(lvl)); idx < 0 || idx >= len(rarities) {
+			t.Fatalf("pickRarity(%d) = %d, out of range", lvl, idx)
+		}
+	}
+}
+
+func TestItemsShowRarityAndName(t *testing.T) {
+	m, r, st := newMgr()
+	ctx := context.Background()
+	m.Handle(chanMsg("alice", "!rpg"))
+	st.HSet(ctx, sheetKey("net|alice"), itemField("weapon"), 9)
+	st.HSet(ctx, sheetKey("net|alice"), rarityField("weapon"), 4) // legendary
+	st.SetStr(ctx, nameKey("net|alice", "weapon"), "Flametongue")
+	m.Handle(chanMsg("alice", "!rpg items"))
+	if !strings.Contains(r.last(), "legendary") || !strings.Contains(r.last(), "Flametongue") {
+		t.Fatalf("items should show rarity + name, got %q", r.last())
 	}
 }

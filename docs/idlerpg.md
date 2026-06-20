@@ -36,8 +36,10 @@ the NAMES list — you don't have to rejoin or speak to resume progress.
 ## What happens while you idle
 
 - **Items.** On level-up you may find gear for one of ten slots (weapon, shield,
-  ring, …). Better gear replaces worse; the sum of your item levels is your
-  **power**. `!rpg items` shows your kit.
+  ring, …). Each drop rolls a **rarity** (common → uncommon → rare → epic →
+  legendary) that multiplies its power, and legendaries come **named**
+  ("Flametongue"). Better gear (by effective power) replaces worse; your total is
+  your **power**. `!rpg items` shows your kit with rarities.
 - **Battles.** Leveling up pits you against a random online player, weighted by
   power, with a chance of a critical hit. Win and your clock speeds up; lose and
   it slows (and takes HP).
