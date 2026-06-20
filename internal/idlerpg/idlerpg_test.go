@@ -722,3 +722,48 @@ func TestResolveFightWinRewards(t *testing.T) {
 		t.Fatalf("a kill should bump kills + gold, got kills=%d gold=%d", s["kills"], s["gold"])
 	}
 }
+
+func TestRaceBakesModifiers(t *testing.T) {
+	m, r, st := newMgr()
+	ctx := context.Background()
+	m.Handle(chanMsg("alice", "!rpg"))
+	st.HSet(ctx, sheetKey("net|alice"), "str", 10)
+	st.HSet(ctx, sheetKey("net|alice"), "con", 10)
+	m.Handle(chanMsg("alice", "!rpg race half-orc")) // +2 STR, +1 CON
+	s, _ := st.HGetAll(ctx, sheetKey("net|alice"))
+	if s["str"] != 12 || s["con"] != 11 {
+		t.Fatalf("half-orc should bake +2 STR +1 CON, got STR %d CON %d", s["str"], s["con"])
+	}
+	if !r.has("is now a half-orc") {
+		t.Fatalf("race announcement wrong: %v", r.lines)
+	}
+}
+
+func TestRaceSetOnce(t *testing.T) {
+	m, r, _ := newMgr()
+	m.Handle(chanMsg("alice", "!rpg"))
+	m.Handle(chanMsg("alice", "!rpg race elf"))
+	m.Handle(chanMsg("alice", "!rpg race dwarf")) // can't change heritage
+	if !r.has("already set") {
+		t.Fatalf("a second race should be rejected, got %q", r.last())
+	}
+}
+
+func TestRaceInTitle(t *testing.T) {
+	m, r, _ := newMgr()
+	m.Handle(chanMsg("alice", "!rpg"))
+	m.Handle(chanMsg("alice", "!rpg race elf"))
+	m.Handle(chanMsg("alice", "!rpg")) // status line
+	if !strings.Contains(r.last(), "elf") {
+		t.Fatalf("status should show race, got %q", r.last())
+	}
+}
+
+func TestRaceRejectsUnknown(t *testing.T) {
+	m, r, _ := newMgr()
+	m.Handle(chanMsg("alice", "!rpg"))
+	m.Handle(chanMsg("alice", "!rpg race wookiee"))
+	if !r.has("no such race") {
+		t.Fatalf("unknown race should be rejected, got %q", r.last())
+	}
+}
