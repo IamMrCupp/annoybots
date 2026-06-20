@@ -46,7 +46,10 @@ the NAMES list — you don't have to rejoin or speak to resume progress.
   (a big swing either way).
 - **Alignment** (`!rpg align good|neutral|evil`). Good fights at +11% power; evil
   crits twice as often; neutral is baseline.
-- **Class** (`!rpg class <name>`). Pure flavor — it shows up in your status line.
+- **Class** (`!rpg class <fighter|ranger|rogue|cleric|bard|wizard>`). Mechanical:
+  each keys off a primary ability (fighter STR, wizard INT, rogue/ranger DEX,
+  cleric WIS, bard CHA) whose modifier is added to your attack power, and whose
+  hit die feeds your HP.
 
 ## Quests
 

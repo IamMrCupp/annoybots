@@ -40,7 +40,7 @@ Opt in with `!rpg`, then "play" by being present and **quiet**. Full rules in
 | `!rpg items` (`gear`) | Your equipped items and total power. |
 | `!rpg top` | The level leaderboard. |
 | `!rpg align good\|neutral\|evil` | Set your alignment (affects combat). |
-| `!rpg class <name>` | Set your class (flavor). |
+| `!rpg class <fighter\|ranger\|rogue\|cleric\|bard\|wizard>` | Pick a class — its primary ability sharpens your attacks (and feeds HP). |
 | `!rpg info` | Realm summary: idlers online, top player, active quest. |
 | `!rpg quest` | The active quest's party, objective, and time left. |
 | `!rpg pause` / `!rpg resume` | (admin) Freeze or resume the whole game. |
