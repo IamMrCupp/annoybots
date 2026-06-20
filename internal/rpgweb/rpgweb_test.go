@@ -1,6 +1,7 @@
 package rpgweb
 
 import (
+	"context"
 	"io"
 	"log/slog"
 	"net/http"
@@ -45,6 +46,25 @@ func TestIndexShowsPlayers(t *testing.T) {
 	for _, want := range []string{"top idlers", "alice", "bob", "No quest underway"} {
 		if !strings.Contains(body, want) {
 			t.Fatalf("page missing %q\n%s", want, body)
+		}
+	}
+}
+
+func TestIndexShowsMapQuest(t *testing.T) {
+	st := state.NewMem()
+	// A map quest exactly as internal/idlerpg persists one (key "rpg:quest").
+	blob := `{"kind":"map","net":"net","chan":"#c","members":{"net|alice":"alice"},` +
+		`"desc":"recover the lost socks","x":50,"y":60,"x1":200,"y1":220,"x2":400,"y2":450,"stage":1}`
+	if err := st.SetStr(context.Background(), "rpg:quest", blob); err != nil {
+		t.Fatal(err)
+	}
+
+	rr := httptest.NewRecorder()
+	New(st).Handler().ServeHTTP(rr, httptest.NewRequest(http.MethodGet, "/", nil))
+	body := rr.Body.String()
+	for _, want := range []string{"<svg", `class="party"`, "leg 2 of 2", "recover the lost socks"} {
+		if !strings.Contains(body, want) {
+			t.Fatalf("map quest page missing %q\n%s", want, body)
 		}
 	}
 }

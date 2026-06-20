@@ -50,11 +50,19 @@ the NAMES list — you don't have to rejoin or speak to resume progress.
 
 ## Quests
 
-Every so often the gods draft a party of online idlers onto a **timed quest**
-(`!rpg quest` shows the active one). The deal is simple: stay present and **silent**
-until the timer runs out and the whole party's clock jumps forward. If *any*
-quester talks, parts, quits, is kicked, or changes nick, the quest collapses and
-the entire party is shoved backward — so a quest is a shared, fragile pact.
+Every so often the gods draft a party of online idlers onto a quest (`!rpg quest`
+shows the active one). There are two kinds, chosen at random:
+
+- **Timed quest** — stay present and **silent** until the timer runs out, and the
+  whole party's clock jumps forward.
+- **Map quest** — the party *journeys* across the realm (a 500×500 grid) to two
+  waypoints in sequence, moving a step each tick. Reaching the end wins. The web
+  dashboard draws the map: the two waypoints, the route, and the party's moving
+  position.
+
+Either way it's a shared, fragile pact: if *any* quester talks, parts, quits, is
+kicked, or changes nick, the quest collapses and the **entire party** is shoved
+backward.
 
 A quest survives a bot restart (its state is persisted), and the cadence is tunable
 — drop `quest_interval` to `15m` and `quest_duration` to `5m` on a test channel if

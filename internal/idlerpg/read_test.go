@@ -40,6 +40,27 @@ func TestReadLeaderboard(t *testing.T) {
 	}
 }
 
+func TestReadQuestMap(t *testing.T) {
+	m, _, st := newMgr()
+	ctx := context.Background()
+	m.Handle(chanMsg("alice", "!rpg"))
+	m.Handle(chanMsg("bob", "!rpg"))
+	m.startMapQuest(ctx, m.draftParty())
+
+	q, err := ReadQuest(ctx, st)
+	if err != nil || q == nil {
+		t.Fatalf("expected a quest view, got %v (err %v)", q, err)
+	}
+	if q.Kind != "map" || q.MapSize != mapSize {
+		t.Fatalf("map quest view wrong: kind=%q mapSize=%d", q.Kind, q.MapSize)
+	}
+	for _, v := range []int{q.X, q.Y, q.X1, q.Y1, q.X2, q.Y2} {
+		if v < 0 || v > mapSize {
+			t.Fatalf("coordinate out of bounds: %#v", q)
+		}
+	}
+}
+
 func TestReadQuest(t *testing.T) {
 	st := state.NewMem()
 	ctx := context.Background()

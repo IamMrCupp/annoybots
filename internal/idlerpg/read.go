@@ -28,9 +28,18 @@ type CharView struct {
 
 // QuestView is a read-only snapshot of the active quest.
 type QuestView struct {
+	Kind     string   // "time" or "map"
 	Desc     string   // the objective flavor text
 	Members  []string // party display nicks, sorted
-	Deadline int64    // unix seconds the quest resolves
+	Deadline int64    // unix seconds the quest resolves ("time" quests)
+
+	// Map quests: the party's position, the two waypoints, the current leg, and
+	// the grid size — everything the dashboard needs to draw the journey.
+	X, Y    int
+	X1, Y1  int
+	X2, Y2  int
+	Stage   int
+	MapSize int
 }
 
 // ReadLeaderboard returns up to n characters ranked by level (highest first).
@@ -90,5 +99,9 @@ func ReadQuest(ctx context.Context, store state.Store) (*QuestView, error) {
 	}
 	members := questNicks(&q)
 	sort.Strings(members)
-	return &QuestView{Desc: q.Desc, Members: members, Deadline: q.Deadline}, nil
+	return &QuestView{
+		Kind: q.Kind, Desc: q.Desc, Members: members, Deadline: q.Deadline,
+		X: q.X, Y: q.Y, X1: q.X1, Y1: q.Y1, X2: q.X2, Y2: q.Y2,
+		Stage: q.Stage, MapSize: mapSize,
+	}, nil
 }
