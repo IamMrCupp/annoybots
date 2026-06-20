@@ -44,6 +44,9 @@ Opt in with `!rpg`, then "play" by being present and **quiet**. Full rules in
 | `!rpg class <fighter\|ranger\|rogue\|cleric\|bard\|wizard>` | Pick a class — its primary ability sharpens your attacks (and feeds HP). |
 | `!rpg info` | Realm summary: idlers online, top player, active quest. |
 | `!rpg quest` | The active quest's party, objective, and time left. |
+| `!rpg travel <town>` | Set off for a town; you walk there over the next ticks. |
+| `!rpg town` | Where you are on the map (at a town, travelling, or roaming). |
+| `!rpg rest` / `!rpg shop` / `!rpg buy <slot>` / `!rpg revive` | Town services — heal, buy gear (gold), revive — usable while at the matching town. |
 | `!rpg pause` / `!rpg resume` | (admin) Freeze or resume the whole game. |
 | `!rpg push <name> <secs>` | (admin) Move a player's clock — negative is toward the next level. |
 | `!rpg hog [name]` | (admin) Invoke the Hand of God on a named player or a random one. |

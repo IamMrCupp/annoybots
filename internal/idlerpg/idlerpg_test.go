@@ -799,3 +799,88 @@ func TestItemsShowRarityAndName(t *testing.T) {
 		t.Fatalf("items should show rarity + name, got %q", r.last())
 	}
 }
+
+func TestRestAtInnHeals(t *testing.T) {
+	m, r, st := newMgr()
+	ctx := context.Background()
+	m.Handle(chanMsg("alice", "!rpg"))
+	st.HSet(ctx, sheetKey("net|alice"), "mx", 420) // Mount AFK (inn)
+	st.HSet(ctx, sheetKey("net|alice"), "my", 90)
+	st.HSet(ctx, sheetKey("net|alice"), "dmg", 50)
+	m.Handle(chanMsg("alice", "!rpg rest"))
+	if !r.has("recovers to full") {
+		t.Fatalf("rest at an inn should heal, got %q", r.last())
+	}
+	if s, _ := st.HGetAll(ctx, sheetKey("net|alice")); s["dmg"] != 0 {
+		t.Fatalf("dmg should be cleared, got %d", s["dmg"])
+	}
+}
+
+func TestServiceWrongTown(t *testing.T) {
+	m, r, st := newMgr()
+	ctx := context.Background()
+	m.Handle(chanMsg("alice", "!rpg"))
+	st.HSet(ctx, sheetKey("net|alice"), "mx", 70) // Lurk Harbor (market)
+	st.HSet(ctx, sheetKey("net|alice"), "my", 410)
+	m.Handle(chanMsg("alice", "!rpg rest")) // no inn here
+	if !r.has("no inn here") {
+		t.Fatalf("rest at a market should be refused, got %q", r.last())
+	}
+}
+
+func TestBuyAtMarket(t *testing.T) {
+	m, r, st := newMgr()
+	ctx := context.Background()
+	m.Handle(chanMsg("alice", "!rpg"))
+	st.HSet(ctx, sheetKey("net|alice"), "mx", 70) // Lurk Harbor (market)
+	st.HSet(ctx, sheetKey("net|alice"), "my", 410)
+	st.HSet(ctx, sheetKey("net|alice"), "gold", 1000)
+	st.HSet(ctx, sheetKey("net|alice"), "level", 5)
+	m.Handle(chanMsg("alice", "!rpg buy weapon"))
+	if !r.has("buys a level-6 weapon") {
+		t.Fatalf("buy wrong, got %q", r.last())
+	}
+	s, _ := st.HGetAll(ctx, sheetKey("net|alice"))
+	if s["gold"] != 952 || s[itemField("weapon")] != 6 { // 1000 - (5+1)*8
+		t.Fatalf("buy should spend gold + set item, gold=%d weapon=%d", s["gold"], s[itemField("weapon")])
+	}
+}
+
+func TestReviveAtTemple(t *testing.T) {
+	m, r, st := newMgr()
+	ctx := context.Background()
+	m.Handle(chanMsg("alice", "!rpg"))
+	st.HSet(ctx, sheetKey("net|alice"), "mx", 250) // Idlecrest (temple)
+	st.HSet(ctx, sheetKey("net|alice"), "my", 250)
+	st.HSet(ctx, sheetKey("net|alice"), "dmg", 1000) // downed
+	st.HSet(ctx, sheetKey("net|alice"), "gold", 1000)
+	st.HSet(ctx, sheetKey("net|alice"), "level", 3)
+	m.Handle(chanMsg("alice", "!rpg revive"))
+	if !r.has("revives") {
+		t.Fatalf("revive wrong, got %q", r.last())
+	}
+	if s, _ := st.HGetAll(ctx, sheetKey("net|alice")); s["dmg"] != 0 || s["gold"] != 973 { // 1000-(15+12)
+		t.Fatalf("revive should clear dmg + spend gold, dmg=%d gold=%d", s["dmg"], s["gold"])
+	}
+}
+
+func TestTravelAndArrive(t *testing.T) {
+	m, r, st := newMgr()
+	ctx := context.Background()
+	m.Handle(chanMsg("alice", "!rpg"))
+	st.HSet(ctx, sheetKey("net|alice"), "mx", 400)
+	st.HSet(ctx, sheetKey("net|alice"), "my", 400)
+	m.Handle(chanMsg("alice", "!rpg travel Idlecrest"))
+	if !r.has("sets out for Idlecrest") {
+		t.Fatalf("travel should set out, got %q", r.last())
+	}
+	for i := 0; i < 80 && !r.has("arrives at Idlecrest"); i++ {
+		m.Tick()
+	}
+	if !r.has("arrives at Idlecrest") {
+		t.Fatalf("traveller should reach Idlecrest, lines: %v", r.lines)
+	}
+	if s, _ := st.HGetAll(ctx, sheetKey("net|alice")); s["dest"] != 0 {
+		t.Fatalf("dest should clear on arrival, got %d", s["dest"])
+	}
+}
