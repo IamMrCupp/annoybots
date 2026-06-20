@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.19.0](https://github.com/IamMrCupp/annoybots/compare/v1.18.0...v1.19.0) (2026-06-20)
+
+
+### Features
+
+* **idlerpg:** functional towns — travel, inn/market/temple services (closes [#78](https://github.com/IamMrCupp/annoybots/issues/78)) ([297887d](https://github.com/IamMrCupp/annoybots/commit/297887d75e188a1bd179c61e01e985a2aa05f077))
+* **idlerpg:** functional towns ([#78](https://github.com/IamMrCupp/annoybots/issues/78)) ([0a7f105](https://github.com/IamMrCupp/annoybots/commit/0a7f105367133b825ea290d175699dfccb99368f))
+
 ## [1.18.0](https://github.com/IamMrCupp/annoybots/compare/v1.17.0...v1.18.0) (2026-06-20)
 
 
