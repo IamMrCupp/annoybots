@@ -1,0 +1,53 @@
+# Config for a remote bot joining an existing botnet. The key is the botnet block:
+# it points at the SHARED hub Redis over the mesh, with the SAME channel as the
+# home bots — that's what makes this one logical botnet. Give the bot a unique
+# `bot:` name and add it to every other bot's personality.siblings.
+#
+# Secrets are NEVER stored here — *_env fields name variables from .env.
+
+bot: outpost
+
+health:
+  addr: ":8080"
+
+brain:
+  path: "/data/brain.gob"
+  save_every: "5m"
+
+botnet:
+  enabled: true
+  redis_addr: "10.99.0.1:6379"     # <-- the hub's address ON THE MESH (edit this)
+  redis_password_env: "REDIS_PASSWORD"
+  channel: "annoybots"             # MUST match the home bots' channel
+
+# IdleRPG state is shared via the hub, but only ONE bot should run the game ticker
+# (your home bot). A remote bot leaves it off — it still shares karma/accounts and
+# joins banter, skits, and the partyline.
+idlerpg:
+  enabled: false
+
+networks:
+  - name: discord
+    kind: discord
+    password_env: "DISCORD_TOKEN"
+    guilds: ["YOUR_GUILD_ID"]
+    channels: []
+
+personality:
+  name: "outpost"
+  commands: true
+  siblings: ["arywen", "kurkutu"]  # the home bots (and any others)
+
+  triggers:
+    - name: greeting
+      pattern: "(?i)\\b(hello|hi|hey)\\b"
+      chance: 0.3
+      cooldown: "1m"
+      responses:
+        - "greetings from the outpost, {nick}."
+
+  markov:
+    enabled: true
+    learn: true
+    order: 2
+    max_words: 30

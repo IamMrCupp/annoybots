@@ -1,0 +1,19 @@
+# Raw-WireGuard peer config for a remote annoybots host. Place at
+# /etc/wireguard/wg0.conf on the remote box, fill in the keys/endpoint, then:
+#   wg-quick up wg0
+#
+# (If you use Headscale instead, you don't need this file — just
+#  `tailscale up --login-server https://your-headscale` and apply an ACL that
+#  lets this node reach the Redis host on 6379.)
+
+[Interface]
+PrivateKey = <this-host-private-key>
+Address = 10.99.0.2/32          # this remote host's tunnel IP
+
+[Peer]
+PublicKey = <hub-side-public-key>
+Endpoint = your.home.example.net:51820
+# Route ONLY the Redis hub through the tunnel — never your whole home subnet.
+AllowedIPs = 10.99.0.1/32
+# Keep the NAT mapping alive from behind CGNAT / a home router.
+PersistentKeepalive = 25

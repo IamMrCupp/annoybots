@@ -1,0 +1,15 @@
+# A remote annoybots host that joins an EXISTING botnet over a private mesh.
+# Unlike deploy/compose, there is NO local Redis — this bot dials the shared hub
+# at the address you set in bot.yaml (botnet.redis_addr). The host must already be
+# on the WireGuard/Headscale mesh. See ../../docs/federation.md.
+services:
+  bot:
+    image: ghcr.io/iammrcupp/annoybots:latest
+    env_file: [.env]
+    volumes:
+      - ./bot.yaml:/config/bot.yaml:ro
+      - bot-data:/data # the Markov brain + runtime state
+    restart: unless-stopped
+
+volumes:
+  bot-data:

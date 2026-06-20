@@ -187,6 +187,11 @@ kubectl apply -k deploy/k8s/redis
 The bus carries only ephemeral coordination messages, so the Redis runs without
 persistence.
 
+**Federation.** Bots on *other* hosts (a VPS, a friend's box) can join the same
+botnet by pointing at the same Redis over a private WireGuard/Headscale mesh — no
+code changes, just `botnet.redis_addr` + a password. See
+[docs/federation.md](docs/federation.md) and the [`deploy/remote`](deploy/remote) kit.
+
 ## Admin console (chat)
 
 DM a bot to run admin commands. Admins are matched by **verified identity** — an
