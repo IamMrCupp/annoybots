@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.16.0](https://github.com/IamMrCupp/annoybots/compare/v1.15.0...v1.16.0) (2026-06-20)
+
+
+### Features
+
+* **idlerpg:** persistent world map — players wander, towns marked (dashboard /map) ([00df2b8](https://github.com/IamMrCupp/annoybots/commit/00df2b8f7ef5f7e9468f62e92c74c730f61e409a))
+* **idlerpg:** persistent world map (/map) ([8fab6ad](https://github.com/IamMrCupp/annoybots/commit/8fab6ad8d6b9e32986cc3b39825228d720f19677))
+
 ## [1.15.0](https://github.com/IamMrCupp/annoybots/compare/v1.14.0...v1.15.0) (2026-06-20)
 
 
