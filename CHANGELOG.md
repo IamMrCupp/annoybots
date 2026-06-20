@@ -1,5 +1,25 @@
 # Changelog
 
+## [1.13.0](https://github.com/IamMrCupp/annoybots/compare/v1.12.0...v1.13.0) (2026-06-20)
+
+
+### Features
+
+* **admin:** !identify — manually (re)authenticate the bot ([4434501](https://github.com/IamMrCupp/annoybots/commit/44345014a6bf59342caa7514c349d6fee9fc069d))
+* **admin:** !identify to (re)authenticate the bot to NickServ ([ea122bc](https://github.com/IamMrCupp/annoybots/commit/ea122bcbb3619241ec212bee7cb2dff82cf1168c))
+* **admin:** one-time claim code — zero-touch owner bootstrap ([e389f1e](https://github.com/IamMrCupp/annoybots/commit/e389f1ef04b5f0774969798ceb45104d1818f5a8))
+* **admin:** one-time claim code to bootstrap the first owner (no password) ([ae08ef1](https://github.com/IamMrCupp/annoybots/commit/ae08ef1a3ada8d197977807d1ddcaef93d0cbcf3))
+* **config:** per-feature toggles (games/tell/accounts) + IdleRPG-only example ([529e8e0](https://github.com/IamMrCupp/annoybots/commit/529e8e0a9172ec3c01d15ec868dbfef3dba2b670))
+* **config:** per-feature toggles + IdleRPG-only bot ([8fc3605](https://github.com/IamMrCupp/annoybots/commit/8fc3605858570d656bbd3d1d3f712fb61db41335))
+
+
+### Documentation
+
+* add License + Acknowledgments sections and quote-pack credits ([32cfa91](https://github.com/IamMrCupp/annoybots/commit/32cfa913ae9ebcf9c664e61f160227eca542593a))
+* command/IdleRPG/accounts guides + Docker Compose & dashboard deploy examples ([3ecb773](https://github.com/IamMrCupp/annoybots/commit/3ecb7730ada10cbdc94d84194c0bdd6c1ae4e457))
+* license clarity + credit where credit's due ([c632777](https://github.com/IamMrCupp/annoybots/commit/c632777029dfef44f2a225542f912a1e22bd97b3))
+* public-release docs + non-k8s (Docker Compose) deploy ([efc15be](https://github.com/IamMrCupp/annoybots/commit/efc15be8e1e4f6836b49b09a8976f359e5600bf5))
+
 ## [1.12.0](https://github.com/IamMrCupp/annoybots/compare/v1.11.0...v1.12.0) (2026-06-19)
 
 
