@@ -25,9 +25,11 @@ RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
 FROM gcr.io/distroless/static:nonroot
 COPY --from=build /out/annoybot /annoybot
 COPY --from=build /out/dashboard /dashboard
-# Bake the default quote packs and shared skits; ConfigMap mounts can override.
+# Bake the default quote packs, shared skits, and example plugins; ConfigMap
+# mounts can override. Set plugins.dir: /plugins in config to load the examples.
 COPY data/quotes /quotes
 COPY data/skits.yaml /skits.yaml
+COPY data/plugins /plugins
 ENV ANNOYBOT_QUOTES_DIR=/quotes
 ENV ANNOYBOT_SKITS_FILE=/skits.yaml
 USER nonroot:nonroot

@@ -50,6 +50,12 @@ admin:
     - network: twitch
       account: "your_twitch_login"
 
+# Lua plugins (eggdrop-style scripting, off by default). Point at a directory of
+# .lua scripts; each can add !commands without a rebuild. The image bakes example
+# scripts at /plugins. See docs/plugins.md.
+# plugins:
+#   dir: "/plugins"
+
 # Channel keeping (IRC only, off by default). Once the bot is opped, it keeps its
 # sibling bots — and any extra `protect` nicks — opped automatically. Eggdrop-style.
 # chankeep:
