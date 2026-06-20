@@ -15,39 +15,58 @@ const (
 	worldStep = 14  // max distance a player drifts per tick
 )
 
-// town is a static, named landmark drawn on the world map for flavor.
+// town is a named landmark on the world map. Service is what you can do there:
+// "inn" (rest to heal), "market" (buy gear), or "temple" (revive when downed).
 type town struct {
-	Name string
-	X, Y int
+	Name    string
+	X, Y    int
+	Service string
 }
+
+// townRadius is how close (world units) you must be to a town to use its service.
+const townRadius = 25
 
 // towns are fixed points of interest on the map.
 var towns = []town{
-	{"Idlecrest", 250, 250},
-	{"Lurk Harbor", 70, 410},
-	{"Mount AFK", 420, 90},
-	{"Quietford", 130, 150},
-	{"The Lag Marsh", 360, 380},
-	{"Tab-Away Tavern", 200, 60},
+	{"Idlecrest", 250, 250, "temple"},
+	{"Lurk Harbor", 70, 410, "market"},
+	{"Mount AFK", 420, 90, "inn"},
+	{"Quietford", 130, 150, "market"},
+	{"The Lag Marsh", 360, 380, "temple"},
+	{"Tab-Away Tavern", 200, 60, "inn"},
 }
 
-// moveOnMap drifts an online player one random step, placing them first if they've
-// never been on the map. Caller passes the player's character key.
-func (m *Manager) moveOnMap(ctx context.Context, key string) {
-	sheet, err := m.store.HGetAll(ctx, sheetKey(key))
+// moveOnMap advances an online player one step: toward their travel destination if
+// they've set one (announcing arrival), otherwise a random drift. Places them on
+// the map first if they've never been on it.
+func (m *Manager) moveOnMap(ctx context.Context, p player) {
+	sheet, err := m.store.HGetAll(ctx, sheetKey(p.key))
 	if err != nil {
 		return
 	}
 	x, y := sheet["mx"], sheet["my"]
 	if x == 0 || y == 0 {
-		x = int64(m.roll(worldSize) + 1)
-		y = int64(m.roll(worldSize) + 1)
-	} else {
-		x = clampWorld(x + int64(m.roll(2*worldStep+1)-worldStep))
-		y = clampWorld(y + int64(m.roll(2*worldStep+1)-worldStep))
+		_ = m.store.HSet(ctx, sheetKey(p.key), "mx", int64(m.roll(worldSize)+1))
+		_ = m.store.HSet(ctx, sheetKey(p.key), "my", int64(m.roll(worldSize)+1))
+		return
 	}
-	_ = m.store.HSet(ctx, sheetKey(key), "mx", x)
-	_ = m.store.HSet(ctx, sheetKey(key), "my", y)
+	// Travelling to a town: walk toward it, announce on arrival.
+	if dest := sheet["dest"]; dest > 0 && int(dest) <= len(towns) {
+		t := towns[dest-1]
+		nx, ny, reached := stepToward(int(x), int(y), t.X, t.Y, worldStep)
+		_ = m.store.HSet(ctx, sheetKey(p.key), "mx", int64(nx))
+		_ = m.store.HSet(ctx, sheetKey(p.key), "my", int64(ny))
+		if reached {
+			_ = m.store.HSet(ctx, sheetKey(p.key), "dest", 0)
+			m.out.Say(p.network, p.channel, "🏘 "+p.nick+" arrives at "+t.Name+" — the "+t.Service+".")
+		}
+		return
+	}
+	// Otherwise wander.
+	x = clampWorld(x + int64(m.roll(2*worldStep+1)-worldStep))
+	y = clampWorld(y + int64(m.roll(2*worldStep+1)-worldStep))
+	_ = m.store.HSet(ctx, sheetKey(p.key), "mx", x)
+	_ = m.store.HSet(ctx, sheetKey(p.key), "my", y)
 }
 
 func clampWorld(v int64) int64 {

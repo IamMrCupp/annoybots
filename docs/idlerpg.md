@@ -82,6 +82,21 @@ A quest survives a bot restart (its state is persisted), and the cadence is tuna
 — drop `quest_interval` to `15m` and `quest_duration` to `5m` on a test channel if
 you want to actually watch one play out.
 
+## Towns
+
+The world map's landmarks are functional stops. `!rpg travel <town>` heads you
+toward one — you walk there over the next ticks (arrival is announced), and
+`!rpg town` tells you where you are. While you're standing at a town you can use
+its service:
+
+- **Inn** (`!rpg rest`) — heal to full.
+- **Market** (`!rpg shop`, then `!rpg buy <slot>`) — spend gold on a
+  level-appropriate item. The gold sink for everything monsters drop.
+- **Temple** (`!rpg revive`) — pay to clear the downed state and heal to full.
+
+The dashboard character page shows where each character is (at a town, travelling,
+or roaming).
+
 ## One character everywhere
 
 Your character is keyed to your **account**, not your nick or platform. Link your

@@ -43,6 +43,7 @@ type CharView struct {
 	Align     string     // "good" / "neutral" / "evil"
 	Race      string     // chosen race, empty if unset
 	Class     string     // class, empty if unset
+	Location  string     // where on the map: at/travelling-to a town, or roaming
 	Items     []ItemView // equipped items (only non-empty slots), in slot order
 	Abilities []Ability  // the six ability scores, in canonical order (empty if unrolled)
 }
@@ -72,8 +73,9 @@ type MapDot struct {
 
 // Town is a named landmark on the world map.
 type Town struct {
-	Name string
-	X, Y int
+	Name    string
+	X, Y    int
+	Service string
 }
 
 // WorldView is everything the dashboard needs to draw the world map: every placed
@@ -166,9 +168,26 @@ func readChar(ctx context.Context, store state.Store, key string) CharView {
 		Align:     alignName(sheet["align"]),
 		Race:      race,
 		Class:     class,
+		Location:  mapLocation(sheet),
 		Items:     items,
 		Abilities: abil,
 	}
+}
+
+// mapLocation describes where a character is on the world map, for display.
+func mapLocation(sheet map[string]int64) string {
+	x, y, placed := playerPos(sheet)
+	if !placed {
+		return "not on the map yet"
+	}
+	if dest := sheet["dest"]; dest > 0 && int(dest) <= len(towns) {
+		return "travelling to " + towns[dest-1].Name
+	}
+	if t := atTown(x, y); t != nil {
+		return "at " + t.Name + " (" + t.Service + ")"
+	}
+	nt, _ := nearestTown(x, y)
+	return "roaming, near " + nt.Name
 }
 
 // displayName strips a leading "network|" from a character key for presentation.

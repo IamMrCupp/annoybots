@@ -186,6 +186,24 @@ func (m *Manager) command(msg engine.Message, fields []string) {
 		case "sheet", "stats":
 			m.out.Say(msg.Network, msg.Channel, m.sheet(msg, fields))
 			return
+		case "travel":
+			m.setTravel(msg, fields)
+			return
+		case "town", "where":
+			m.out.Say(msg.Network, msg.Channel, m.townStatus(msg))
+			return
+		case "rest":
+			m.rest(msg)
+			return
+		case "shop":
+			m.shop(msg)
+			return
+		case "buy":
+			m.buy(msg, fields)
+			return
+		case "revive":
+			m.revive(msg)
+			return
 		case "pause", "resume", "push", "hog":
 			m.adminVerb(msg, fields)
 			return
@@ -606,7 +624,7 @@ func (m *Manager) Tick() {
 	for _, p := range m.snapshot() {
 		ctx := context.Background()
 		key := sheetKey(p.key)
-		m.moveOnMap(ctx, p.key) // wander the world map (cosmetic; happens every tick)
+		m.moveOnMap(ctx, p) // wander the world map (or travel to a town)
 		if m.tickHP(ctx, p.key) {
 			continue // downed and recovering — no progress this tick
 		}
