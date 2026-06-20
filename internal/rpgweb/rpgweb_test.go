@@ -92,7 +92,7 @@ func TestCharPage(t *testing.T) {
 		t.Fatalf("char page status = %d; want 200", rr.Code)
 	}
 	body := rr.Body.String()
-	for _, want := range []string{"alice", "level", "equipment", "back to the realm"} {
+	for _, want := range []string{"alice", "level", "abilities", "STR", "equipment", "back to the realm"} {
 		if !strings.Contains(body, want) {
 			t.Fatalf("char page missing %q\n%s", want, body)
 		}

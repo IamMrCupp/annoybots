@@ -250,6 +250,14 @@ const charTmpl = `<!doctype html>
   <tr><td class="k">power</td><td>{{.Power}}</td></tr>
 </table>
 
+{{if .Abilities}}
+<h2 style="font-size:1rem;color:#8aa0c6;margin:1.5rem 0 .5rem;">abilities</h2>
+<table>
+  {{range .Abilities}}<tr><td class="k">{{.Name}}</td><td>{{.Score}} <span class="muted">({{if ge .Mod 0}}+{{end}}{{.Mod}})</span></td></tr>
+  {{end}}
+</table>
+{{end}}
+
 <h2 style="font-size:1rem;color:#8aa0c6;margin:1.5rem 0 .5rem;">equipment</h2>
 <table>
   {{range $slot, $lvl := .Items}}<tr><td class="k">{{$slot}}</td><td>{{$lvl}}</td></tr>

@@ -14,16 +14,24 @@ import (
 // the Redis key schema (sheetKey/boardKey/classKey/itemField) stays in one place
 // — a consumer never reconstructs raw keys.
 
+// Ability is one D&D ability score and its modifier, for display.
+type Ability struct {
+	Name  string // "STR", "DEX", …
+	Score int64
+	Mod   int64
+}
+
 // CharView is a read-only snapshot of one character's sheet.
 type CharView struct {
-	Key   string           // canonical character key (network|nick, or a linked account)
-	Name  string           // display name: the key with any "network|" prefix stripped
-	Level int64            // current level
-	TTL   int64            // seconds to the next level
-	Power int64            // total equipment power (sum of item levels)
-	Align string           // "good" / "neutral" / "evil"
-	Class string           // free-text class, empty if unset
-	Items map[string]int64 // equipped slots → level (only non-empty slots)
+	Key       string           // canonical character key (network|nick, or a linked account)
+	Name      string           // display name: the key with any "network|" prefix stripped
+	Level     int64            // current level
+	TTL       int64            // seconds to the next level
+	Power     int64            // total equipment power (sum of item levels)
+	Align     string           // "good" / "neutral" / "evil"
+	Class     string           // free-text class, empty if unset
+	Items     map[string]int64 // equipped slots → level (only non-empty slots)
+	Abilities []Ability        // the six ability scores, in canonical order (empty if unrolled)
 }
 
 // QuestView is a read-only snapshot of the active quest.
@@ -120,15 +128,22 @@ func readChar(ctx context.Context, store state.Store, key string) CharView {
 			items[s] = v
 		}
 	}
+	var abil []Ability
+	if sheet["str"] != 0 { // scores rolled
+		for _, a := range abilityLabels {
+			abil = append(abil, Ability{Name: a.label, Score: sheet[a.field], Mod: abilityMod(sheet[a.field])})
+		}
+	}
 	return CharView{
-		Key:   key,
-		Name:  displayName(key),
-		Level: sheet["level"],
-		TTL:   sheet["ttl"],
-		Power: itemSum(sheet),
-		Align: alignName(sheet["align"]),
-		Class: class,
-		Items: items,
+		Key:       key,
+		Name:      displayName(key),
+		Level:     sheet["level"],
+		TTL:       sheet["ttl"],
+		Power:     itemSum(sheet),
+		Align:     alignName(sheet["align"]),
+		Class:     class,
+		Items:     items,
+		Abilities: abil,
 	}
 }
 

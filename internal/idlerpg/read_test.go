@@ -76,6 +76,9 @@ func TestReadChar(t *testing.T) {
 	if _, ok := ReadChar(ctx, st, "net|ghost"); ok {
 		t.Fatal("a non-enrolled key must not resolve to a character")
 	}
+	if len(cv.Abilities) != 6 || cv.Abilities[0].Name != "STR" {
+		t.Fatalf("char view should carry the six abilities in order, got %+v", cv.Abilities)
+	}
 }
 
 func TestReadQuestMap(t *testing.T) {
