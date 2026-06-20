@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.14.0](https://github.com/IamMrCupp/annoybots/compare/v1.13.0...v1.14.0) (2026-06-20)
+
+
+### Features
+
+* **idlerpg:** map quests — party journeys two waypoints; dashboard draws it (parity [#8](https://github.com/IamMrCupp/annoybots/issues/8)) ([6a467d2](https://github.com/IamMrCupp/annoybots/commit/6a467d2104095f348a4c9bb637fbc7603ebd7b93))
+* **idlerpg:** map quests (parity [#8](https://github.com/IamMrCupp/annoybots/issues/8)) ([7bd8de9](https://github.com/IamMrCupp/annoybots/commit/7bd8de926d46a9cdf87b747b0e035fcabe72c008))
+
 ## [1.13.0](https://github.com/IamMrCupp/annoybots/compare/v1.12.0...v1.13.0) (2026-06-20)
 
 
