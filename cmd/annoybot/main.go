@@ -26,6 +26,7 @@ import (
 	"github.com/IamMrCupp/annoybots/internal/idlerpg"
 	"github.com/IamMrCupp/annoybots/internal/irc"
 	"github.com/IamMrCupp/annoybots/internal/markov"
+	"github.com/IamMrCupp/annoybots/internal/plugin"
 	"github.com/IamMrCupp/annoybots/internal/state"
 	"github.com/IamMrCupp/annoybots/internal/tell"
 )
@@ -114,8 +115,16 @@ func main() {
 			cfg.IdleRPG.QuestInterval.D(), cfg.IdleRPG.QuestDuration.D(), log)
 	}
 
+	// Eggdrop-style Lua scripting: load command binds from the plugins dir.
+	var pluginMgr *plugin.Manager
+	if cfg.Plugins.Dir != "" {
+		pluginMgr = plugin.New(router, log)
+		pluginMgr.Load(cfg.Plugins.Dir)
+		defer pluginMgr.Close()
+	}
+
 	log.Info("features", "games", gamesMgr != nil, "tell", tellMgr != nil,
-		"accounts", acctMgr != nil, "idlerpg", rpgMgr != nil)
+		"accounts", acctMgr != nil, "idlerpg", rpgMgr != nil, "plugins", pluginMgr != nil)
 
 	// Optional inter-bot bus + skit coordinator (the "botnet").
 	var coord *botnet.Coordinator
@@ -181,6 +190,9 @@ func main() {
 			return
 		}
 		if rpgMgr != nil && isOther && rpgMgr.Handle(m) {
+			return
+		}
+		if pluginMgr != nil && isOther && pluginMgr.Handle(m) {
 			return
 		}
 		eng.Handle(m, router)

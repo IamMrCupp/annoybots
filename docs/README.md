@@ -5,6 +5,8 @@
   quests, and the web dashboard.
 - **[accounts.md](accounts.md)** — link your identities across networks into one
   character.
+- **[plugins.md](plugins.md)** — eggdrop-style Lua scripting: add `!commands` with
+  a `.lua` file.
 
 For configuration, the heavily-commented [`configs/echo.yaml`](../configs/echo.yaml)
 is the reference — it exercises every feature and all three platforms. For running

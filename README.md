@@ -24,6 +24,7 @@ triggers, and voice. The repo ships two example personalities, **Echo** and
 - **Leave a message** — `!message <nick> <text>`, delivered when they're next around.
 - **Channel keeping** — eggdrop-style: an opped bot keeps its sibling bots opped.
 - **Chat admin console** — DM the bot to puppet it, edit quotes, manage channels and admins; identity-authenticated, tiered by access flag.
+- **Lua plugins** — eggdrop-style scripting: drop a `.lua` file to add `!commands` with no rebuild. See [docs/plugins.md](docs/plugins.md).
 
 For the full command list see **[docs/commands.md](docs/commands.md)**.
 
@@ -46,6 +47,7 @@ internal/idlerpg     the IdleRPG game
 internal/rpgweb      HTML rendering for the dashboard
 internal/account     cross-network identity linking
 internal/tell        "!message <nick>" deferred delivery
+internal/plugin      eggdrop-style Lua scripting (command binds)
 internal/ratelimit   token-bucket limiter (Twitch-aware)
 internal/cooldown    per-channel cooldown tracking
 internal/config      YAML config loading, validation, quote-pack loading
@@ -53,6 +55,7 @@ internal/health      /healthz + /readyz for Kubernetes probes
 configs/             echo.yaml, mimic.yaml — example personalities (+ networks)
 data/quotes/         starter quote packs
 data/skits.yaml      shared multi-bot skit scripts
+data/plugins/        example Lua plugins
 deploy/compose/      Docker Compose stack (no Kubernetes needed)
 deploy/k8s/          kustomize base + per-bot overlays + the dashboard
 docs/                command, IdleRPG, and accounts reference

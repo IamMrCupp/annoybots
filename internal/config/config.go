@@ -38,6 +38,12 @@ type Config struct {
 	Games    Feature `yaml:"games"`
 	Tell     Feature `yaml:"tell"`
 	Accounts Feature `yaml:"accounts"`
+	Plugins  Plugins `yaml:"plugins"`
+}
+
+// Plugins configures the eggdrop-style Lua scripting layer. Empty Dir disables it.
+type Plugins struct {
+	Dir string `yaml:"dir"` // directory of .lua scripts to load at startup
 }
 
 // Feature is an on/off toggle that defaults to ON when omitted, so existing
