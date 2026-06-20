@@ -16,7 +16,7 @@ var adminCommands = map[string]bool{
 	"!admin": true, "!help": true,
 	"!login": true, "!logout": true,
 	"!join": true, "!part": true, "!invite": true,
-	"!say": true, "!act": true,
+	"!say": true, "!act": true, "!identify": true,
 	"!addquote": true, "!delquote": true,
 	"!addadmin": true, "!deladmin": true, "!admins": true,
 	"!reload": true,
@@ -92,7 +92,8 @@ func (m *Manager) exec(_ context.Context, msg engine.Message, cmd string, fields
 		m.reply(msg, "commands: !login <password> | !logout | "+
 			"!join <net> <#chan> | !part <net> <#chan> | "+
 			"!invite <net> <#chan> <nick> | !say <net> <target> <text> | "+
-			"!act <net> <target> <text> | !addquote <pack> <text> | "+
+			"!act <net> <target> <text> | !identify <net> [password] | "+
+			"!addquote <pack> <text> | "+
 			"!delquote <pack> <text> | !addadmin <net|*> <account> | "+
 			"!deladmin <net|*> <account> | !admins | !reload | "+
 			"!party [text] | !unparty")
@@ -149,6 +150,25 @@ func (m *Manager) exec(_ context.Context, msg engine.Message, cmd string, fields
 			m.ctl.Say(fields[1], fields[2], body)
 		}
 		m.reply(msg, "sent.")
+
+	case "!identify":
+		// Re-authenticate the bot to NickServ. With no password it uses the
+		// network's configured secret (nothing sensitive typed in chat); pass one
+		// explicitly only when the network has none configured.
+		if len(fields) < 2 {
+			m.reply(msg, "usage: !identify <network> [password]  (omit password to use the configured one)")
+			return
+		}
+		network := fields[1]
+		password := ""
+		if len(fields) >= 3 {
+			password = fields[2]
+		}
+		if m.ctl.Identify(network, password) {
+			m.reply(msg, "sent NickServ IDENTIFY on "+network+".")
+		} else {
+			m.reply(msg, "couldn't identify on "+network+" — unknown network, or no password configured (try !identify "+network+" <password>).")
+		}
 
 	case "!addquote":
 		if len(fields) < 3 {

@@ -27,6 +27,10 @@ func (f *fakeTransport) Part(network, channel string) {
 func (f *fakeTransport) Invite(network, nick, channel string) {
 	f.sent = append(f.sent, "INVITE "+network+" "+nick+" "+channel)
 }
+func (f *fakeTransport) Identify(network, password string) bool {
+	f.sent = append(f.sent, "IDENTIFY "+network+" "+password)
+	return true
+}
 func (f *fakeTransport) Networks() []string  { return f.networks }
 func (f *fakeTransport) Run(context.Context) {}
 func (f *fakeTransport) Quit()               {}

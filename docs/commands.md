@@ -74,8 +74,9 @@ block; send `!help` for the list your flags allow.
 | `!help` / `!admin` | friend | List commands / show your access. |
 | `!networks` | friend | Which networks the bot is connected to (connected/offline). |
 | `!party` / `!unparty` | friend | Join/leave the partyline (cross-bot operator chat). |
-| `!say <net> <target> <text>` | op | Puppet the bot. |
+| `!say <net> <target> <text>` | op | Puppet the bot. The target can be a nick or a service — e.g. `!say <net> NickServ IDENTIFY …` to message NickServ directly. |
 | `!act <net> <target> <text>` | op | Puppet a `/me`. |
+| `!identify <net> [password]` | master | (Re)authenticate the bot to NickServ. Omit the password to use the network's configured secret — nothing sensitive is typed in chat or written to logs. Pass one explicitly only when the network has none configured. |
 | `!addquote <pack> <text>` | op | Add a runtime quote. |
 | `!delquote <pack> <text>` | op | Remove a runtime-added quote (file packs are immutable). |
 | `!join <net> <#chan>` / `!part <net> <#chan>` | master | Channel ops. |

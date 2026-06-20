@@ -420,6 +420,25 @@ func (c *conn) sendLoop(ctx context.Context) {
 }
 
 // Say queues a normal message (engine.Sender).
+// Identify (re)sends a NickServ IDENTIFY on a network. With an explicit password
+// it uses that; otherwise it falls back to the network's configured NickServ
+// secret. Returns false for an unknown network or when no password is available
+// (so the caller can tell the admin to pass one). The password is never logged.
+func (m *Manager) Identify(network, password string) bool {
+	c, ok := m.conns[network]
+	if !ok {
+		return false
+	}
+	if password == "" {
+		password = c.nickservPass
+	}
+	if password == "" {
+		return false
+	}
+	m.enqueue(network, outMsg{target: "NickServ", text: "IDENTIFY " + password})
+	return true
+}
+
 func (m *Manager) Say(network, target, text string) {
 	m.enqueue(network, outMsg{target: target, text: text})
 }

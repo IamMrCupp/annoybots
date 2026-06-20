@@ -184,6 +184,12 @@ func (c *Client) NetworkStatus() map[string]bool {
 	return out
 }
 
+// Identify is not applicable on Discord (the bot token is the auth); always false.
+func (c *Client) Identify(network, _ string) bool {
+	c.unsupported(network, "identify", "")
+	return false
+}
+
 // Join is not applicable on Discord (the bot is present in channels of guilds it
 // was invited to); it logs and no-ops so the Transport interface is satisfied.
 func (c *Client) Join(network, channel string) { c.unsupported(network, "join", channel) }

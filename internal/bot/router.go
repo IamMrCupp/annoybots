@@ -19,6 +19,10 @@ type Transport interface {
 	Join(network, channel string)
 	Part(network, channel string)
 	Invite(network, nick, channel string)
+	// Identify (re)authenticates to services on a network. An empty password uses
+	// the network's configured NickServ secret. Returns false if the network is
+	// unknown, isn't IRC, or has no password to use.
+	Identify(network, password string) bool
 	Networks() []string
 	NetworkStatus() map[string]bool // network -> connected
 	Run(ctx context.Context)
@@ -81,6 +85,14 @@ func (r *Router) Invite(network, nick, channel string) {
 	if t, ok := r.byNetwork[network]; ok {
 		t.Invite(network, nick, channel)
 	}
+}
+
+// Identify asks the owning transport to (re)authenticate to services on network.
+func (r *Router) Identify(network, password string) bool {
+	if t, ok := r.byNetwork[network]; ok {
+		return t.Identify(network, password)
+	}
+	return false
 }
 
 // HasNetwork reports whether any transport owns the named network.
