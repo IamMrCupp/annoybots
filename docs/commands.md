@@ -36,7 +36,8 @@ Opt in with `!rpg`, then "play" by being present and **quiet**. Full rules in
 |---|---|
 | `!rpg` | Enroll, or show your character. |
 | `!rpg status [name]` | A character sheet — yours, or a named player's. |
-| `!rpg sheet [name]` | The D&D ability block (STR/DEX/CON/INT/WIS/CHA + modifiers). |
+| `!rpg sheet [name]` | The D&D ability block (STR/DEX/CON/INT/WIS/CHA + modifiers), HP, gold, kills. |
+| `!rpg race <human\|elf\|dwarf\|halfling\|half-orc\|gnome\|tiefling>` | Choose your heritage once — bakes ability bonuses into your scores. |
 | `!rpg items` (`gear`) | Your equipped items and total power. |
 | `!rpg top` | The level leaderboard. |
 | `!rpg align good\|neutral\|evil` | Set your alignment (affects combat). |

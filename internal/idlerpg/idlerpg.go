@@ -171,6 +171,9 @@ func (m *Manager) command(msg engine.Message, fields []string) {
 		case "class":
 			m.setClass(msg, fields)
 			return
+		case "race":
+			m.setRace(msg, fields)
+			return
 		case "info":
 			m.out.Say(msg.Network, msg.Channel, m.info())
 			return
@@ -207,12 +210,21 @@ func (m *Manager) command(msg engine.Message, fields []string) {
 		return
 	}
 	m.setOnline(msg.Network, msg.Nick, msg.Channel, pkey)
+	m.out.Say(msg.Network, msg.Channel, fmt.Sprintf("%s the %s — level %d, %s to the next. (stop talking, it hurts.)",
+		msg.Nick, m.charDesc(ctx, pkey, sheet), sheet["level"], dur(sheet["ttl"])))
+}
+
+// charDesc builds a character's title, e.g. "evil dwarf fighter" — alignment, then
+// race, then class, skipping any that are unset.
+func (m *Manager) charDesc(ctx context.Context, pkey string, sheet map[string]int64) string {
 	desc := alignName(sheet["align"])
+	if race, _ := m.store.GetStr(ctx, raceKey(pkey)); race != "" {
+		desc += " " + race
+	}
 	if class, _ := m.store.GetStr(ctx, classKey(pkey)); class != "" {
 		desc += " " + class
 	}
-	m.out.Say(msg.Network, msg.Channel, fmt.Sprintf("%s the %s — level %d, %s to the next. (stop talking, it hurts.)",
-		msg.Nick, desc, sheet["level"], dur(sheet["ttl"])))
+	return desc
 }
 
 func classKey(player string) string { return "rpg:class:" + player }
@@ -276,6 +288,47 @@ func (m *Manager) setClass(msg engine.Message, fields []string) {
 	}
 	_ = m.store.SetStr(ctx, classKey(pkey), c.Name)
 	m.out.Say(msg.Network, msg.Channel, msg.Nick+" is now a "+c.Name+" — "+c.Blurb+".")
+}
+
+// setRace chooses a character's race once, baking its ability bonuses permanently
+// into the rolled scores.
+func (m *Manager) setRace(msg engine.Message, fields []string) {
+	if len(fields) < 3 {
+		m.out.Say(msg.Network, msg.Channel, "usage: !rpg race <"+strings.Join(raceNames(), "|")+">")
+		return
+	}
+	r, ok := raceOf(fields[2])
+	if !ok {
+		m.out.Say(msg.Network, msg.Channel, "no such race. pick one: "+strings.Join(raceNames(), ", "))
+		return
+	}
+	ctx := context.Background()
+	pkey := m.resolve(msg.Network, msg.Account, msg.Nick)
+	if sheet, _ := m.store.HGetAll(ctx, sheetKey(pkey)); len(sheet) == 0 {
+		m.out.Say(msg.Network, msg.Channel, "you're not playing. !rpg to start the grind.")
+		return
+	}
+	if cur, _ := m.store.GetStr(ctx, raceKey(pkey)); cur != "" {
+		m.out.Say(msg.Network, msg.Channel, "your heritage is already set — you can't change your blood.")
+		return
+	}
+	m.ensureAbilities(ctx, pkey) // make sure base scores exist before adding bonuses
+	for field, bonus := range r.Mods {
+		_, _ = m.store.HIncr(ctx, sheetKey(pkey), field, bonus)
+	}
+	_ = m.store.SetStr(ctx, raceKey(pkey), r.Name)
+	m.out.Say(msg.Network, msg.Channel, msg.Nick+" is now "+article(r.Name)+" "+r.Name+" — "+r.Blurb+". (stats adjusted)")
+}
+
+// article returns "an" before a vowel-ish word, else "a".
+func article(s string) string {
+	if s == "" {
+		return "a"
+	}
+	if strings.ContainsRune("aeiou", rune(s[0])) {
+		return "an"
+	}
+	return "a"
 }
 
 func (m *Manager) leaderboard() string {
@@ -347,12 +400,8 @@ func (m *Manager) status(msg engine.Message, fields []string) string {
 	if _, ok := sheet["level"]; !ok {
 		return name + " isn't playing. !rpg to start the grind."
 	}
-	desc := alignName(sheet["align"])
-	if class, _ := m.store.GetStr(ctx, classKey(pkey)); class != "" {
-		desc += " " + class
-	}
 	return fmt.Sprintf("%s the %s — level %d, %s to the next · power %d.",
-		name, desc, sheet["level"], dur(sheet["ttl"]), itemSum(sheet))
+		name, m.charDesc(ctx, pkey, sheet), sheet["level"], dur(sheet["ttl"]), itemSum(sheet))
 }
 
 // sheet renders a character's D&D ability block — the sender's own or a named
@@ -371,12 +420,8 @@ func (m *Manager) sheet(msg engine.Message, fields []string) string {
 	m.ensureAbilities(ctx, pkey)
 	sheet, _ := m.store.HGetAll(ctx, sheetKey(pkey))
 	class, _ := m.store.GetStr(ctx, classKey(pkey))
-	desc := alignName(sheet["align"])
-	if class != "" {
-		desc += " " + class
-	}
 	return fmt.Sprintf("%s the %s (lvl %d) — HP %d/%d · %dg · %d kills · %s",
-		name, desc, sheet["level"], curHP(sheet, class), maxHP(sheet, class),
+		name, m.charDesc(ctx, pkey, sheet), sheet["level"], curHP(sheet, class), maxHP(sheet, class),
 		sheet["gold"], sheet["kills"], abilityLine(sheet))
 }
 

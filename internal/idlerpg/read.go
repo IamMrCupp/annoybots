@@ -33,7 +33,8 @@ type CharView struct {
 	TTL       int64            // seconds to the next level
 	Power     int64            // total equipment power (sum of item levels)
 	Align     string           // "good" / "neutral" / "evil"
-	Class     string           // free-text class, empty if unset
+	Race      string           // chosen race, empty if unset
+	Class     string           // class, empty if unset
 	Items     map[string]int64 // equipped slots → level (only non-empty slots)
 	Abilities []Ability        // the six ability scores, in canonical order (empty if unrolled)
 }
@@ -126,6 +127,7 @@ func ReadChar(ctx context.Context, store state.Store, key string) (CharView, boo
 func readChar(ctx context.Context, store state.Store, key string) CharView {
 	sheet, _ := store.HGetAll(ctx, sheetKey(key))
 	class, _ := store.GetStr(ctx, classKey(key))
+	race, _ := store.GetStr(ctx, raceKey(key))
 	items := map[string]int64{}
 	for _, s := range itemSlots {
 		if v := sheet[itemField(s)]; v > 0 {
@@ -149,6 +151,7 @@ func readChar(ctx context.Context, store state.Store, key string) CharView {
 		TTL:       sheet["ttl"],
 		Power:     itemSum(sheet),
 		Align:     alignName(sheet["align"]),
+		Race:      race,
 		Class:     class,
 		Items:     items,
 		Abilities: abil,

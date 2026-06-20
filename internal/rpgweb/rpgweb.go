@@ -242,7 +242,7 @@ const charTmpl = `<!doctype html>
 </head>
 <body>
 <h1>{{.Name}}</h1>
-<p class="sub">the <span class="{{.Align}}">{{.Align}}{{if .Class}} {{.Class}}{{end}}</span></p>
+<p class="sub">the <span class="{{.Align}}">{{.Align}}{{if .Race}} {{.Race}}{{end}}{{if .Class}} {{.Class}}{{end}}</span></p>
 
 <table>
   <tr><td class="k">level</td><td class="lvl">{{.Level}}</td></tr>
