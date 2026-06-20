@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.20.0](https://github.com/IamMrCupp/annoybots/compare/v1.19.0...v1.20.0) (2026-06-20)
+
+
+### Features
+
+* **rpgweb:** fantasy world map ([#81](https://github.com/IamMrCupp/annoybots/issues/81)) ([4a67c69](https://github.com/IamMrCupp/annoybots/commit/4a67c699a0af63e6a0182532d8dada116d4bbdbc))
+* **rpgweb:** render the world map as a parchment fantasy map (closes [#81](https://github.com/IamMrCupp/annoybots/issues/81)) ([c91ed86](https://github.com/IamMrCupp/annoybots/commit/c91ed86a7991df8db364ef798cf671fb8098d0fb))
+
 ## [1.19.0](https://github.com/IamMrCupp/annoybots/compare/v1.18.0...v1.19.0) (2026-06-20)
 
 
