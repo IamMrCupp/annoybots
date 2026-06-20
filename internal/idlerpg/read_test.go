@@ -40,6 +40,20 @@ func TestReadLeaderboard(t *testing.T) {
 	}
 }
 
+func TestReadChar(t *testing.T) {
+	m, _, st := newMgr()
+	ctx := context.Background()
+	m.Handle(chanMsg("alice", "!rpg"))
+
+	cv, ok := ReadChar(ctx, st, "net|alice")
+	if !ok || cv.Name != "alice" {
+		t.Fatalf("expected alice's char view, got %#v ok=%v", cv, ok)
+	}
+	if _, ok := ReadChar(ctx, st, "net|ghost"); ok {
+		t.Fatal("a non-enrolled key must not resolve to a character")
+	}
+}
+
 func TestReadQuestMap(t *testing.T) {
 	m, _, st := newMgr()
 	ctx := context.Background()

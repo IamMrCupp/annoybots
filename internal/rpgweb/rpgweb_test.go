@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"testing"
 	"time"
@@ -77,6 +78,31 @@ func TestIndexEmptyRealm(t *testing.T) {
 	}
 	if !strings.Contains(rr.Body.String(), "No idlers yet") {
 		t.Fatalf("empty realm should say so, got:\n%s", rr.Body.String())
+	}
+}
+
+func TestCharPage(t *testing.T) {
+	st := state.NewMem()
+	seed(st) // enrolls net|alice, net|bob
+
+	rr := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/p/"+url.PathEscape("net|alice"), nil)
+	New(st).Handler().ServeHTTP(rr, req)
+	if rr.Code != http.StatusOK {
+		t.Fatalf("char page status = %d; want 200", rr.Code)
+	}
+	body := rr.Body.String()
+	for _, want := range []string{"alice", "level", "equipment", "back to the realm"} {
+		if !strings.Contains(body, want) {
+			t.Fatalf("char page missing %q\n%s", want, body)
+		}
+	}
+
+	// An unknown character is a 404.
+	rr2 := httptest.NewRecorder()
+	New(st).Handler().ServeHTTP(rr2, httptest.NewRequest(http.MethodGet, "/p/"+url.PathEscape("net|ghost"), nil))
+	if rr2.Code != http.StatusNotFound {
+		t.Fatalf("unknown char = %d; want 404", rr2.Code)
 	}
 }
 

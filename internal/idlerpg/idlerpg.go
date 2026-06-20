@@ -10,8 +10,10 @@ import (
 	"log/slog"
 	"math"
 	"math/rand"
+	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/IamMrCupp/annoybots/internal/engine"
@@ -56,6 +58,9 @@ type Manager struct {
 	questInterval time.Duration
 	questDuration time.Duration
 	now           func() time.Time // injectable clock (quest deadlines); time.Now in prod
+
+	authz  func(engine.Message) bool // is the sender a bot admin? (nil = no admin verbs)
+	paused atomic.Bool               // when set, Tick freezes the whole game
 
 	mu     sync.Mutex
 	online map[string]player // network|nick -> online player
@@ -111,6 +116,15 @@ func (m *Manager) roll(n int) int {
 // Interval is how often the caller should invoke Tick.
 func (m *Manager) Interval() time.Duration { return m.interval }
 
+// SetAuthz wires an admin-authorization predicate, enabling the privileged !rpg
+// verbs (pause/resume/push/hog). Without it those commands are inert.
+func (m *Manager) SetAuthz(fn func(engine.Message) bool) { m.authz = fn }
+
+// authorized reports whether the sender may run privileged !rpg commands.
+func (m *Manager) authorized(msg engine.Message) bool {
+	return m.authz != nil && m.authz(msg)
+}
+
 func okey(network, nick string) string { return strings.ToLower(network) + "|" + strings.ToLower(nick) }
 
 // sheetKey/boardKey are keyed by the resolved player key (account or identity),
@@ -165,6 +179,9 @@ func (m *Manager) command(msg engine.Message, fields []string) {
 			return
 		case "status":
 			m.out.Say(msg.Network, msg.Channel, m.status(msg, fields))
+			return
+		case "pause", "resume", "push", "hog":
+			m.adminVerb(msg, fields)
 			return
 		}
 	}
@@ -347,6 +364,70 @@ func (m *Manager) status(msg engine.Message, fields []string) string {
 		name, desc, sheet["level"], dur(sheet["ttl"]), itemSum(sheet))
 }
 
+// adminVerb handles the privileged !rpg commands (pause/resume/push/hog). They are
+// gated by the authz hook, so a non-admin just gets a brush-off.
+func (m *Manager) adminVerb(msg engine.Message, fields []string) {
+	if !m.authorized(msg) {
+		m.out.Say(msg.Network, msg.Channel, "the gods do not heed you.")
+		return
+	}
+	ctx := context.Background()
+	switch strings.ToLower(fields[1]) {
+	case "pause":
+		m.paused.Store(true)
+		m.out.Say(msg.Network, msg.Channel, "⏸ the realm freezes — idling is suspended.")
+	case "resume":
+		m.paused.Store(false)
+		m.out.Say(msg.Network, msg.Channel, "▶ the realm stirs back to life. idle on.")
+	case "push":
+		// !rpg push <name> <seconds> — move a player's clock (negative = forward).
+		if len(fields) < 4 {
+			m.out.Say(msg.Network, msg.Channel, "usage: !rpg push <name> <seconds> (negative = toward the next level)")
+			return
+		}
+		secs, err := strconv.ParseInt(fields[3], 10, 64)
+		if err != nil {
+			m.out.Say(msg.Network, msg.Channel, "that's not a number of seconds.")
+			return
+		}
+		pkey := m.resolve(msg.Network, "", fields[2])
+		if sheet, _ := m.store.HGetAll(ctx, sheetKey(pkey)); len(sheet) == 0 {
+			m.out.Say(msg.Network, msg.Channel, fields[2]+" isn't playing.")
+			return
+		}
+		_, _ = m.store.HIncr(ctx, sheetKey(pkey), "ttl", secs)
+		dir := "toward"
+		if secs > 0 {
+			dir = "away from"
+		}
+		m.out.Say(msg.Network, msg.Channel, fmt.Sprintf("✋ the gods shove %s %ds %s the next level.", fields[2], abs64(secs), dir))
+	case "hog":
+		// !rpg hog [name] — invoke the Hand of God on a named player or a random one.
+		var p player
+		ok := false
+		if len(fields) >= 3 {
+			pkey := m.resolve(msg.Network, "", fields[2])
+			if sheet, _ := m.store.HGetAll(ctx, sheetKey(pkey)); len(sheet) > 0 {
+				p, ok = player{network: msg.Network, nick: fields[2], channel: msg.Channel, key: pkey}, true
+			}
+		} else {
+			p, ok = m.randomOnline()
+		}
+		if !ok {
+			m.out.Say(msg.Network, msg.Channel, "there's no one for the Hand of God to find.")
+			return
+		}
+		m.handOfGod(ctx, p)
+	}
+}
+
+func abs64(n int64) int64 {
+	if n < 0 {
+		return -n
+	}
+	return n
+}
+
 // OnJoin marks an enrolled player online when they (re)appear in a channel.
 func (m *Manager) OnJoin(ev event.Event) {
 	if ev.Kind != event.Join {
@@ -451,6 +532,9 @@ func (m *Manager) OnLeave(ev event.Event) {
 
 // Tick advances every online player toward their next level by one interval.
 func (m *Manager) Tick() {
+	if m.paused.Load() {
+		return // the game is paused by an admin
+	}
 	step := int64(m.interval / time.Second)
 	if step < 1 {
 		step = 1

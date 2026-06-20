@@ -159,6 +159,12 @@ func main() {
 		}
 	}
 
+	// Let bot admins drive the privileged !rpg verbs (pause/resume/push/hog),
+	// authorized by the same identity model as the admin console.
+	if rpgMgr != nil && adminMgr != nil {
+		rpgMgr.SetAuthz(adminMgr.IsAdmin)
+	}
+
 	handler := func(m engine.Message) {
 		isOther := !strings.EqualFold(m.Nick, m.Self) && !eng.IsSibling(m.Nick)
 		// Admin commands (DM-only) are handled first and never reach the engine.

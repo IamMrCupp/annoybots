@@ -512,6 +512,50 @@ func TestStatusCommand(t *testing.T) {
 	}
 }
 
+func allowAll(engine.Message) bool { return true }
+
+func TestAdminVerbsRequireAuthz(t *testing.T) {
+	m, r, _ := newMgr() // no authz wired
+	m.Handle(chanMsg("alice", "!rpg pause"))
+	if !r.has("do not heed") {
+		t.Fatalf("an unauthorized admin verb should be refused, got %v", r.lines)
+	}
+	if m.paused.Load() {
+		t.Fatal("an unauthorized !rpg pause must not pause the game")
+	}
+}
+
+func TestAdminPauseResume(t *testing.T) {
+	m, r, _ := newMgr()
+	m.SetAuthz(allowAll)
+	m.Handle(chanMsg("alice", "!rpg")) // enroll, online, ttl=1
+	m.Handle(chanMsg("boss", "!rpg pause"))
+	if !m.paused.Load() {
+		t.Fatal("!rpg pause should freeze the game")
+	}
+	m.Tick() // paused → no progress
+	if r.has("attained level") {
+		t.Fatal("a paused game must not level anyone up")
+	}
+	m.Handle(chanMsg("boss", "!rpg resume"))
+	m.Tick() // ttl=1 → levels up
+	if !r.has("attained level 1") {
+		t.Fatalf("a resumed game should tick again, got %v", r.lines)
+	}
+}
+
+func TestAdminPush(t *testing.T) {
+	m, _, st := newMgr()
+	ctx := context.Background()
+	m.SetAuthz(allowAll)
+	m.Handle(chanMsg("alice", "!rpg"))
+	st.HSet(ctx, sheetKey("net|alice"), "ttl", 1000)
+	m.Handle(chanMsg("boss", "!rpg push alice 500"))
+	if s, _ := st.HGetAll(ctx, sheetKey("net|alice")); s["ttl"] != 1500 {
+		t.Fatalf("push should move the clock, ttl=%d want 1500", s["ttl"])
+	}
+}
+
 func TestLeaderboard(t *testing.T) {
 	m, r, _ := newMgr()
 	m.Handle(chanMsg("alice", "!rpg"))
