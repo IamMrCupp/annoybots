@@ -71,6 +71,7 @@ block; send `!help` for the list your flags allow.
 
 | Command | Min flag | What it does |
 |---|---|---|
+| `!claim <code>` | — | First-run bootstrap: become the owner using the one-time code the bot logs at startup when no admins are configured. Needs a verified identity; spent on first use. |
 | `!help` / `!admin` | friend | List commands / show your access. |
 | `!networks` | friend | Which networks the bot is connected to (connected/offline). |
 | `!party` / `!unparty` | friend | Join/leave the partyline (cross-bot operator chat). |

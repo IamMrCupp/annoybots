@@ -154,6 +154,69 @@ func TestIdentifyRequiresMaster(t *testing.T) {
 	}
 }
 
+func TestClaimBootstrap(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "admin.json")
+	cfg := Config{Enabled: true, StatePath: path} // no admins → bootstrap
+	c := &fakeControl{}
+	m := New("arywen", cfg, "", &fakeQuoter{}, c, nil, quietLog())
+
+	if m.claimCode == "" {
+		t.Fatal("an enabled console with no admins should generate a claim code")
+	}
+	if m.isAdmin(dm("alice", "x")) {
+		t.Fatal("nobody should be admin before claiming")
+	}
+
+	m.Handle(context.Background(), dm("alice", "!claim "+m.claimCode))
+	if !m.has(dm("alice", "x"), flagOwner) {
+		t.Fatalf("a correct claim should make the sender owner; reply=%q", c.last())
+	}
+	if m.claimCode != "" {
+		t.Fatal("the claim code must be burned after a successful claim")
+	}
+
+	// A fresh manager loading the same state should see the owner and NOT bootstrap.
+	m2 := New("arywen", cfg, "", &fakeQuoter{}, &fakeControl{}, nil, quietLog())
+	if m2.claimCode != "" {
+		t.Fatal("a bootstrapped bot must not generate a new claim code")
+	}
+	if !m2.has(dm("alice", "x"), flagOwner) {
+		t.Fatal("the claimed owner should persist across restarts")
+	}
+}
+
+func TestClaimWrongCodeAndUnverified(t *testing.T) {
+	cfg := Config{Enabled: true}
+	c := &fakeControl{}
+	m := New("arywen", cfg, "", &fakeQuoter{}, c, nil, quietLog())
+	code := m.claimCode
+
+	// Wrong code: rejected, code intact, no admin.
+	m.Handle(context.Background(), dm("alice", "!claim WRONG-CODE"))
+	if !strings.Contains(c.last(), "nope") || m.claimCode != code {
+		t.Fatalf("a wrong code must be rejected without burning; reply=%q", c.last())
+	}
+	if m.isAdmin(dm("alice", "x")) {
+		t.Fatal("a wrong code must not grant admin")
+	}
+
+	// Right code but no verified identity: refused, code intact.
+	m.Handle(context.Background(), dm("", "!claim "+code))
+	if m.claimCode != code {
+		t.Fatal("a code presented without a verified identity must not be burned")
+	}
+	if !strings.Contains(c.last(), "can't verify your identity") {
+		t.Fatalf("expected an identity-required reply, got %q", c.last())
+	}
+}
+
+func TestNoClaimWhenAdminsConfigured(t *testing.T) {
+	m := New("arywen", bossConfig(), "", &fakeQuoter{}, &fakeControl{}, nil, quietLog())
+	if m.claimCode != "" {
+		t.Fatal("a console with configured admins must not generate a claim code")
+	}
+}
+
 func TestInviteCommand(t *testing.T) {
 	c := &fakeControl{}
 	m := New("arywen", bossConfig(), "", &fakeQuoter{}, c, nil, quietLog())

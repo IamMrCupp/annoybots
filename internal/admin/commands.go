@@ -14,7 +14,7 @@ import (
 // first token is one of these is treated as an admin command (and gated on auth).
 var adminCommands = map[string]bool{
 	"!admin": true, "!help": true,
-	"!login": true, "!logout": true,
+	"!login": true, "!logout": true, "!claim": true,
 	"!join": true, "!part": true, "!invite": true,
 	"!say": true, "!act": true, "!identify": true,
 	"!addquote": true, "!delquote": true,
@@ -43,7 +43,8 @@ func (m *Manager) Handle(ctx context.Context, msg engine.Message) bool {
 	}
 	cmd := strings.ToLower(fields[0])
 
-	// !login / !logout are how you authenticate, so they bypass the admin gate.
+	// !login / !logout / !claim are how you authenticate or bootstrap, so they
+	// bypass the admin gate (the claimer isn't an admin yet).
 	switch cmd {
 	case "!login":
 		m.handleLogin(msg, text)
@@ -51,6 +52,9 @@ func (m *Manager) Handle(ctx context.Context, msg engine.Message) bool {
 	case "!logout":
 		m.clearSession(msg)
 		m.reply(msg, "logged out.")
+		return true
+	case "!claim":
+		m.handleClaim(msg, text)
 		return true
 	}
 
@@ -80,6 +84,39 @@ func (m *Manager) handleLogin(msg engine.Message, text string) {
 	}
 	m.recordFail(msg)
 	m.reply(msg, "nope.")
+}
+
+// handleClaim consumes the one-time bootstrap code: the first sender to present
+// it (with a verified identity) becomes the owner. The code is burned on success.
+func (m *Manager) handleClaim(msg engine.Message, text string) {
+	m.mu.Lock()
+	code := m.claimCode
+	m.mu.Unlock()
+	if code == "" {
+		m.reply(msg, "claiming isn't available.")
+		return
+	}
+	if m.throttled(msg) {
+		m.reply(msg, "too many failed attempts; wait a minute.")
+		return
+	}
+	got := tailAfter(text, 1)
+	if got == "" || subtle.ConstantTimeCompare([]byte(got), []byte(code)) != 1 {
+		m.recordFail(msg)
+		m.reply(msg, "nope.")
+		return
+	}
+	// Correct code — but we can only enshrine a VERIFIED identity as owner, so a
+	// services-less nick can't claim (it would be spoofable). The code stays valid.
+	if msg.Account == "" {
+		m.reply(msg, "right code, but I can't verify your identity here. claim from Discord or a network with services (SASL/NickServ), or set an admin in the config.")
+		return
+	}
+	id := Identity{Network: msg.Network, Account: msg.Account, Flags: string(flagOwner)}
+	m.applyAdminAdd(id) // persists, burns the claim code, and rebuilds the auth set
+	m.publish(botnet.Event{Type: botnet.EventAdminAdd, AdminNet: id.Network, Account: id.Account, Flags: id.Flags})
+	m.log.Warn("admin claimed", "network", msg.Network, "account", msg.Account)
+	m.reply(msg, "done — you're the owner now ("+msg.Account+"@"+msg.Network+"). the claim code is spent.")
 }
 
 func (m *Manager) reply(msg engine.Message, text string) {
@@ -300,6 +337,7 @@ func (m *Manager) applyAdminAdd(id Identity) bool {
 		return false
 	}
 	m.runtime = append(m.runtime, id)
+	m.claimCode = "" // any successful admin-add closes the bootstrap claim window (local or bus-synced)
 	m.rebuild()
 	m.save()
 	return true

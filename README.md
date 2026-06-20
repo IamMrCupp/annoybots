@@ -191,6 +191,14 @@ IRC services/NickServ account, a Discord user ID, or a Twitch login — never by
 spoofable nick, and commands are only honored in DMs. Configure admins in the
 `admin:` block of each bot's config.
 
+**First-run claim (no password to manage).** If the console is enabled but no
+admins are configured, the bot prints a one-time **claim code** to its log on
+startup. The first person to DM `!claim <code>` (from a verified identity)
+becomes the owner — their identity is recorded and the code is spent. Nothing to
+invent, paste into a Secret, or keep around: it bootstraps straight into identity
+auth. (The code lives only in memory, so a restart prints a fresh one until it's
+claimed; set `admin.state_path` so the claimed owner persists.)
+
 Commands (send `!help` for the list; full reference in [docs/commands.md](docs/commands.md)):
 
 - `!networks` — which networks the bot is currently connected to
