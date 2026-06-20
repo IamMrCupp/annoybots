@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.18.0](https://github.com/IamMrCupp/annoybots/compare/v1.17.0...v1.18.0) (2026-06-20)
+
+
+### Features
+
+* **idlerpg:** loot rarity + named items ([#69](https://github.com/IamMrCupp/annoybots/issues/69)) ([96075e5](https://github.com/IamMrCupp/annoybots/commit/96075e53e2300f21bb326390bf3210bb25778b17))
+* **idlerpg:** loot rarity + named magic items (closes [#69](https://github.com/IamMrCupp/annoybots/issues/69)) ([53460b1](https://github.com/IamMrCupp/annoybots/commit/53460b1e5c0b87279def2422224ab071c1418c4e))
+* **idlerpg:** races — heritage with baked-in ability bonuses (closes [#65](https://github.com/IamMrCupp/annoybots/issues/65)) ([07c9978](https://github.com/IamMrCupp/annoybots/commit/07c9978a02792564e1f8bf95799f0b3d2b0d07b7))
+* **idlerpg:** races ([#65](https://github.com/IamMrCupp/annoybots/issues/65)) ([a75b4fa](https://github.com/IamMrCupp/annoybots/commit/a75b4fa1cfc90b0dae13dd0a348725d856598091))
+
 ## [1.17.0](https://github.com/IamMrCupp/annoybots/compare/v1.16.0...v1.17.0) (2026-06-20)
 
 
