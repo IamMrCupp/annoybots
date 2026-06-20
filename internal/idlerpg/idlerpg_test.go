@@ -687,3 +687,38 @@ func TestLeaderboard(t *testing.T) {
 		t.Fatalf("leaderboard should list players, got %q", r.last())
 	}
 }
+
+func TestPickMonsterRespectsLevel(t *testing.T) {
+	m, _, _ := newMgr()
+	if mon := m.pickMonster(0); mon.MinLvl > 0 {
+		t.Fatalf("level 0 picked %q (MinLvl %d)", mon.Name, mon.MinLvl)
+	}
+	for i := 0; i < 30; i++ {
+		if mon := m.pickMonster(5); mon.MinLvl > 5 {
+			t.Fatalf("level 5 picked too-strong %q (MinLvl %d)", mon.Name, mon.MinLvl)
+		}
+	}
+}
+
+func TestResolveFightWinRewards(t *testing.T) {
+	m, r, st := newMgr()
+	ctx := context.Background()
+	m.Handle(chanMsg("alice", "!rpg"))
+	// A level-20 fighter with STR/DEX 18 always hits a giant rat (AC 10) and one
+	// hit (d8+4 ≥ 5) kills its 4 HP — a deterministic win regardless of seed.
+	for _, f := range []string{"str", "dex", "con"} {
+		st.HSet(ctx, sheetKey("net|alice"), f, 18)
+	}
+	st.HSet(ctx, sheetKey("net|alice"), "level", 20)
+	st.SetStr(ctx, classKey("net|alice"), "fighter")
+	sheet, _ := st.HGetAll(ctx, sheetKey("net|alice"))
+	p := player{network: "net", nick: "alice", channel: "#chan", key: "net|alice"}
+
+	m.resolveFight(ctx, p, sheet, "fighter", bestiary[0]) // a giant rat
+	if !r.has("slew") {
+		t.Fatalf("a juggernaut should slay a giant rat, got %v", r.lines)
+	}
+	if s, _ := st.HGetAll(ctx, sheetKey("net|alice")); s["kills"] != 1 || s["gold"] < 1 {
+		t.Fatalf("a kill should bump kills + gold, got kills=%d gold=%d", s["kills"], s["gold"])
+	}
+}

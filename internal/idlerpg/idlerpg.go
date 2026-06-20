@@ -375,8 +375,9 @@ func (m *Manager) sheet(msg engine.Message, fields []string) string {
 	if class != "" {
 		desc += " " + class
 	}
-	return fmt.Sprintf("%s the %s (lvl %d) — HP %d/%d · %s",
-		name, desc, sheet["level"], curHP(sheet, class), maxHP(sheet, class), abilityLine(sheet))
+	return fmt.Sprintf("%s the %s (lvl %d) — HP %d/%d · %dg · %d kills · %s",
+		name, desc, sheet["level"], curHP(sheet, class), maxHP(sheet, class),
+		sheet["gold"], sheet["kills"], abilityLine(sheet))
 }
 
 // adminVerb handles the privileged !rpg commands (pause/resume/push/hog). They are
@@ -555,6 +556,7 @@ func (m *Manager) Tick() {
 		step = 1
 	}
 	m.maybeEvent(context.Background())
+	m.maybeMonster(context.Background())
 	m.questTick(context.Background())
 	for _, p := range m.snapshot() {
 		ctx := context.Background()

@@ -28,6 +28,8 @@ type CharView struct {
 	Level     int64            // current level
 	HP        int64            // current hit points
 	MaxHP     int64            // hit-point ceiling
+	Gold      int64            // coin from monster kills
+	Kills     int64            // monsters slain
 	TTL       int64            // seconds to the next level
 	Power     int64            // total equipment power (sum of item levels)
 	Align     string           // "good" / "neutral" / "evil"
@@ -142,6 +144,8 @@ func readChar(ctx context.Context, store state.Store, key string) CharView {
 		Level:     sheet["level"],
 		HP:        curHP(sheet, class),
 		MaxHP:     maxHP(sheet, class),
+		Gold:      sheet["gold"],
+		Kills:     sheet["kills"],
 		TTL:       sheet["ttl"],
 		Power:     itemSum(sheet),
 		Align:     alignName(sheet["align"]),
