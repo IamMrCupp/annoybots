@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.15.0](https://github.com/IamMrCupp/annoybots/compare/v1.14.0...v1.15.0) (2026-06-20)
+
+
+### Features
+
+* **idlerpg:** admin verbs (pause/resume/push/hog) + per-character dashboard pages ([42601bd](https://github.com/IamMrCupp/annoybots/commit/42601bd2e11c4ce59469217fe6f9863f9eac6b60))
+* **idlerpg:** admin verbs + per-character dashboard pages ([9bc4a6e](https://github.com/IamMrCupp/annoybots/commit/9bc4a6e9b72c623c2bc81747e0efdad5efcd709c))
+* **plugin:** eggdrop-style Lua scripting layer ([811c8ac](https://github.com/IamMrCupp/annoybots/commit/811c8ac2ab09458d52148dfba7e4c2e00e75fddc))
+* **plugin:** eggdrop-style Lua scripting layer (command binds) ([0c3b43b](https://github.com/IamMrCupp/annoybots/commit/0c3b43bba7c884cde8c11abe365ad7b0f171545d))
+
+
+### Documentation
+
+* federation (remote-host bots) + deploy kit ([347d6ab](https://github.com/IamMrCupp/annoybots/commit/347d6abd415eb0e55a4f774f285435c5378391c1))
+* federation guide + remote-host deploy kit; CONTRIBUTING docs pointer ([1bfb848](https://github.com/IamMrCupp/annoybots/commit/1bfb848f61d240034e3726ab28c8a8c1e7d7c735))
+
 ## [1.14.0](https://github.com/IamMrCupp/annoybots/compare/v1.13.0...v1.14.0) (2026-06-20)
 
 
