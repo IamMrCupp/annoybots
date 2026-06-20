@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.17.0](https://github.com/IamMrCupp/annoybots/compare/v1.16.0...v1.17.0) (2026-06-20)
+
+
+### Features
+
+* **idlerpg:** D&D ability scores ([#64](https://github.com/IamMrCupp/annoybots/issues/64)) ([e53b5f9](https://github.com/IamMrCupp/annoybots/commit/e53b5f9de21e7e4a45021c784ba32318762e59ea))
+* **idlerpg:** D&D ability scores + !rpg sheet (closes [#64](https://github.com/IamMrCupp/annoybots/issues/64)) ([788dd7d](https://github.com/IamMrCupp/annoybots/commit/788dd7dc3d9e43284a8208afe506852f73d5ea2c))
+* **idlerpg:** hit points + downed state ([#67](https://github.com/IamMrCupp/annoybots/issues/67)) ([1a52206](https://github.com/IamMrCupp/annoybots/commit/1a52206a841e87162b14d8c8897ae208284553fa))
+* **idlerpg:** hit points + downed/heal state (closes [#67](https://github.com/IamMrCupp/annoybots/issues/67)) ([42b0ebe](https://github.com/IamMrCupp/annoybots/commit/42b0ebedce98f89870432098d8fe1348a57797d1))
+* **idlerpg:** mechanical classes — primary-ability attack bonus (closes [#66](https://github.com/IamMrCupp/annoybots/issues/66)) ([172ff2c](https://github.com/IamMrCupp/annoybots/commit/172ff2c3b111bb220d336d95d19c4ae619cb3780))
+* **idlerpg:** mechanical classes ([#66](https://github.com/IamMrCupp/annoybots/issues/66)) ([6648d11](https://github.com/IamMrCupp/annoybots/commit/6648d11769e85d0226ff5793d1d9c5004ddeca9f))
+* **idlerpg:** monster encounters (PvE) — d20 combat, bestiary, gold/kills (closes [#68](https://github.com/IamMrCupp/annoybots/issues/68)) ([0395f42](https://github.com/IamMrCupp/annoybots/commit/0395f423d100d1dc4639ca2f8d63bf2a9b379e5a))
+* **idlerpg:** monster encounters / PvE ([#68](https://github.com/IamMrCupp/annoybots/issues/68)) ([8529eb2](https://github.com/IamMrCupp/annoybots/commit/8529eb27a0ebbf0741e3103efc32ab23e2655b45))
+
 ## [1.16.0](https://github.com/IamMrCupp/annoybots/compare/v1.15.0...v1.16.0) (2026-06-20)
 
 
