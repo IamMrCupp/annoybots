@@ -7,6 +7,8 @@ package admin
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/base32"
 	"encoding/json"
 	"log/slog"
 	"os"
@@ -89,6 +91,7 @@ type Manager struct {
 	sessions    map[string]time.Time // network|nick -> session expiry (password logins)
 	fails       map[string][]time.Time
 	party       map[string]partyMember // network|nick -> joined partyline member
+	claimCode   string                 // one-time bootstrap code; empty once any admin exists
 }
 
 // session/throttle tuning for the password fallback.
@@ -134,7 +137,29 @@ func New(bot string, cfg Config, password string, eng Quoter, ctl Control, bus b
 	}
 	m.load()
 	m.rebuild()
+	// Zero-touch bootstrap: an enabled console with no admins (config or persisted)
+	// prints a one-time claim code. The first person to DM "!claim <code>" with a
+	// verified identity becomes the owner — no password to invent or store. The
+	// code lives only in memory, so a restart prints a fresh one until it's claimed.
+	if m.cfg.Enabled && len(m.admins) == 0 && len(m.maskAdmins) == 0 {
+		if code := generateClaimCode(); code != "" {
+			m.claimCode = code
+			m.log.Warn(`admin bootstrap: no admins configured — DM the bot "!claim `+code+`" to become owner`,
+				"claim_code", code)
+		}
+	}
 	return m
+}
+
+// generateClaimCode returns a short, single-use bootstrap code (40 bits of
+// crypto-random, formatted XXXX-XXXX), or "" if randomness is unavailable.
+func generateClaimCode() string {
+	var b [5]byte
+	if _, err := rand.Read(b[:]); err != nil {
+		return ""
+	}
+	s := base32.StdEncoding.WithPadding(base32.NoPadding).EncodeToString(b[:])
+	return s[:4] + "-" + s[4:8]
 }
 
 // SetReload registers the reload hook invoked by the !reload command. fn should
