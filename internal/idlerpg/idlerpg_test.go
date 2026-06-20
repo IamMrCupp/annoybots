@@ -512,6 +512,45 @@ func TestStatusCommand(t *testing.T) {
 	}
 }
 
+func TestMaxHP(t *testing.T) {
+	sheet := map[string]int64{"level": 2, "con": 14} // CON 14 → +2
+	if got := maxHP(sheet, "fighter"); got != 32 {   // d10: (5+1+2)*3 + 8
+		t.Fatalf("fighter L2 CON14 maxHP = %d; want 32", got)
+	}
+	if got := maxHP(sheet, ""); got != 29 { // unclassed d8: (4+1+2)*3 + 8
+		t.Fatalf("unclassed L2 CON14 maxHP = %d; want 29", got)
+	}
+}
+
+func TestDamageDownedAndHeal(t *testing.T) {
+	m, _, st := newMgr()
+	ctx := context.Background()
+	m.Handle(chanMsg("alice", "!rpg"))
+	m.damage(ctx, "net|alice", 1000)
+	if s, _ := st.HGetAll(ctx, sheetKey("net|alice")); !isDowned(s, "") {
+		t.Fatal("massive damage should leave the character downed")
+	}
+	m.heal(ctx, "net|alice", 1000)
+	s, _ := st.HGetAll(ctx, sheetKey("net|alice"))
+	if isDowned(s, "") || s["dmg"] != 0 {
+		t.Fatalf("a full heal should clear downed and clamp dmg to 0, got dmg=%d", s["dmg"])
+	}
+}
+
+func TestDownedFreezesProgress(t *testing.T) {
+	m, r, st := newMgr() // 1s tick/ttl: a healthy player would level
+	ctx := context.Background()
+	m.Handle(chanMsg("alice", "!rpg"))
+	m.damage(ctx, "net|alice", 1000) // down alice
+	m.Tick()
+	if r.has("attained level") {
+		t.Fatal("a downed player must not level up")
+	}
+	if s, _ := st.HGetAll(ctx, sheetKey("net|alice")); s["level"] != 0 {
+		t.Fatalf("downed level = %d; want 0", s["level"])
+	}
+}
+
 func TestClassMustBeCanonical(t *testing.T) {
 	m, r, _ := newMgr()
 	m.Handle(chanMsg("alice", "!rpg"))
@@ -564,8 +603,8 @@ func TestSheetCommand(t *testing.T) {
 	m, r, _ := newMgr()
 	m.Handle(chanMsg("alice", "!rpg"))
 	m.Handle(chanMsg("alice", "!rpg sheet"))
-	if !strings.Contains(r.last(), "STR") || !strings.Contains(r.last(), "CHA") {
-		t.Fatalf("!rpg sheet should show the ability block, got %q", r.last())
+	if !strings.Contains(r.last(), "STR") || !strings.Contains(r.last(), "CHA") || !strings.Contains(r.last(), "HP") {
+		t.Fatalf("!rpg sheet should show HP + the ability block, got %q", r.last())
 	}
 }
 

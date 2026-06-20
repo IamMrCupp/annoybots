@@ -26,6 +26,8 @@ type CharView struct {
 	Key       string           // canonical character key (network|nick, or a linked account)
 	Name      string           // display name: the key with any "network|" prefix stripped
 	Level     int64            // current level
+	HP        int64            // current hit points
+	MaxHP     int64            // hit-point ceiling
 	TTL       int64            // seconds to the next level
 	Power     int64            // total equipment power (sum of item levels)
 	Align     string           // "good" / "neutral" / "evil"
@@ -138,6 +140,8 @@ func readChar(ctx context.Context, store state.Store, key string) CharView {
 		Key:       key,
 		Name:      displayName(key),
 		Level:     sheet["level"],
+		HP:        curHP(sheet, class),
+		MaxHP:     maxHP(sheet, class),
 		TTL:       sheet["ttl"],
 		Power:     itemSum(sheet),
 		Align:     alignName(sheet["align"]),
