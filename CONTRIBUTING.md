@@ -20,7 +20,8 @@ make run CONFIG=configs/echo.yaml
 ```
 
 See the [README](README.md) for the config format, the "Add a bot" guide, and
-how the botnet/skits work.
+how the botnet/skits work, and [`docs/`](docs/) for the command, IdleRPG, plugin,
+accounts, and federation references.
 
 ## Pull requests
 

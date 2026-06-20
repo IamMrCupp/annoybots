@@ -7,6 +7,8 @@
   character.
 - **[plugins.md](plugins.md)** — eggdrop-style Lua scripting: add `!commands` with
   a `.lua` file.
+- **[federation.md](federation.md)** — run bots on other hosts that join the same
+  botnet over a private mesh.
 
 For configuration, the heavily-commented [`configs/echo.yaml`](../configs/echo.yaml)
 is the reference — it exercises every feature and all three platforms. For running
