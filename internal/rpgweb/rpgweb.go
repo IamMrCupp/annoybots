@@ -281,34 +281,106 @@ const mapTmpl = `<!doctype html>
 <title>annoybots · the realm map</title>
 <style>
   :root { color-scheme: dark; }
-  body { background:#0e0f13; color:#d6d8de; font:15px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace; margin:0; padding:2rem; }
-  h1 { font-size:1.4rem; margin:0 0 .25rem; color:#e9b949; }
-  .sub { color:#8aa0c6; margin:0 0 1rem; }
-  .world { display:block; width:100%; max-width:680px; margin:0 auto; background:#0b0c10; border:1px solid #2a2f3a; border-radius:8px; }
-  .town { fill:#4a3c14; stroke:#e9b949; stroke-width:2; }
-  .town-l { fill:#b9912f; font-size:11px; }
-  .dot { fill:#7fd1a8; stroke:#0e0f13; stroke-width:1.5; }
-  .dot-l { fill:#9aa0ac; font-size:9px; }
-  .muted { color:#6b7280; }
-  a { color:#7fd1a8; text-decoration:none; }
+  body { background:#15110b; color:#d6c9a8; font:15px/1.5 Georgia,'Times New Roman',serif; margin:0; padding:2rem; }
+  h1 { font-size:1.5rem; margin:0 0 .25rem; color:#e9b949; font-variant:small-caps; letter-spacing:.06em; }
+  .sub { color:#9a8a64; margin:0 0 1rem; font-style:italic; }
+  .world { display:block; width:100%; max-width:680px; margin:0 auto; background:#e7d9b5; border:2px solid #6b563b; border-radius:4px; box-shadow:0 4px 20px rgba(0,0,0,.5); }
+  .coast { fill:#b9cfcb; stroke:#6b563b; stroke-width:1.3; }
+  .wave { fill:none; stroke:#98b3ae; stroke-width:1; }
+  .river { fill:none; stroke:#b9cfcb; stroke-width:4; stroke-linecap:round; }
+  .river-l { fill:none; stroke:#8fb0ab; stroke-width:1; }
+  .lake { fill:#b9cfcb; stroke:#6b563b; stroke-width:1.2; }
+  .mtn { fill:#cdbb94; stroke:#6b563b; stroke-width:1.2; stroke-linejoin:round; }
+  .snow { fill:#f4eede; }
+  .tree { fill:#6f7d49; }
+  .reed { stroke:#7f8a55; stroke-width:1.2; stroke-linecap:round; fill:none; }
+  .sea-l { fill:#6e8a85; font-style:italic; font-size:13px; }
+  .region-l { fill:#9a8255; font-style:italic; font-size:11px; }
+  .frame { fill:none; stroke:#6b563b; }
+  .town-l { fill:#5a3a22; font-size:12px; font-variant:small-caps; }
+  .dot { fill:#2f4a78; stroke:#e7d9b5; stroke-width:1.2; }
+  .dot-l { fill:#463c26; font-size:9px; font-style:italic; }
+  a { color:#e9b949; text-decoration:none; }
   a:hover { text-decoration:underline; }
-  footer { margin-top:1.5rem; color:#4b5563; font-size:.8rem; text-align:center; }
+  footer { margin-top:1.5rem; color:#6b5a3a; font-size:.8rem; text-align:center; }
 </style>
 </head>
 <body>
 <h1>🗺 the realm map</h1>
-<p class="sub">{{len .Players}} adventurers roaming · towns in gold</p>
-<svg class="world" viewBox="-12 -12 {{add .Size 24}} {{add .Size 24}}" role="img" aria-label="world map of player positions">
-  <rect x="0" y="0" width="{{.Size}}" height="{{.Size}}" fill="#0b0c10" stroke="#20232b" stroke-width="1"/>
+<p class="sub">{{len .Players}} souls abroad in the realm</p>
+<svg class="world" viewBox="0 0 {{.Size}} {{.Size}}" role="img" aria-label="fantasy map of the realm with towns and wandering players">
+  <rect x="0" y="0" width="{{.Size}}" height="{{.Size}}" fill="#e7d9b5"/>
+
+  <!-- the sea (southwest) -->
+  <path class="coast" d="M0,392 Q60,430 100,452 Q140,470 130,490 L0,500 Z"/>
+  <path class="coast" d="M210,500 Q250,486 300,492 L320,500 Z"/>
+  <path class="wave" d="M24,440 q12,-7 24,0 t24,0"/>
+  <path class="wave" d="M36,460 q12,-7 24,0 t24,0"/>
+  <text class="sea-l" x="22" y="486">The Idle Sea</text>
+
+  <!-- river: from the northeast peaks down to the sea -->
+  <path class="river" d="M428,118 C360,168 300,228 250,278 C202,326 158,396 118,452"/>
+  <path class="river-l" d="M428,118 C360,168 300,228 250,278 C202,326 158,396 118,452"/>
+  <!-- the ford stream past Quietford, with a little bridge -->
+  <path class="river" style="stroke-width:3" d="M34,108 Q92,138 168,132"/>
+  <path class="reed" d="M122,142 l16,-8 M122,150 l16,-8"/>
+
+  <!-- a lake -->
+  <ellipse class="lake" cx="332" cy="196" rx="26" ry="15"/>
+
+  <!-- the northeastern peaks -->
+  <g class="mtn">
+    <path d="M356,128 l20,-40 20,40 z"/>
+    <path d="M388,134 l26,-54 26,54 z"/>
+    <path d="M428,124 l18,-34 18,34 z"/>
+    <path d="M334,132 l14,-26 14,26 z"/>
+  </g>
+  <path class="snow" d="M408,98 l6,-14 6,14 z"/>
+  <path class="snow" d="M376,104 l4,-10 4,10 z"/>
+
+  <!-- forests -->
+  <g class="tree">
+    <path d="M286,316 l-5,9 10,0 z"/><path d="M298,322 l-5,9 10,0 z"/><path d="M278,326 l-5,9 10,0 z"/>
+    <path d="M306,312 l-5,9 10,0 z"/><path d="M292,332 l-5,9 10,0 z"/><path d="M314,326 l-5,9 10,0 z"/>
+    <path d="M168,250 l-5,9 10,0 z"/><path d="M180,256 l-5,9 10,0 z"/><path d="M158,260 l-5,9 10,0 z"/>
+    <path d="M190,248 l-5,9 10,0 z"/><path d="M174,266 l-5,9 10,0 z"/>
+    <path d="M436,288 l-5,9 10,0 z"/><path d="M448,294 l-5,9 10,0 z"/><path d="M428,298 l-5,9 10,0 z"/>
+    <path d="M250,150 l-4,8 8,0 z"/><path d="M260,156 l-4,8 8,0 z"/><path d="M242,158 l-4,8 8,0 z"/>
+  </g>
+
+  <!-- the marsh (southeast) -->
+  <g class="reed">
+    <path d="M330,360 l0,-10 M338,364 l0,-12 M324,368 l0,-9"/>
+    <path d="M352,372 l0,-11 M362,366 l0,-10 M372,374 l0,-12 M384,368 l0,-9"/>
+    <path d="M344,388 l0,-10 M356,392 l0,-11 M368,386 l0,-9"/>
+  </g>
+  <text class="region-l" x="316" y="412">The Lag Fens</text>
+
+  <!-- compass rose (southeast corner) -->
+  <g transform="translate(452,452)">
+    <circle r="20" fill="none" stroke="#6b563b" stroke-width="1"/>
+    <path d="M0,-22 L4,0 L0,22 L-4,0 Z" fill="#6b563b"/>
+    <path d="M-22,0 L0,-4 L22,0 L0,4 Z" fill="#8a7a5e"/>
+    <text x="-3.5" y="-25" fill="#6b563b" font-size="10" font-weight="bold">N</text>
+  </g>
+
+  <!-- decorative double frame -->
+  <rect class="frame" x="6" y="6" width="{{add .Size -12}}" height="{{add .Size -12}}" stroke-width="3"/>
+  <rect class="frame" x="12" y="12" width="{{add .Size -24}}" height="{{add .Size -24}}" stroke-width="1"/>
+
+  <!-- towns -->
   {{range .Towns}}
-  <rect x="{{add .X -5}}" y="{{add .Y -5}}" width="10" height="10" class="town"/>
-  <text x="{{add .X 9}}" y="{{add .Y 4}}" class="town-l">{{.Name}}</text>
+  <circle cx="{{.X}}" cy="{{.Y}}" r="4.5" fill="#8c2f1c" stroke="#3a160d" stroke-width="1"/>
+  <circle cx="{{.X}}" cy="{{.Y}}" r="1.6" fill="#f0e6c8"/>
+  <text class="town-l" x="{{add .X 8}}" y="{{add .Y 4}}">{{.Name}}</text>
   {{end}}
+
+  <!-- wandering souls -->
   {{range .Players}}
-  <circle cx="{{.X}}" cy="{{.Y}}" r="4" class="dot"/>
-  <text x="{{add .X 6}}" y="{{add .Y 3}}" class="dot-l">{{.Name}}</text>
+  <circle class="dot" cx="{{.X}}" cy="{{.Y}}" r="3"/>
+  <text class="dot-l" x="{{add .X 5}}" y="{{add .Y 3}}">{{.Name}}</text>
   {{else}}
-  <text x="{{add .Size -250}}" y="250" class="dot-l">no one has wandered onto the map yet.</text>
+  <text class="region-l" x="186" y="248">no souls wander here yet…</text>
   {{end}}
 </svg>
 <footer><a href="/">&larr; back to the realm</a> · auto-refreshes every 30s</footer>
