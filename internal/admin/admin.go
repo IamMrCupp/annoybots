@@ -31,6 +31,7 @@ type Control interface {
 	Join(network, channel string)
 	Part(network, channel string)
 	Invite(network, nick, channel string)
+	Identify(network, password string) bool
 	NetworkStatus() map[string]bool
 }
 

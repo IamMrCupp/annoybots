@@ -44,6 +44,10 @@ func (f *fakeControl) Action(n, t, x string)    { f.record("ACT " + n + " " + t 
 func (f *fakeControl) Join(n, c string)         { f.record("JOIN " + n + " " + c) }
 func (f *fakeControl) Part(n, c string)         { f.record("PART " + n + " " + c) }
 func (f *fakeControl) Invite(n, nick, c string) { f.record("INVITE " + n + " " + nick + " " + c) }
+func (f *fakeControl) Identify(n, pass string) bool {
+	f.record("IDENTIFY " + n + " " + pass)
+	return n == "testnet" // pretend only testnet can identify
+}
 func (f *fakeControl) NetworkStatus() map[string]bool {
 	return map[string]bool{"testnet": true, "discord": false}
 }
@@ -108,6 +112,45 @@ func TestNetworksCommand(t *testing.T) {
 	m.Handle(context.Background(), dm("boss", "!networks"))
 	if !strings.Contains(c.last(), "testnet (connected)") || !strings.Contains(c.last(), "discord (offline)") {
 		t.Fatalf("expected network status, got %q", c.last())
+	}
+}
+
+func TestIdentifyCommand(t *testing.T) {
+	c := &fakeControl{}
+	m := New("arywen", bossConfig(), "", &fakeQuoter{}, c, nil, quietLog())
+
+	// No password: uses the configured secret (none typed in chat).
+	m.Handle(context.Background(), dm("boss", "!identify testnet"))
+	found := false
+	for _, s := range c.said {
+		if s == "IDENTIFY testnet " {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatalf("expected IDENTIFY control call with no password, got %#v", c.said)
+	}
+	if !strings.Contains(c.last(), "sent NickServ IDENTIFY on testnet") {
+		t.Fatalf("expected success reply, got %q", c.last())
+	}
+
+	// Unknown network (fakeControl returns false): a helpful failure.
+	m.Handle(context.Background(), dm("boss", "!identify nope"))
+	if !strings.Contains(c.last(), "couldn't identify on nope") {
+		t.Fatalf("expected failure reply for unknown network, got %q", c.last())
+	}
+}
+
+func TestIdentifyRequiresMaster(t *testing.T) {
+	c := &fakeControl{}
+	// A friend-flagged admin shouldn't be able to identify (needs master).
+	cfg := Config{Enabled: true, Admins: []Identity{{Network: "testnet", Account: "pal", Flags: "f"}}}
+	m := New("arywen", cfg, "", &fakeQuoter{}, c, nil, quietLog())
+	m.Handle(context.Background(), dm("pal", "!identify testnet"))
+	for _, s := range c.said {
+		if strings.HasPrefix(s, "IDENTIFY") {
+			t.Fatalf("a friend must not be able to !identify: %#v", c.said)
+		}
 	}
 }
 

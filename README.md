@@ -196,7 +196,8 @@ Commands (send `!help` for the list; full reference in [docs/commands.md](docs/c
 - `!networks` — which networks the bot is currently connected to
 - `!join <net> <#chan>` / `!part <net> <#chan>` — channel ops
 - `!invite <net> <#chan> <nick>` — IRC INVITE (bot needs ops on `+i` channels)
-- `!say <net> <target> <text>` / `!act <net> <target> <text>` — puppet the bot
+- `!say <net> <target> <text>` / `!act <net> <target> <text>` — puppet the bot (the target can be a nick or service, e.g. `!say <net> NickServ "IDENTIFY …"`)
+- `!identify <net> [password]` — (re)authenticate to NickServ; omit the password to use the bot's configured secret (nothing sensitive typed in chat)
 - `!addquote <pack> <text>` / `!delquote <pack> <text>` — runtime quote editing
 - `!addadmin <net|*> <account>` / `!deladmin <net|*> <account>` / `!admins`
 - `!reload` — re-read quote-pack files and the skits file from disk, no restart
