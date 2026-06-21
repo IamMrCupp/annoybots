@@ -13,16 +13,60 @@ type classDef struct {
 	Name    string // canonical lowercase name
 	Primary string // primary ability field ("str", "dex", …)
 	HitDie  int64  // HP per level (d6/d8/d10), used by the HP system
+	Ability string // signature combat ability name
+	AbilDsc string // one-line ability description
 	Blurb   string // one-line flavor for announcements
 }
 
 var classes = map[string]classDef{
-	"fighter": {"fighter", "str", 10, "a frontline bruiser — STR drives the blade"},
-	"ranger":  {"ranger", "dex", 10, "a deadeye skirmisher — DEX guides the shot"},
-	"rogue":   {"rogue", "dex", 8, "a sneak who strikes where it hurts (DEX)"},
-	"cleric":  {"cleric", "wis", 8, "a battle-priest channeling WIS"},
-	"bard":    {"bard", "cha", 8, "a silver-tongued meddler running on CHA"},
-	"wizard":  {"wizard", "int", 6, "a glass cannon slinging INT"},
+	"fighter": {"fighter", "str", 10, "Extra Attack", "a second swing each combat round", "a frontline bruiser — STR drives the blade"},
+	"ranger":  {"ranger", "dex", 10, "Hunter's Mark", "extra damage on every hit", "a deadeye skirmisher — DEX guides the shot"},
+	"rogue":   {"rogue", "dex", 8, "Sneak Attack", "big bonus damage when you land a hit", "a sneak who strikes where it hurts (DEX)"},
+	"cleric":  {"cleric", "wis", 8, "Healing Word", "heal yourself a little each round", "a battle-priest channeling WIS"},
+	"bard":    {"bard", "cha", 8, "Cutting Words", "a chance to spoil the enemy's attack", "a silver-tongued meddler running on CHA"},
+	"wizard":  {"wizard", "int", 6, "Arcane Bolt", "guaranteed magic damage each round", "a glass cannon slinging INT"},
+}
+
+// combatMods are the per-class effects applied during a monster encounter. All
+// magnitudes are deterministic functions of the character's ability scores, so
+// they're easy to test.
+type combatMods struct {
+	extraAttacks int    // additional weapon swings per round (fighter)
+	bonusOnHit   int64  // extra damage when a weapon hit lands (rogue/ranger)
+	autoDmg      int64  // damage dealt every round, no roll (wizard)
+	selfHeal     int64  // HP recovered each round (cleric)
+	negateChance int    // 1-in-N chance to negate the monster's attack (bard); 0 = none
+	ability      string // display name, empty if no class
+}
+
+// classCombat returns the combat effects for a character's class.
+func classCombat(class string, sheet map[string]int64) combatMods {
+	c, ok := classOf(class)
+	if !ok {
+		return combatMods{}
+	}
+	nonNeg := func(v int64) int64 {
+		if v < 0 {
+			return 0
+		}
+		return v
+	}
+	cm := combatMods{ability: c.Ability}
+	switch c.Name {
+	case "fighter":
+		cm.extraAttacks = 1
+	case "wizard":
+		cm.autoDmg = nonNeg(2 + abilityMod(sheet["int"]))
+	case "rogue":
+		cm.bonusOnHit = nonNeg(3 + abilityMod(sheet["dex"]))
+	case "ranger":
+		cm.bonusOnHit = nonNeg(2 + abilityMod(sheet["dex"]))
+	case "cleric":
+		cm.selfHeal = nonNeg(1 + abilityMod(sheet["wis"]))
+	case "bard":
+		cm.negateChance = 3
+	}
+	return cm
 }
 
 // classNames lists the canonical classes, sorted, for usage messages.

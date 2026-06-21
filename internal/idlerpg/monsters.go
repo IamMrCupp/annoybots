@@ -81,17 +81,48 @@ func (m *Manager) resolveFight(ctx context.Context, p player, sheet map[string]i
 	if pDmgBonus < 0 {
 		pDmgBonus = 0
 	}
+	cm := classCombat(class, sheet)
+	usedAbility := false
 	monHP := mon.HP
 
-	for round := 0; round < 30 && pHP > 0 && monHP > 0; round++ {
-		if int64(m.roll(20)+1)+pAtk >= mon.AC { // player swings (weapon d8)
+	swing := func() bool { // one weapon attack; returns whether it landed
+		if int64(m.roll(20)+1)+pAtk >= mon.AC {
 			monHP -= int64(m.roll(8)+1) + pDmgBonus
+			return true
+		}
+		return false
+	}
+
+	for round := 0; round < 30 && pHP > 0 && monHP > 0; round++ {
+		hit := swing()
+		for k := 0; k < cm.extraAttacks; k++ { // fighter: Extra Attack
+			if swing() {
+				hit, usedAbility = true, true
+			}
+		}
+		if hit && cm.bonusOnHit > 0 { // rogue/ranger: Sneak Attack / Hunter's Mark
+			monHP -= cm.bonusOnHit
+			usedAbility = true
+		}
+		if cm.autoDmg > 0 { // wizard: Arcane Bolt
+			monHP -= cm.autoDmg
+			usedAbility = true
 		}
 		if monHP <= 0 {
 			break
 		}
-		if int64(m.roll(20)+1)+mon.Atk >= pAC { // monster swings
+		// bard: Cutting Words may spoil the monster's swing.
+		if cm.negateChance > 0 && m.roll(cm.negateChance) == 0 {
+			usedAbility = true
+		} else if int64(m.roll(20)+1)+mon.Atk >= pAC {
 			pHP -= int64(m.roll(int(mon.DmgDie)) + 1)
+		}
+		if cm.selfHeal > 0 && pHP < startHP { // cleric: Healing Word
+			pHP += cm.selfHeal
+			if pHP > startHP {
+				pHP = startHP
+			}
+			usedAbility = true
 		}
 	}
 
@@ -104,8 +135,12 @@ func (m *Manager) resolveFight(ctx context.Context, p player, sheet map[string]i
 		_, _ = m.store.HIncr(ctx, sheetKey(p.key), "ttl", -reward)
 		_, _ = m.store.HIncr(ctx, sheetKey(p.key), "gold", mon.Gold)
 		_, _ = m.store.HIncr(ctx, sheetKey(p.key), "kills", 1)
+		flourish := ""
+		if usedAbility && cm.ability != "" {
+			flourish = " with " + cm.ability
+		}
 		m.out.Say(p.network, p.channel, fmt.Sprintf(
-			"⚔️ %s slew %s! +%dg, %ds closer to the next level.", p.nick, mon.Name, mon.Gold, reward))
+			"⚔️ %s slew %s%s — +%dg, %ds closer to the next level.", p.nick, mon.Name, flourish, mon.Gold, reward))
 		if m.roll(3) == 0 {
 			m.findItem(ctx, p, sheet["level"])
 		}

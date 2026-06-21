@@ -305,7 +305,8 @@ func (m *Manager) setClass(msg engine.Message, fields []string) {
 		return
 	}
 	_ = m.store.SetStr(ctx, classKey(pkey), c.Name)
-	m.out.Say(msg.Network, msg.Channel, msg.Nick+" is now a "+c.Name+" — "+c.Blurb+".")
+	m.out.Say(msg.Network, msg.Channel, fmt.Sprintf("%s is now a %s — %s. ability: %s (%s).",
+		msg.Nick, c.Name, c.Blurb, c.Ability, c.AbilDsc))
 }
 
 // setRace chooses a character's race once, baking its ability bonuses permanently
@@ -438,9 +439,13 @@ func (m *Manager) sheet(msg engine.Message, fields []string) string {
 	m.ensureAbilities(ctx, pkey)
 	sheet, _ := m.store.HGetAll(ctx, sheetKey(pkey))
 	class, _ := m.store.GetStr(ctx, classKey(pkey))
-	return fmt.Sprintf("%s the %s (lvl %d) — HP %d/%d · %dg · %d kills · %s",
+	abil := ""
+	if c, ok := classOf(class); ok {
+		abil = " · " + c.Ability
+	}
+	return fmt.Sprintf("%s the %s (lvl %d) — HP %d/%d · %dg · %d kills%s · %s",
 		name, m.charDesc(ctx, pkey, sheet), sheet["level"], curHP(sheet, class), maxHP(sheet, class),
-		sheet["gold"], sheet["kills"], abilityLine(sheet))
+		sheet["gold"], sheet["kills"], abil, abilityLine(sheet))
 }
 
 // adminVerb handles the privileged !rpg commands (pause/resume/push/hog). They are

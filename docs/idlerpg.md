@@ -59,8 +59,10 @@ the NAMES list — you don't have to rejoin or speak to resume progress.
   heal back, which happens a little each tick. `!rpg sheet` shows `HP cur/max`.
 - **Class** (`!rpg class <fighter|ranger|rogue|cleric|bard|wizard>`). Mechanical:
   each keys off a primary ability (fighter STR, wizard INT, rogue/ranger DEX,
-  cleric WIS, bard CHA) whose modifier is added to your attack power, and whose
-  hit die feeds your HP.
+  cleric WIS, bard CHA) whose modifier is added to your attack power, whose hit die
+  feeds your HP, and which grants a **signature combat ability** in monster fights —
+  fighter's Extra Attack, wizard's Arcane Bolt, rogue's Sneak Attack, ranger's
+  Hunter's Mark, cleric's Healing Word, bard's Cutting Words.
 
 ## Quests
 
