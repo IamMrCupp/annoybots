@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.21.0](https://github.com/IamMrCupp/annoybots/compare/v1.20.0...v1.21.0) (2026-06-21)
+
+
+### Features
+
+* **idlerpg:** 9-point alignment grid ([#86](https://github.com/IamMrCupp/annoybots/issues/86)) ([804425f](https://github.com/IamMrCupp/annoybots/commit/804425fdc4870e8152d317e198327c3d05668fca))
+* **idlerpg:** 9-point alignment grid (closes [#86](https://github.com/IamMrCupp/annoybots/issues/86)) ([7f8c935](https://github.com/IamMrCupp/annoybots/commit/7f8c93516e0144f2438dc46edd4dd54ee111cb53))
+* **idlerpg:** class combat abilities ([#84](https://github.com/IamMrCupp/annoybots/issues/84)) ([a17457d](https://github.com/IamMrCupp/annoybots/commit/a17457dfc3bdc4c5db094c596fc982fb22b127ba))
+* **idlerpg:** class combat abilities in monster fights (closes [#84](https://github.com/IamMrCupp/annoybots/issues/84)) ([33cc1e4](https://github.com/IamMrCupp/annoybots/commit/33cc1e431aaa4cc8b572e57bf1638d75dddbb916))
+
 ## [1.20.0](https://github.com/IamMrCupp/annoybots/compare/v1.19.0...v1.20.0) (2026-06-20)
 
 
