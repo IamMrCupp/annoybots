@@ -192,7 +192,7 @@ func TestAlignAndClass(t *testing.T) {
 	m, r, _ := newMgr()
 	m.Handle(chanMsg("alice", "!rpg")) // enroll
 	m.Handle(chanMsg("alice", "!rpg align evil"))
-	if !r.has("is now evil") {
+	if !r.has("is now neutral evil") {
 		t.Fatalf("align failed: %v", r.lines)
 	}
 	m.Handle(chanMsg("alice", "!rpg class wizard"))
@@ -200,8 +200,8 @@ func TestAlignAndClass(t *testing.T) {
 		t.Fatalf("class failed: %v", r.lines)
 	}
 	m.Handle(chanMsg("alice", "!rpg")) // status shows both
-	if !strings.Contains(r.last(), "the evil wizard") {
-		t.Fatalf("status = %q; want 'the evil wizard'", r.last())
+	if !strings.Contains(r.last(), "the neutral evil wizard") {
+		t.Fatalf("status = %q; want 'the neutral evil wizard'", r.last())
 	}
 }
 
@@ -932,5 +932,38 @@ func TestResolveFightEveryClassRuns(t *testing.T) {
 		if r.last() == "" {
 			t.Fatalf("class %q: fight produced no announcement", class)
 		}
+	}
+}
+
+func TestAlignmentGrid(t *testing.T) {
+	if got := fullAlign(0, 0); got != "true neutral" {
+		t.Fatalf("fullAlign(0,0) = %q; want 'true neutral'", got)
+	}
+	if got := fullAlign(1, 1); got != "lawful good" {
+		t.Fatalf("fullAlign(1,1) = %q; want 'lawful good'", got)
+	}
+	if got := fullAlign(2, 2); got != "chaotic evil" {
+		t.Fatalf("fullAlign(2,2) = %q; want 'chaotic evil'", got)
+	}
+	if got := fullAlign(0, 1); got != "neutral good" {
+		t.Fatalf("fullAlign(0,1) = %q; want 'neutral good'", got)
+	}
+}
+
+func TestSetAlignTwoAxes(t *testing.T) {
+	m, r, st := newMgr()
+	ctx := context.Background()
+	m.Handle(chanMsg("alice", "!rpg"))
+	m.Handle(chanMsg("alice", "!rpg align chaotic evil"))
+	if !r.has("is now chaotic evil") {
+		t.Fatalf("two-axis align failed: %q", r.last())
+	}
+	if s, _ := st.HGetAll(ctx, sheetKey("net|alice")); s["law"] != 2 || s["align"] != 2 {
+		t.Fatalf("law/align = %d/%d; want 2/2", s["law"], s["align"])
+	}
+	// single ethical word adjusts just that axis
+	m.Handle(chanMsg("alice", "!rpg align lawful"))
+	if s, _ := st.HGetAll(ctx, sheetKey("net|alice")); s["law"] != 1 || s["align"] != 2 {
+		t.Fatalf("after 'lawful': law/align = %d/%d; want 1/2", s["law"], s["align"])
 	}
 }

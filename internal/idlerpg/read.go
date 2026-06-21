@@ -31,21 +31,22 @@ type ItemView struct {
 
 // CharView is a read-only snapshot of one character's sheet.
 type CharView struct {
-	Key       string     // canonical character key (network|nick, or a linked account)
-	Name      string     // display name: the key with any "network|" prefix stripped
-	Level     int64      // current level
-	HP        int64      // current hit points
-	MaxHP     int64      // hit-point ceiling
-	Gold      int64      // coin from monster kills
-	Kills     int64      // monsters slain
-	TTL       int64      // seconds to the next level
-	Power     int64      // total equipment power (sum of item levels)
-	Align     string     // "good" / "neutral" / "evil"
-	Race      string     // chosen race, empty if unset
-	Class     string     // class, empty if unset
-	Location  string     // where on the map: at/travelling-to a town, or roaming
-	Items     []ItemView // equipped items (only non-empty slots), in slot order
-	Abilities []Ability  // the six ability scores, in canonical order (empty if unrolled)
+	Key        string     // canonical character key (network|nick, or a linked account)
+	Name       string     // display name: the key with any "network|" prefix stripped
+	Level      int64      // current level
+	HP         int64      // current hit points
+	MaxHP      int64      // hit-point ceiling
+	Gold       int64      // coin from monster kills
+	Kills      int64      // monsters slain
+	TTL        int64      // seconds to the next level
+	Power      int64      // total equipment power (sum of item levels)
+	Align      string     // full 9-point alignment, e.g. "chaotic evil" / "true neutral"
+	AlignClass string     // moral axis only ("good"/"neutral"/"evil"), for color styling
+	Race       string     // chosen race, empty if unset
+	Class      string     // class, empty if unset
+	Location   string     // where on the map: at/travelling-to a town, or roaming
+	Items      []ItemView // equipped items (only non-empty slots), in slot order
+	Abilities  []Ability  // the six ability scores, in canonical order (empty if unrolled)
 }
 
 // QuestView is a read-only snapshot of the active quest.
@@ -156,21 +157,22 @@ func readChar(ctx context.Context, store state.Store, key string) CharView {
 		}
 	}
 	return CharView{
-		Key:       key,
-		Name:      displayName(key),
-		Level:     sheet["level"],
-		HP:        curHP(sheet, class),
-		MaxHP:     maxHP(sheet, class),
-		Gold:      sheet["gold"],
-		Kills:     sheet["kills"],
-		TTL:       sheet["ttl"],
-		Power:     itemSum(sheet),
-		Align:     alignName(sheet["align"]),
-		Race:      race,
-		Class:     class,
-		Location:  mapLocation(sheet),
-		Items:     items,
-		Abilities: abil,
+		Key:        key,
+		Name:       displayName(key),
+		Level:      sheet["level"],
+		HP:         curHP(sheet, class),
+		MaxHP:      maxHP(sheet, class),
+		Gold:       sheet["gold"],
+		Kills:      sheet["kills"],
+		TTL:        sheet["ttl"],
+		Power:      itemSum(sheet),
+		Align:      fullAlign(sheet["law"], sheet["align"]),
+		AlignClass: alignName(sheet["align"]),
+		Race:       race,
+		Class:      class,
+		Location:   mapLocation(sheet),
+		Items:      items,
+		Abilities:  abil,
 	}
 }
 

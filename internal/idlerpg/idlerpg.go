@@ -235,7 +235,7 @@ func (m *Manager) command(msg engine.Message, fields []string) {
 // charDesc builds a character's title, e.g. "evil dwarf fighter" — alignment, then
 // race, then class, skipping any that are unset.
 func (m *Manager) charDesc(ctx context.Context, pkey string, sheet map[string]int64) string {
-	desc := alignName(sheet["align"])
+	desc := fullAlign(sheet["law"], sheet["align"])
 	if race, _ := m.store.GetStr(ctx, raceKey(pkey)); race != "" {
 		desc += " " + race
 	}
@@ -261,20 +261,9 @@ func alignName(v int64) string {
 // setAlign sets the player's alignment: good fights at +11% power, evil crits
 // twice as often, neutral is baseline.
 func (m *Manager) setAlign(msg engine.Message, fields []string) {
+	const usage = "usage: !rpg align <good|neutral|evil>, or <lawful|neutral|chaotic> <good|neutral|evil>"
 	if len(fields) < 3 {
-		m.out.Say(msg.Network, msg.Channel, "usage: !rpg align good|neutral|evil")
-		return
-	}
-	var v int64
-	switch strings.ToLower(fields[2]) {
-	case "good":
-		v = 1
-	case "evil":
-		v = 2
-	case "neutral":
-		v = 0
-	default:
-		m.out.Say(msg.Network, msg.Channel, "alignment is good, neutral, or evil.")
+		m.out.Say(msg.Network, msg.Channel, usage)
 		return
 	}
 	ctx := context.Background()
@@ -283,8 +272,25 @@ func (m *Manager) setAlign(msg engine.Message, fields []string) {
 		m.out.Say(msg.Network, msg.Channel, "you're not playing. !rpg to start the grind.")
 		return
 	}
-	_ = m.store.HSet(ctx, sheetKey(pkey), "align", v)
-	m.out.Say(msg.Network, msg.Channel, msg.Nick+" is now "+alignName(v)+".")
+	if len(fields) >= 4 { // two axes: <ethic> <moral>
+		law, lok := parseEthic(fields[2])
+		moral, mok := parseMoral(fields[3])
+		if !lok || !mok {
+			m.out.Say(msg.Network, msg.Channel, usage)
+			return
+		}
+		_ = m.store.HSet(ctx, sheetKey(pkey), "law", law)
+		_ = m.store.HSet(ctx, sheetKey(pkey), "align", moral)
+	} else if moral, ok := parseMoral(fields[2]); ok { // single moral word (back-compat)
+		_ = m.store.HSet(ctx, sheetKey(pkey), "align", moral)
+	} else if law, ok := parseEthic(fields[2]); ok { // single ethical word
+		_ = m.store.HSet(ctx, sheetKey(pkey), "law", law)
+	} else {
+		m.out.Say(msg.Network, msg.Channel, usage)
+		return
+	}
+	sheet, _ := m.store.HGetAll(ctx, sheetKey(pkey))
+	m.out.Say(msg.Network, msg.Channel, msg.Nick+" is now "+fullAlign(sheet["law"], sheet["align"])+".")
 }
 
 // setClass sets the player's class (flavor text shown in status).

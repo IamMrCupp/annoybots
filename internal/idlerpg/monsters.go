@@ -77,6 +77,12 @@ func (m *Manager) resolveFight(ctx context.Context, p player, sheet map[string]i
 	pHP := startHP
 	pAC := 10 + abilityMod(sheet["dex"])
 	pAtk := 2 + sheet["level"]/4 + classAttackMod(sheet, class)
+	switch sheet["law"] { // ethical axis: lawful is disciplined, chaotic is reckless
+	case 1:
+		pAC++ // lawful: +AC
+	case 2:
+		pAtk++ // chaotic: +attack
+	}
 	pDmgBonus := classAttackMod(sheet, class)
 	if pDmgBonus < 0 {
 		pDmgBonus = 0
