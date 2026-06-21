@@ -884,3 +884,53 @@ func TestTravelAndArrive(t *testing.T) {
 		t.Fatalf("dest should clear on arrival, got %d", s["dest"])
 	}
 }
+
+func TestClassCombatMods(t *testing.T) {
+	sheet := map[string]int64{"int": 16, "dex": 14, "wis": 12, "str": 10}
+	if cm := classCombat("fighter", sheet); cm.extraAttacks != 1 || cm.ability != "Extra Attack" {
+		t.Fatalf("fighter: %#v", cm)
+	}
+	if cm := classCombat("wizard", sheet); cm.autoDmg != 5 { // 2 + INT16 mod (+3)
+		t.Fatalf("wizard autoDmg = %d; want 5", cm.autoDmg)
+	}
+	if cm := classCombat("rogue", sheet); cm.bonusOnHit != 5 { // 3 + DEX14 mod (+2)
+		t.Fatalf("rogue bonusOnHit = %d; want 5", cm.bonusOnHit)
+	}
+	if cm := classCombat("ranger", sheet); cm.bonusOnHit != 4 { // 2 + DEX14 (+2)
+		t.Fatalf("ranger bonusOnHit = %d; want 4", cm.bonusOnHit)
+	}
+	if cm := classCombat("cleric", sheet); cm.selfHeal != 2 { // 1 + WIS12 (+1)
+		t.Fatalf("cleric selfHeal = %d; want 2", cm.selfHeal)
+	}
+	if cm := classCombat("bard", sheet); cm.negateChance != 3 {
+		t.Fatalf("bard negateChance = %d; want 3", cm.negateChance)
+	}
+	if cm := classCombat("", sheet); cm.ability != "" { // unclassed → nothing
+		t.Fatalf("unclassed should have no ability: %#v", cm)
+	}
+}
+
+func TestClassAbilityInClassMessage(t *testing.T) {
+	m, r, _ := newMgr()
+	m.Handle(chanMsg("alice", "!rpg"))
+	m.Handle(chanMsg("alice", "!rpg class rogue"))
+	if !strings.Contains(r.last(), "Sneak Attack") {
+		t.Fatalf("class message should name the ability, got %q", r.last())
+	}
+}
+
+func TestResolveFightEveryClassRuns(t *testing.T) {
+	// Smoke test: a fight resolves cleanly for each class (no panic, an announce).
+	for class := range classes {
+		m, r, st := newMgr()
+		ctx := context.Background()
+		m.Handle(chanMsg("alice", "!rpg"))
+		st.SetStr(ctx, classKey("net|alice"), class)
+		sheet, _ := st.HGetAll(ctx, sheetKey("net|alice"))
+		p := player{network: "net", nick: "alice", channel: "#chan", key: "net|alice"}
+		m.resolveFight(ctx, p, sheet, class, bestiary[0])
+		if r.last() == "" {
+			t.Fatalf("class %q: fight produced no announcement", class)
+		}
+	}
+}
