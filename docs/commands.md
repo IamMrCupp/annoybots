@@ -40,7 +40,7 @@ Opt in with `!rpg`, then "play" by being present and **quiet**. Full rules in
 | `!rpg race <human\|elf\|dwarf\|halfling\|half-orc\|gnome\|tiefling>` | Choose your heritage once — bakes ability bonuses into your scores. |
 | `!rpg items` (`gear`) | Your equipped items and total power. |
 | `!rpg top` | The level leaderboard. |
-| `!rpg align good\|neutral\|evil` | Set your alignment (affects combat). |
+| `!rpg align <good\|neutral\|evil>` or `<lawful\|neutral\|chaotic> <good\|neutral\|evil>` | Set your alignment on the D&D 9-point grid (affects combat). |
 | `!rpg class <fighter\|ranger\|rogue\|cleric\|bard\|wizard>` | Pick a class — its primary ability sharpens your attacks (and feeds HP). |
 | `!rpg info` | Realm summary: idlers online, top player, active quest. |
 | `!rpg quest` | The active quest's party, objective, and time left. |

@@ -50,8 +50,10 @@ the NAMES list — you don't have to rejoin or speak to resume progress.
 - **Events.** At random the gods intervene — a **godsend** (time forward), a
   **calamity** (time back, or an item loses its luster), or the **Hand of God**
   (a big swing either way).
-- **Alignment** (`!rpg align good|neutral|evil`). Good fights at +11% power; evil
-  crits twice as often; neutral is baseline.
+- **Alignment** — the full D&D 9-point grid: an ethical axis (`!rpg align lawful|
+  neutral|chaotic`) crossed with the moral axis (`good|neutral|evil`), or both at
+  once (`!rpg align chaotic evil`). Good fights at +11% power and evil crits twice
+  as often (PvP); lawful adds +AC and chaotic +attack in monster fights.
 - **Race** (`!rpg race <human|elf|dwarf|…>`). Chosen once at creation; bakes small,
   permanent ability bonuses into your rolled scores (half-orc +2 STR, elf +2 DEX, …).
 - **HP.** Derived from CON, level, and your class hit die. Losing a fight (and,
