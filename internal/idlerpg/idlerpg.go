@@ -204,7 +204,7 @@ func (m *Manager) command(msg engine.Message, fields []string) {
 		case "revive":
 			m.revive(msg)
 			return
-		case "pause", "resume", "push", "hog":
+		case "pause", "resume", "push", "hog", "reset", "setlevel", "gold":
 			m.adminVerb(msg, fields)
 			return
 		}
@@ -508,7 +508,116 @@ func (m *Manager) adminVerb(msg engine.Message, fields []string) {
 			return
 		}
 		m.handOfGod(ctx, p)
+
+	case "reset":
+		// !rpg reset <name>  — wipe one character.
+		// !rpg reset all yes — wipe the entire realm.
+		if len(fields) < 3 {
+			m.out.Say(msg.Network, msg.Channel, "usage: !rpg reset <name>, or !rpg reset all yes")
+			return
+		}
+		if strings.EqualFold(fields[2], "all") {
+			if len(fields) < 4 || strings.ToLower(fields[3]) != "yes" {
+				m.out.Say(msg.Network, msg.Channel, "this wipes EVERY character and the active quest. confirm with: !rpg reset all yes")
+				return
+			}
+			n := m.wipeAll(ctx)
+			m.out.Say(msg.Network, msg.Channel, fmt.Sprintf("💥 the realm is wiped clean — %d characters gone. a new age begins.", n))
+			return
+		}
+		pkey := m.resolve(msg.Network, "", fields[2])
+		if sheet, _ := m.store.HGetAll(ctx, sheetKey(pkey)); len(sheet) == 0 {
+			m.out.Say(msg.Network, msg.Channel, fields[2]+" isn't playing.")
+			return
+		}
+		m.wipeChar(ctx, pkey)
+		m.out.Say(msg.Network, msg.Channel, fields[2]+"'s character has been erased.")
+
+	case "setlevel":
+		if len(fields) < 4 {
+			m.out.Say(msg.Network, msg.Channel, "usage: !rpg setlevel <name> <level>")
+			return
+		}
+		lvl, err := strconv.ParseInt(fields[3], 10, 64)
+		if err != nil || lvl < 0 {
+			m.out.Say(msg.Network, msg.Channel, "level must be a non-negative number.")
+			return
+		}
+		pkey := m.resolve(msg.Network, "", fields[2])
+		sheet, _ := m.store.HGetAll(ctx, sheetKey(pkey))
+		if len(sheet) == 0 {
+			m.out.Say(msg.Network, msg.Channel, fields[2]+" isn't playing.")
+			return
+		}
+		_, _ = m.store.ZIncr(ctx, boardKey(), pkey, lvl-sheet["level"]) // keep the board in sync
+		_ = m.store.HSet(ctx, sheetKey(pkey), "level", lvl)
+		_ = m.store.HSet(ctx, sheetKey(pkey), "ttl", m.ttlFor(lvl))
+		m.out.Say(msg.Network, msg.Channel, fmt.Sprintf("✨ %s is now level %d.", fields[2], lvl))
+
+	case "gold":
+		if len(fields) < 4 {
+			m.out.Say(msg.Network, msg.Channel, "usage: !rpg gold <name> <amount> (negative to remove)")
+			return
+		}
+		amt, err := strconv.ParseInt(fields[3], 10, 64)
+		if err != nil {
+			m.out.Say(msg.Network, msg.Channel, "that's not an amount of gold.")
+			return
+		}
+		pkey := m.resolve(msg.Network, "", fields[2])
+		if sheet, _ := m.store.HGetAll(ctx, sheetKey(pkey)); len(sheet) == 0 {
+			m.out.Say(msg.Network, msg.Channel, fields[2]+" isn't playing.")
+			return
+		}
+		now, _ := m.store.HIncr(ctx, sheetKey(pkey), "gold", amt)
+		if now < 0 { // never let an adjustment drive gold negative
+			_ = m.store.HSet(ctx, sheetKey(pkey), "gold", 0)
+			now = 0
+		}
+		m.out.Say(msg.Network, msg.Channel, fmt.Sprintf("💰 %s now has %dg.", fields[2], now))
 	}
+}
+
+// wipeChar erases a single character: its sheet, item names, class, race, and
+// leaderboard entry, plus any online presence.
+func (m *Manager) wipeChar(ctx context.Context, key string) {
+	for _, s := range itemSlots {
+		_ = m.store.Del(ctx, nameKey(key, s))
+	}
+	_ = m.store.Del(ctx, classKey(key))
+	_ = m.store.Del(ctx, raceKey(key))
+	_ = m.store.Del(ctx, sheetKey(key))
+	_ = m.store.ZRem(ctx, boardKey(), key)
+	m.mu.Lock()
+	for ok, p := range m.online {
+		if p.key == key {
+			delete(m.online, ok)
+		}
+	}
+	m.mu.Unlock()
+}
+
+// wipeAll erases every character and clears the active quest. Returns the count.
+func (m *Manager) wipeAll(ctx context.Context) int {
+	top, _ := m.store.ZTop(ctx, boardKey(), 100000)
+	for _, e := range top {
+		for _, s := range itemSlots {
+			_ = m.store.Del(ctx, nameKey(e.Member, s))
+		}
+		_ = m.store.Del(ctx, classKey(e.Member))
+		_ = m.store.Del(ctx, raceKey(e.Member))
+		_ = m.store.Del(ctx, sheetKey(e.Member))
+	}
+	_ = m.store.Del(ctx, boardKey())
+	_ = m.store.Del(ctx, questKey())
+	m.qmu.Lock()
+	m.quest = nil
+	m.qmu.Unlock()
+	m.mu.Lock()
+	m.online = map[string]player{}
+	m.mu.Unlock()
+	m.paused.Store(false)
+	return len(top)
 }
 
 func abs64(n int64) int64 {

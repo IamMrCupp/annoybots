@@ -50,6 +50,10 @@ Opt in with `!rpg`, then "play" by being present and **quiet**. Full rules in
 | `!rpg pause` / `!rpg resume` | (admin) Freeze or resume the whole game. |
 | `!rpg push <name> <secs>` | (admin) Move a player's clock — negative is toward the next level. |
 | `!rpg hog [name]` | (admin) Invoke the Hand of God on a named player or a random one. |
+| `!rpg reset <name>` | (admin) Erase one character. |
+| `!rpg reset all yes` | (admin) Wipe the **entire** realm — every character + the active quest. The `yes` is required. |
+| `!rpg setlevel <name> <n>` | (admin) Set a character's level. |
+| `!rpg gold <name> <amount>` | (admin) Grant or remove gold (negative removes). |
 
 Admin `!rpg` verbs use the same identity authorization as the admin console (op flag).
 The web dashboard also links each leaderboard name to a per-character page at `/p/<name>`.

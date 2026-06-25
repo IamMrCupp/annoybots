@@ -28,6 +28,7 @@ type Store interface {
 	ZIncr(ctx context.Context, key, member string, delta int64) (int64, error)
 	ZScore(ctx context.Context, key, member string) (int64, error)
 	ZTop(ctx context.Context, key string, n int) ([]Entry, error)
+	ZRem(ctx context.Context, key, member string) error // remove a member from a sorted set
 	// Hash ops — structured per-entity records (e.g. an IdleRPG player sheet).
 	HIncr(ctx context.Context, key, field string, delta int64) (int64, error)
 	HSet(ctx context.Context, key, field string, value int64) error
@@ -112,6 +113,12 @@ func (s *redisStore) ZTop(ctx context.Context, key string, n int) ([]Entry, erro
 		out = append(out, Entry{Member: m, Score: int64(z.Score)})
 	}
 	return out, nil
+}
+
+func (s *redisStore) ZRem(ctx context.Context, key, member string) error {
+	ctx, cancel := s.ctx(ctx)
+	defer cancel()
+	return s.c.ZRem(ctx, s.k(key), member).Err()
 }
 
 func (s *redisStore) HIncr(ctx context.Context, key, field string, delta int64) (int64, error) {
@@ -234,6 +241,13 @@ func (m *memStore) ZTop(_ context.Context, key string, n int) ([]Entry, error) {
 		out = out[:n]
 	}
 	return out, nil
+}
+
+func (m *memStore) ZRem(_ context.Context, key, member string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	delete(m.zsets[key], member)
+	return nil
 }
 
 func (m *memStore) HIncr(_ context.Context, key, field string, delta int64) (int64, error) {
