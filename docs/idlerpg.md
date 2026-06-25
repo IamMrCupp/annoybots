@@ -78,6 +78,10 @@ the NAMES list — you don't have to rejoin or speak to resume progress.
   as often (PvP); lawful adds +AC and chaotic +attack in monster fights.
 - **Race** (`!rpg race <human|elf|dwarf|…>`). Chosen once at creation; bakes small,
   permanent ability bonuses into your rolled scores (half-orc +2 STR, elf +2 DEX, …).
+- **Healing draughts.** Buy potions at a market (`!rpg buy potion`) and carry a
+  stack; `!rpg quaff` drinks one to restore full HP **anywhere** — the only way to
+  pick yourself up after being downed far from a temple. A gold sink with a
+  purpose. Your stock shows on `!rpg sheet`.
 - **HP.** Derived from CON, level, and your class hit die. Losing a fight (and,
   later, monsters) deals damage; at 0 HP you're **downed** — no progress until you
   heal back, which happens a little each tick. `!rpg sheet` shows `HP cur/max`.

@@ -49,6 +49,8 @@ Opt in with `!rpg`, then "play" by being present and **quiet**. Full rules in
 | `!rpg pet` (`companion`) | Your companion and the combat bonus it grants (earned by slaying a boss). |
 | `!rpg duel <name>` (`spar`) | Friendly best-of-three spar with a present player — bragging rights only, no stat changes. |
 | `!rpg rest` / `!rpg shop` / `!rpg buy <slot>` / `!rpg revive` | Town services — heal, buy gear (gold), revive — usable while at the matching town. |
+| `!rpg buy potion` | Buy a healing draught at a market (gold). |
+| `!rpg quaff` (`drink`) | Drink a healing draught to restore full HP — works **anywhere** (self-rescue when downed in the wild). |
 | `!rpg pause` / `!rpg resume` | (admin) Freeze or resume the whole game. |
 | `!rpg push <name> <secs>` | (admin) Move a player's clock — negative is toward the next level. |
 | `!rpg hog [name]` | (admin) Invoke the Hand of God on a named player or a random one. |

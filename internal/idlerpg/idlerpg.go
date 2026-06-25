@@ -198,6 +198,9 @@ func (m *Manager) command(msg engine.Message, fields []string) {
 		case "duel", "spar":
 			m.duel(msg, fields)
 			return
+		case "quaff", "drink":
+			m.quaff(msg)
+			return
 		case "rest":
 			m.rest(msg)
 			return
@@ -455,9 +458,13 @@ func (m *Manager) sheet(msg engine.Message, fields []string) string {
 	if c, ok := classOf(class); ok {
 		abil = " · " + c.Ability
 	}
-	return fmt.Sprintf("%s (lvl %d) — HP %d/%d · %dg · %d kills%s · %s",
+	pots := ""
+	if sheet["pots"] > 0 {
+		pots = fmt.Sprintf(" · %d🧪", sheet["pots"])
+	}
+	return fmt.Sprintf("%s (lvl %d) — HP %d/%d · %dg · %d kills%s%s · %s",
 		m.charLine(ctx, name, pkey, sheet), sheet["level"], curHP(sheet, class), maxHP(sheet, class),
-		sheet["gold"], sheet["kills"], abil, abilityLine(sheet))
+		sheet["gold"], sheet["kills"], pots, abil, abilityLine(sheet))
 }
 
 // adminVerb handles the privileged !rpg commands (pause/resume/push/hog). They are

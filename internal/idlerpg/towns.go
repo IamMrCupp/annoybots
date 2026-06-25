@@ -142,8 +142,12 @@ func (m *Manager) shop(msg engine.Message) {
 
 // buy purchases a level-appropriate item for a slot.
 func (m *Manager) buy(msg engine.Message, fields []string) {
+	if len(fields) >= 3 && strings.EqualFold(fields[2], "potion") {
+		m.buyPotion(msg)
+		return
+	}
 	if len(fields) < 3 || !isItemSlot(fields[2]) {
-		m.out.Say(msg.Network, msg.Channel, "usage: !rpg buy <slot>. slots: "+strings.Join(itemSlots, ", "))
+		m.out.Say(msg.Network, msg.Channel, "usage: !rpg buy <slot|potion>. slots: "+strings.Join(itemSlots, ", "))
 		return
 	}
 	slot := strings.ToLower(fields[2])
