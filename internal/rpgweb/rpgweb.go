@@ -251,6 +251,7 @@ const charTmpl = `<!doctype html>
   <tr><td class="k">gold</td><td>{{.Gold}}</td></tr>
   <tr><td class="k">kills</td><td>{{.Kills}}</td></tr>
   <tr><td class="k">location</td><td class="muted">{{.Location}}</td></tr>
+  {{if .Pet}}<tr><td class="k">companion</td><td>🐾 {{.Pet}}</td></tr>{{end}}
   <tr><td class="k">time to next</td><td class="muted">{{dur .TTL}}</td></tr>
   <tr><td class="k">power</td><td>{{.Power}}</td></tr>
 </table>

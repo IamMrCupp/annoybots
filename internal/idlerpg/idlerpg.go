@@ -192,6 +192,9 @@ func (m *Manager) command(msg engine.Message, fields []string) {
 		case "town", "where":
 			m.out.Say(msg.Network, msg.Channel, m.townStatus(msg))
 			return
+		case "pet", "companion":
+			m.out.Say(msg.Network, msg.Channel, m.petStatus(msg, fields))
+			return
 		case "rest":
 			m.rest(msg)
 			return
