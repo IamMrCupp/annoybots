@@ -68,10 +68,19 @@ func TestReadChar(t *testing.T) {
 	m, _, st := newMgr()
 	ctx := context.Background()
 	m.Handle(chanMsg("alice", "!rpg"))
+	st.HSet(ctx, sheetKey("net|alice"), "pots", 3)
+	st.HSet(ctx, sheetKey("net|alice"), "duelw", 5)
+	st.HSet(ctx, sheetKey("net|alice"), "level", 60) // earns a title
 
 	cv, ok := ReadChar(ctx, st, "net|alice")
 	if !ok || cv.Name != "alice" {
 		t.Fatalf("expected alice's char view, got %#v ok=%v", cv, ok)
+	}
+	if cv.Draughts != 3 || cv.DuelWins != 5 {
+		t.Fatalf("char view stats: draughts=%d duelwins=%d; want 3/5", cv.Draughts, cv.DuelWins)
+	}
+	if cv.Title == "" {
+		t.Fatal("a level-60 character should carry a title")
 	}
 	if _, ok := ReadChar(ctx, st, "net|ghost"); ok {
 		t.Fatal("a non-enrolled key must not resolve to a character")

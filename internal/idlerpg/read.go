@@ -46,6 +46,8 @@ type CharView struct {
 	Race       string     // chosen race, empty if unset
 	Class      string     // class, empty if unset
 	Pet        string     // companion's kind (e.g. "wolf"), empty if none
+	Draughts   int64      // healing draughts carried
+	DuelWins   int64      // career spar wins
 	Location   string     // where on the map: at/travelling-to a town, or roaming
 	Items      []ItemView // equipped items (only non-empty slots), in slot order
 	Abilities  []Ability  // the six ability scores, in canonical order (empty if unrolled)
@@ -176,6 +178,8 @@ func readChar(ctx context.Context, store state.Store, key string) CharView {
 		Race:       race,
 		Class:      class,
 		Pet:        pet,
+		Draughts:   sheet["pots"],
+		DuelWins:   sheet["duelw"],
 		Location:   mapLocation(sheet),
 		Items:      items,
 		Abilities:  abil,
