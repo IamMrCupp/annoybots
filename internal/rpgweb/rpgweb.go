@@ -229,6 +229,7 @@ const charTmpl = `<!doctype html>
   body { background:#0e0f13; color:#d6d8de; font:15px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace; margin:0; padding:2rem; }
   h1 { font-size:1.4rem; margin:0 0 .25rem; color:#e9b949; }
   h1 .ttl { color:#c9a227; font-style:italic; font-weight:400; }
+  .feat { display:inline-block; background:#1a160c; border:1px solid #4a3c14; border-radius:10px; padding:.1rem .55rem; margin:.15rem .15rem 0 0; font-size:.85em; color:#e9b949; }
   .sub { color:#8aa0c6; margin:0 0 1.5rem; }
   table { border-collapse:collapse; max-width:480px; width:100%; }
   th,td { text-align:left; padding:.35rem .75rem; border-bottom:1px solid #20232b; }
@@ -272,6 +273,11 @@ const charTmpl = `<!doctype html>
   {{range .Items}}<tr><td class="k">{{.Slot}}</td><td>{{.Rarity}} lvl {{.Level}}{{if .Name}} <span class="muted">“{{.Name}}”</span>{{end}}</td></tr>
   {{else}}<tr><td colspan="2" class="muted">nothing equipped yet.</td></tr>{{end}}
 </table>
+
+{{if .Feats}}
+<h2 style="font-size:1rem;color:#8aa0c6;margin:1.5rem 0 .5rem;">feats</h2>
+<p>{{range .Feats}}<span class="feat">🎖️ {{.}}</span> {{end}}</p>
+{{end}}
 
 <footer><a href="/">&larr; back to the realm</a></footer>
 </body>

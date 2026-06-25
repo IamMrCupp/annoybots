@@ -201,6 +201,9 @@ func (m *Manager) command(msg engine.Message, fields []string) {
 		case "quaff", "drink":
 			m.quaff(msg)
 			return
+		case "feats", "achievements":
+			m.out.Say(msg.Network, msg.Channel, m.featsStatus(msg, fields))
+			return
 		case "rest":
 			m.rest(msg)
 			return
@@ -979,6 +982,9 @@ func (m *Manager) findItem(ctx context.Context, p player, level int64) {
 		out += " — “" + name + "”"
 	}
 	m.out.Say(p.network, p.channel, out+"!")
+	if rarities[rIdx].name == "legendary" {
+		m.awardFeat(ctx, p, 1<<4) // Treasure Hunter
+	}
 }
 
 // itemSum is the character's total equipment power.

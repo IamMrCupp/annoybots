@@ -48,6 +48,7 @@ Opt in with `!rpg`, then "play" by being present and **quiet**. Full rules in
 | `!rpg town` | Where you are on the map (at a town, travelling, or roaming). |
 | `!rpg pet` (`companion`) | Your companion and the combat bonus it grants (earned by slaying a boss). |
 | `!rpg duel <name>` (`spar`) | Friendly best-of-three spar with a present player — bragging rights only, no stat changes. |
+| `!rpg feats [name]` (`achievements`) | One-time achievements you've earned (first kill, first boss, a legendary, 1000 gold, …). |
 | `!rpg rest` / `!rpg shop` / `!rpg buy <slot>` / `!rpg revive` | Town services — heal, buy gear (gold), revive — usable while at the matching town. |
 | `!rpg buy potion` | Buy a healing draught at a market (gold). |
 | `!rpg quaff` (`drink`) | Drink a healing draught to restore full HP — works **anywhere** (self-rescue when downed in the wild). |

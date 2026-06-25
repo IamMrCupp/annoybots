@@ -51,6 +51,7 @@ type CharView struct {
 	Location   string     // where on the map: at/travelling-to a town, or roaming
 	Items      []ItemView // equipped items (only non-empty slots), in slot order
 	Abilities  []Ability  // the six ability scores, in canonical order (empty if unrolled)
+	Feats      []string   // earned one-time achievements, in display order
 }
 
 // QuestView is a read-only snapshot of the active quest.
@@ -183,6 +184,7 @@ func readChar(ctx context.Context, store state.Store, key string) CharView {
 		Location:   mapLocation(sheet),
 		Items:      items,
 		Abilities:  abil,
+		Feats:      featList(sheet["feats"]),
 	}
 }
 
