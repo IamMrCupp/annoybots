@@ -47,6 +47,7 @@ Opt in with `!rpg`, then "play" by being present and **quiet**. Full rules in
 | `!rpg travel <town>` | Set off for a town; you walk there over the next ticks. |
 | `!rpg town` | Where you are on the map (at a town, travelling, or roaming). |
 | `!rpg pet` (`companion`) | Your companion and the combat bonus it grants (earned by slaying a boss). |
+| `!rpg duel <name>` (`spar`) | Friendly best-of-three spar with a present player — bragging rights only, no stat changes. |
 | `!rpg rest` / `!rpg shop` / `!rpg buy <slot>` / `!rpg revive` | Town services — heal, buy gear (gold), revive — usable while at the matching town. |
 | `!rpg pause` / `!rpg resume` | (admin) Freeze or resume the whole game. |
 | `!rpg push <name> <secs>` | (admin) Move a player's clock — negative is toward the next level. |
