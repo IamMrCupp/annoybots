@@ -45,6 +45,7 @@ type CharView struct {
 	AlignClass string     // moral axis only ("good"/"neutral"/"evil"), for color styling
 	Race       string     // chosen race, empty if unset
 	Class      string     // class, empty if unset
+	Pet        string     // companion's kind (e.g. "wolf"), empty if none
 	Location   string     // where on the map: at/travelling-to a town, or roaming
 	Items      []ItemView // equipped items (only non-empty slots), in slot order
 	Abilities  []Ability  // the six ability scores, in canonical order (empty if unrolled)
@@ -140,6 +141,7 @@ func readChar(ctx context.Context, store state.Store, key string) CharView {
 	sheet, _ := store.HGetAll(ctx, sheetKey(key))
 	class, _ := store.GetStr(ctx, classKey(key))
 	race, _ := store.GetStr(ctx, raceKey(key))
+	pet, _ := store.GetStr(ctx, petKey(key))
 	var items []ItemView
 	for _, s := range itemSlots {
 		lvl := sheet[itemField(s)]
@@ -172,6 +174,7 @@ func readChar(ctx context.Context, store state.Store, key string) CharView {
 		AlignClass: alignName(sheet["align"]),
 		Race:       race,
 		Class:      class,
+		Pet:        pet,
 		Location:   mapLocation(sheet),
 		Items:      items,
 		Abilities:  abil,

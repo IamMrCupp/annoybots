@@ -53,6 +53,10 @@ the NAMES list — you don't have to rejoin or speak to resume progress.
   Asmodeus and their kin. They're level-gated and brutally tough (you'll often
   lose), but a kill is a windfall: a fortune in gold, several kills toward your
   titles, a big jump toward the next level, and **guaranteed top-tier loot**.
+- **Companions.** Slay a boss and a beast may take to you — a wolf, dire boar,
+  hawk, imp, or owlbear. Your companion fights at your side in every monster
+  encounter, adding a small passive bonus to your attack and damage. `!rpg pet`
+  shows yours; it also rides on your dashboard page.
 - **Events.** At random the gods intervene — a **godsend** (time forward), a
   **calamity** (time back, or an item loses its luster), or the **Hand of God**
   (a big swing either way).

@@ -127,6 +127,10 @@ func (m *Manager) resolveFight(ctx context.Context, p player, sheet map[string]i
 	if pDmgBonus < 0 {
 		pDmgBonus = 0
 	}
+	if pet, ok := m.petOf(ctx, p.key); ok { // a companion fights at your side
+		pAtk += pet.Atk
+		pDmgBonus += pet.Dmg
+	}
 	cm := classCombat(class, sheet)
 	usedAbility := false
 	monHP := mon.HP
@@ -192,6 +196,10 @@ func (m *Manager) resolveFight(ctx context.Context, p player, sheet map[string]i
 			// guaranteed top-tier spoils: two drops rolled as if far higher level.
 			m.findItem(ctx, p, sheet["level"]+30)
 			m.findItem(ctx, p, sheet["level"]+30)
+			if pet := m.maybeTamePet(ctx, p.key); pet != "" {
+				m.out.Say(p.network, p.channel, fmt.Sprintf(
+					"🐾 from the carnage a %s emerges and takes to %s — a new companion joins the hunt!", pet, p.nick))
+			}
 			return
 		}
 		reward := m.pctOfTTL(ctx, p.key, 8, 14)
