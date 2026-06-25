@@ -49,6 +49,10 @@ the NAMES list — you don't have to rejoin or speak to resume progress.
   monster (giant rat → young dragon) and a quick d20 fight resolves — attack rolls
   vs AC, damage both ways. **Works solo** (unlike PvP battles). Win → time toward
   your next level, **gold**, a kill, maybe loot; lose → bloodied, or downed.
+- **Bosses.** Rarely, a named legend rises instead — the Tarrasque, Tiamat,
+  Asmodeus and their kin. They're level-gated and brutally tough (you'll often
+  lose), but a kill is a windfall: a fortune in gold, several kills toward your
+  titles, a big jump toward the next level, and **guaranteed top-tier loot**.
 - **Events.** At random the gods intervene — a **godsend** (time forward), a
   **calamity** (time back, or an item loses its luster), or the **Hand of God**
   (a big swing either way).
