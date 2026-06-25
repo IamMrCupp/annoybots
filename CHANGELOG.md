@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.23.0](https://github.com/IamMrCupp/annoybots/compare/v1.22.0...v1.23.0) (2026-06-25)
+
+
+### Features
+
+* **idlerpg:** earned titles ([#94](https://github.com/IamMrCupp/annoybots/issues/94)) ([943ae16](https://github.com/IamMrCupp/annoybots/commit/943ae16e70c317a66f3ad67778c76fd568b8804a))
+* **idlerpg:** earned titles from kills + level renown (closes [#94](https://github.com/IamMrCupp/annoybots/issues/94)) ([18b6c40](https://github.com/IamMrCupp/annoybots/commit/18b6c40c7f63ca513f1c2792ea21842cdcc2c471))
+
 ## [1.22.0](https://github.com/IamMrCupp/annoybots/compare/v1.21.0...v1.22.0) (2026-06-25)
 
 
