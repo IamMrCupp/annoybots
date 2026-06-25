@@ -61,6 +61,11 @@ the NAMES list — you don't have to rejoin or speak to resume progress.
   Asmodeus and their kin. They're level-gated and brutally tough (you'll often
   lose), but a kill is a windfall: a fortune in gold, several kills toward your
   titles, a big jump toward the next level, and **guaranteed top-tier loot**.
+- **Feats.** One-time achievements you cross exactly once — First Blood (first
+  kill), Centurion (100 kills), Warlord (1000), Giant-Slayer (a boss falls),
+  Treasure Hunter (a legendary drop), Deep Pockets (1000 gold). Each is announced
+  the moment you earn it; `!rpg feats` lists yours and they badge your dashboard
+  page.
 - **Duels.** `!rpg duel <name>` challenges a present player to a friendly
   best-of-three spar — effective power (gear + alignment + class) plus luck.
   It's bragging rights only: no clock changes, no HP, no rewards, just a career
