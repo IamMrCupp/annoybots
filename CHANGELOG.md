@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.22.0](https://github.com/IamMrCupp/annoybots/compare/v1.21.0...v1.22.0) (2026-06-25)
+
+
+### Features
+
+* **idlerpg:** admin DM panel — reset/wipe/setlevel/gold + store ZRem (closes [#92](https://github.com/IamMrCupp/annoybots/issues/92)) ([1a0b04c](https://github.com/IamMrCupp/annoybots/commit/1a0b04c48022eee3302165a2141f2e27240481e0))
+* **idlerpg:** admin DM panel ([#92](https://github.com/IamMrCupp/annoybots/issues/92)) ([59b0ddb](https://github.com/IamMrCupp/annoybots/commit/59b0ddb83cea268bb529d6abce32e468f2d30d96))
+* **idlerpg:** slot-appropriate item names ([#89](https://github.com/IamMrCupp/annoybots/issues/89)) ([ebd6faa](https://github.com/IamMrCupp/annoybots/commit/ebd6faafd12673e72b7c5ab6fbb4435d2128dd83))
+* **idlerpg:** slot-appropriate procedural item names (closes [#89](https://github.com/IamMrCupp/annoybots/issues/89)) ([4957a1d](https://github.com/IamMrCupp/annoybots/commit/4957a1d130cbb6ed4c45850b8a537774da864a38))
+
 ## [1.21.0](https://github.com/IamMrCupp/annoybots/compare/v1.20.0...v1.21.0) (2026-06-21)
 
 
