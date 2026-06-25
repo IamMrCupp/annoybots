@@ -108,6 +108,14 @@ identities (see [accounts.md](accounts.md)) and you're a single hero whether you
 idle from IRC or Discord — something the original idlerpg never did. Unlinked, you
 get a per-network character, which is fine too.
 
+## Running the game (admin / DM)
+
+Admins (same identity auth as the console) get DM controls in-channel:
+`!rpg pause` / `!rpg resume` freeze the game; `!rpg push <name> <secs>` and
+`!rpg hog [name]` nudge fate; `!rpg setlevel <name> <n>` and `!rpg gold <name>
+<amt>` adjust a character; **`!rpg reset <name>`** erases one character and
+**`!rpg reset all yes`** wipes the whole realm for a fresh start.
+
 ## A dedicated IdleRPG bot
 
 Want a "legit" game bot that *only* runs IdleRPG — no triggers, no ambient

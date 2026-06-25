@@ -1006,3 +1006,73 @@ func TestMagicNames(t *testing.T) {
 		t.Fatalf("expected varied names, got only %d distinct in 20", len(seen))
 	}
 }
+
+func TestDMResetChar(t *testing.T) {
+	m, r, st := newMgr()
+	ctx := context.Background()
+	m.SetAuthz(allowAll)
+	m.Handle(chanMsg("alice", "!rpg")) // enroll → board + sheet
+	m.Handle(chanMsg("boss", "!rpg reset alice"))
+	if !r.has("has been erased") {
+		t.Fatalf("reset reply: %q", r.last())
+	}
+	if s, _ := st.HGetAll(ctx, sheetKey("net|alice")); len(s) != 0 {
+		t.Fatal("the sheet should be gone after reset")
+	}
+	if score, _ := st.ZScore(ctx, boardKey(), "net|alice"); score != 0 {
+		t.Fatal("the character should be off the leaderboard")
+	}
+}
+
+func TestDMResetRequiresAuthz(t *testing.T) {
+	m, r, _ := newMgr() // no authz
+	m.Handle(chanMsg("alice", "!rpg"))
+	m.Handle(chanMsg("alice", "!rpg reset alice"))
+	if !r.has("do not heed") {
+		t.Fatalf("an unauthorized reset must be refused, got %q", r.last())
+	}
+}
+
+func TestDMResetAllNeedsConfirm(t *testing.T) {
+	m, r, st := newMgr()
+	ctx := context.Background()
+	m.SetAuthz(allowAll)
+	m.Handle(chanMsg("alice", "!rpg"))
+	m.Handle(chanMsg("bob", "!rpg"))
+	m.Handle(chanMsg("boss", "!rpg reset all")) // no confirmation
+	if !r.has("confirm with") {
+		t.Fatalf("reset all should require confirmation, got %q", r.last())
+	}
+	if s, _ := st.HGetAll(ctx, sheetKey("net|alice")); len(s) == 0 {
+		t.Fatal("reset all must not wipe without confirmation")
+	}
+	m.Handle(chanMsg("boss", "!rpg reset all yes"))
+	if !r.has("wiped clean") {
+		t.Fatalf("confirmed wipe reply: %q", r.last())
+	}
+	if top, _ := st.ZTop(ctx, boardKey(), 10); len(top) != 0 {
+		t.Fatalf("the board should be empty after a full wipe, got %d", len(top))
+	}
+}
+
+func TestDMSetLevelAndGold(t *testing.T) {
+	m, _, st := newMgr()
+	ctx := context.Background()
+	m.SetAuthz(allowAll)
+	m.Handle(chanMsg("alice", "!rpg"))
+	m.Handle(chanMsg("boss", "!rpg setlevel alice 40"))
+	if s, _ := st.HGetAll(ctx, sheetKey("net|alice")); s["level"] != 40 {
+		t.Fatalf("setlevel: level = %d; want 40", s["level"])
+	}
+	if score, _ := st.ZScore(ctx, boardKey(), "net|alice"); score != 40 {
+		t.Fatalf("setlevel should sync the board, score = %d; want 40", score)
+	}
+	m.Handle(chanMsg("boss", "!rpg gold alice 500"))
+	if s, _ := st.HGetAll(ctx, sheetKey("net|alice")); s["gold"] != 500 {
+		t.Fatalf("gold = %d; want 500", s["gold"])
+	}
+	m.Handle(chanMsg("boss", "!rpg gold alice -1000")) // clamps at 0
+	if s, _ := st.HGetAll(ctx, sheetKey("net|alice")); s["gold"] != 0 {
+		t.Fatalf("gold should clamp to 0, got %d", s["gold"])
+	}
+}

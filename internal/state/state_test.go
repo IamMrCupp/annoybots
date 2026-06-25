@@ -49,6 +49,17 @@ func runContract(t *testing.T, s Store) {
 		t.Fatalf("ZTop ordering wrong: %#v", top)
 	}
 
+	// ZRem drops a member from the sorted set
+	if err := s.ZRem(ctx, "board", "bob"); err != nil {
+		t.Fatalf("ZRem: %v", err)
+	}
+	if v, _ := s.ZScore(ctx, "board", "bob"); v != 0 {
+		t.Fatalf("after ZRem, ZScore bob = %d; want 0", v)
+	}
+	if all, _ := s.ZTop(ctx, "board", 10); len(all) != 2 {
+		t.Fatalf("after ZRem, board has %d entries; want 2", len(all))
+	}
+
 	// hash (player sheet)
 	if v, err := s.HIncr(ctx, "player:x", "level", 1); err != nil || v != 1 {
 		t.Fatalf("HIncr = %d, %v; want 1", v, err)
