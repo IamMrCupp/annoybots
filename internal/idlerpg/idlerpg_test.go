@@ -967,3 +967,42 @@ func TestSetAlignTwoAxes(t *testing.T) {
 		t.Fatalf("after 'lawful': law/align = %d/%d; want 1/2", s["law"], s["align"])
 	}
 }
+
+func TestMagicNames(t *testing.T) {
+	m, _, _ := newMgr()
+	// legendary weapon: full title with an epithet + a weapon-pool noun.
+	leg := m.magicName("weapon", true)
+	if !strings.Contains(leg, " of ") {
+		t.Fatalf("legendary name should have an epithet: %q", leg)
+	}
+	hasNoun := func(name string, nouns []string) bool {
+		for _, n := range nouns {
+			if strings.Contains(name, n) {
+				return true
+			}
+		}
+		return false
+	}
+	if !hasNoun(leg, slotNouns["weapon"]) {
+		t.Fatalf("weapon name should use a weapon noun: %q", leg)
+	}
+	// epic boots: two words, no epithet, a boots-pool noun.
+	ep := m.magicName("boots", false)
+	if strings.Contains(ep, " of ") || !hasNoun(ep, slotNouns["boots"]) {
+		t.Fatalf("epic boots name wrong: %q", ep)
+	}
+	// different slots can't collide (disjoint noun pools).
+	for i := 0; i < 30; i++ {
+		if m.magicName("weapon", true) == m.magicName("boots", true) {
+			t.Fatal("weapon and boots names should never be equal")
+		}
+	}
+	// variety: not all the same.
+	seen := map[string]bool{}
+	for i := 0; i < 20; i++ {
+		seen[m.magicName("ring", true)] = true
+	}
+	if len(seen) < 5 {
+		t.Fatalf("expected varied names, got only %d distinct in 20", len(seen))
+	}
+}

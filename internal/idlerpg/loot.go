@@ -19,13 +19,50 @@ var rarities = []rarity{
 	{"common", 690, 100, false},
 	{"uncommon", 200, 130, false},
 	{"rare", 80, 170, false},
-	{"epic", 25, 220, false},
+	{"epic", 25, 220, true},
 	{"legendary", 5, 300, true},
 }
 
-var legendaryNames = []string{
-	"Flametongue", "Widowmaker", "the Whisper", "Doombringer",
-	"Starcaller", "Frostbite", "Kingslayer", "the Lurker's Gift",
+// Magic-item names are generated per slot so they're slot-appropriate (a weapon
+// is a "Blade", boots are "Striders") and rarely repeat. epic items get a
+// two-word name; legendaries get a full "… of <epithet>" title.
+var lootAdjs = []string{
+	"Flaming", "Frostbound", "Vicious", "Ancient", "Cursed", "Gilded", "Shadow",
+	"Storm", "Bloodforged", "Whispering", "Thorned", "Gloom", "Radiant",
+	"Wyrmscale", "Doomforged", "Spectral",
+}
+
+var lootEpithets = []string{
+	"the Lurker", "the Abyss", "Doom", "Kings", "the Wyrm", "Night", "the Fallen",
+	"Frost", "Storms", "the Void", "Ash", "the Deep", "Ruin", "Embers",
+}
+
+// slotNouns gives each equipment slot its own noun pool, so two different slots
+// can never generate the same name.
+var slotNouns = map[string][]string{
+	"ring":     {"Band", "Signet", "Loop", "Circle"},
+	"amulet":   {"Amulet", "Talisman", "Pendant", "Locket"},
+	"charm":    {"Charm", "Idol", "Token", "Sigil"},
+	"weapon":   {"Blade", "Edge", "Fang", "Reaver", "Cleaver"},
+	"helm":     {"Helm", "Crown", "Visage", "Casque"},
+	"tunic":    {"Mail", "Vestment", "Hauberk", "Wrap"},
+	"gloves":   {"Gauntlets", "Grips", "Talons", "Mitts"},
+	"leggings": {"Greaves", "Legguards", "Chausses"},
+	"shield":   {"Aegis", "Bulwark", "Wall", "Bastion"},
+	"boots":    {"Treads", "Striders", "Sabatons", "Stalkers"},
+}
+
+// magicName generates a name for an item in slot. Legendaries get an epithet title.
+func (m *Manager) magicName(slot string, legendary bool) string {
+	nouns := slotNouns[slot]
+	if len(nouns) == 0 {
+		nouns = []string{"Relic"}
+	}
+	name := lootAdjs[m.roll(len(lootAdjs))] + " " + nouns[m.roll(len(nouns))]
+	if legendary {
+		name += " of " + lootEpithets[m.roll(len(lootEpithets))]
+	}
+	return name
 }
 
 func rarityField(slot string) string     { return "ir:" + slot }
