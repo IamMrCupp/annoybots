@@ -228,8 +228,8 @@ func (m *Manager) command(msg engine.Message, fields []string) {
 		return
 	}
 	m.setOnline(msg.Network, msg.Nick, msg.Channel, pkey)
-	m.out.Say(msg.Network, msg.Channel, fmt.Sprintf("%s the %s — level %d, %s to the next. (stop talking, it hurts.)",
-		msg.Nick, m.charDesc(ctx, pkey, sheet), sheet["level"], dur(sheet["ttl"])))
+	m.out.Say(msg.Network, msg.Channel, fmt.Sprintf("%s — level %d, %s to the next. (stop talking, it hurts.)",
+		m.charLine(ctx, msg.Nick, pkey, sheet), sheet["level"], dur(sheet["ttl"])))
 }
 
 // charDesc builds a character's title, e.g. "evil dwarf fighter" — alignment, then
@@ -425,8 +425,8 @@ func (m *Manager) status(msg engine.Message, fields []string) string {
 	if _, ok := sheet["level"]; !ok {
 		return name + " isn't playing. !rpg to start the grind."
 	}
-	return fmt.Sprintf("%s the %s — level %d, %s to the next · power %d.",
-		name, m.charDesc(ctx, pkey, sheet), sheet["level"], dur(sheet["ttl"]), itemSum(sheet))
+	return fmt.Sprintf("%s — level %d, %s to the next · power %d.",
+		m.charLine(ctx, name, pkey, sheet), sheet["level"], dur(sheet["ttl"]), itemSum(sheet))
 }
 
 // sheet renders a character's D&D ability block — the sender's own or a named
@@ -449,8 +449,8 @@ func (m *Manager) sheet(msg engine.Message, fields []string) string {
 	if c, ok := classOf(class); ok {
 		abil = " · " + c.Ability
 	}
-	return fmt.Sprintf("%s the %s (lvl %d) — HP %d/%d · %dg · %d kills%s · %s",
-		name, m.charDesc(ctx, pkey, sheet), sheet["level"], curHP(sheet, class), maxHP(sheet, class),
+	return fmt.Sprintf("%s (lvl %d) — HP %d/%d · %dg · %d kills%s · %s",
+		m.charLine(ctx, name, pkey, sheet), sheet["level"], curHP(sheet, class), maxHP(sheet, class),
 		sheet["gold"], sheet["kills"], abil, abilityLine(sheet))
 }
 

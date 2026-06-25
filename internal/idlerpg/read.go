@@ -40,6 +40,7 @@ type CharView struct {
 	Kills      int64      // monsters slain
 	TTL        int64      // seconds to the next level
 	Power      int64      // total equipment power (sum of item levels)
+	Title      string     // earned honorific (e.g. "the Dragonslayer"), empty if none yet
 	Align      string     // full 9-point alignment, e.g. "chaotic evil" / "true neutral"
 	AlignClass string     // moral axis only ("good"/"neutral"/"evil"), for color styling
 	Race       string     // chosen race, empty if unset
@@ -166,6 +167,7 @@ func readChar(ctx context.Context, store state.Store, key string) CharView {
 		Kills:      sheet["kills"],
 		TTL:        sheet["ttl"],
 		Power:      itemSum(sheet),
+		Title:      titleFor(sheet),
 		Align:      fullAlign(sheet["law"], sheet["align"]),
 		AlignClass: alignName(sheet["align"]),
 		Race:       race,

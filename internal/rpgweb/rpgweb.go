@@ -227,6 +227,7 @@ const charTmpl = `<!doctype html>
   :root { color-scheme: dark; }
   body { background:#0e0f13; color:#d6d8de; font:15px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace; margin:0; padding:2rem; }
   h1 { font-size:1.4rem; margin:0 0 .25rem; color:#e9b949; }
+  h1 .ttl { color:#c9a227; font-style:italic; font-weight:400; }
   .sub { color:#8aa0c6; margin:0 0 1.5rem; }
   table { border-collapse:collapse; max-width:480px; width:100%; }
   th,td { text-align:left; padding:.35rem .75rem; border-bottom:1px solid #20232b; }
@@ -241,7 +242,7 @@ const charTmpl = `<!doctype html>
 </style>
 </head>
 <body>
-<h1>{{.Name}}</h1>
+<h1>{{.Name}}{{if .Title}} <span class="ttl">{{.Title}}</span>{{end}}</h1>
 <p class="sub">the <span class="{{.AlignClass}}">{{.Align}}{{if .Race}} {{.Race}}{{end}}{{if .Class}} {{.Class}}{{end}}</span></p>
 
 <table>

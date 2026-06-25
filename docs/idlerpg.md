@@ -37,9 +37,11 @@ the NAMES list — you don't have to rejoin or speak to resume progress.
 
 - **Items.** On level-up you may find gear for one of ten slots (weapon, shield,
   ring, …). Each drop rolls a **rarity** (common → uncommon → rare → epic →
-  legendary) that multiplies its power, and legendaries come **named**
-  ("Flametongue"). Better gear (by effective power) replaces worse; your total is
-  your **power**. `!rpg items` shows your kit with rarities.
+  legendary) that multiplies its power, and the rarest finds come **named** —
+  epics get a slot-appropriate title (*Vicious Blade*, *Gilded Striders*) and
+  legendaries a full epithet (*Whispering Greaves of Frost*). Names are drawn from
+  per-slot pools, so two slots never collide. Better gear (by effective power)
+  replaces worse; your total is your **power**. `!rpg items` shows your kit.
 - **Battles.** Leveling up pits you against a random online player, weighted by
   power, with a chance of a critical hit. Win and your clock speeds up; lose and
   it slows (and takes HP).
@@ -65,6 +67,11 @@ the NAMES list — you don't have to rejoin or speak to resume progress.
   feeds your HP, and which grants a **signature combat ability** in monster fights —
   fighter's Extra Attack, wizard's Arcane Bolt, rogue's Sneak Attack, ranger's
   Hunter's Mark, cleric's Healing Word, bard's Cutting Words.
+- **Titles.** As you rack up kills and levels you earn an honorific that rides
+  next to your name — combat renown (the Brave → Slayer → Bloodied → Dragonslayer
+  → Annihilator) and legend (the Seasoned → Veteran → Ascended → Mythic →
+  Eternal). Your most prestigious earned title shows in your status and on the
+  dashboard. Nothing to opt into; it's derived from your sheet.
 
 ## Quests
 
