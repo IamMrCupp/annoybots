@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.25.0](https://github.com/IamMrCupp/annoybots/compare/v1.24.0...v1.25.0) (2026-06-25)
+
+
+### Features
+
+* **idlerpg:** biome-themed encounters ([#102](https://github.com/IamMrCupp/annoybots/issues/102)) ([1fc11c2](https://github.com/IamMrCupp/annoybots/commit/1fc11c28ce47cc96290bdcc7b2c472ee3ae149f6))
+* **idlerpg:** biome-themed encounters tied to map terrain (closes [#102](https://github.com/IamMrCupp/annoybots/issues/102)) ([244a4de](https://github.com/IamMrCupp/annoybots/commit/244a4deeaa11bd7a2c05288ffa552c759d7bd8d4))
+* **rpgweb:** biome labels on the world map ([#105](https://github.com/IamMrCupp/annoybots/issues/105)) ([a115e01](https://github.com/IamMrCupp/annoybots/commit/a115e01818879b007c1cf31dbaf41082c209cf37))
+* **rpgweb:** label biome + service on the world map (closes [#105](https://github.com/IamMrCupp/annoybots/issues/105)) ([7be2dd1](https://github.com/IamMrCupp/annoybots/commit/7be2dd1a9cfb688f0ad9c2eec775c6ed56e9012e))
+
 ## [1.24.0](https://github.com/IamMrCupp/annoybots/compare/v1.23.0...v1.24.0) (2026-06-25)
 
 
