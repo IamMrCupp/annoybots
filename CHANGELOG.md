@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.28.0](https://github.com/IamMrCupp/annoybots/compare/v1.27.0...v1.28.0) (2026-06-25)
+
+
+### Features
+
+* **idlerpg:** feats / achievements ([#115](https://github.com/IamMrCupp/annoybots/issues/115)) ([4108f1d](https://github.com/IamMrCupp/annoybots/commit/4108f1d949947170dff69bf8f9be7ad6cf4b7c5b))
+* **idlerpg:** one-time feats/achievements with dashboard badges (closes [#115](https://github.com/IamMrCupp/annoybots/issues/115)) ([72f03c0](https://github.com/IamMrCupp/annoybots/commit/72f03c08dabadbf12cf1466b4234b7422cdb4b98))
+
 ## [1.27.0](https://github.com/IamMrCupp/annoybots/compare/v1.26.0...v1.27.0) (2026-06-25)
 
 
