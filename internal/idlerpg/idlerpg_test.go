@@ -690,11 +690,11 @@ func TestLeaderboard(t *testing.T) {
 
 func TestPickMonsterRespectsLevel(t *testing.T) {
 	m, _, _ := newMgr()
-	if mon := m.pickMonster(0); mon.MinLvl > 0 {
+	if mon := m.pickMonster(0, ""); mon.MinLvl > 0 {
 		t.Fatalf("level 0 picked %q (MinLvl %d)", mon.Name, mon.MinLvl)
 	}
 	for i := 0; i < 30; i++ {
-		if mon := m.pickMonster(5); mon.MinLvl > 5 {
+		if mon := m.pickMonster(5, ""); mon.MinLvl > 5 {
 			t.Fatalf("level 5 picked too-strong %q (MinLvl %d)", mon.Name, mon.MinLvl)
 		}
 	}

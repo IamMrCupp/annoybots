@@ -18,7 +18,8 @@ const (
 	bossKills   = 3  // a boss counts as several kills toward renown/titles
 )
 
-// monster is one bestiary entry.
+// monster is one bestiary entry. Biome themes where it roams: "" means anywhere,
+// otherwise it only appears in that terrain (coast/mountain/forest/swamp/plains).
 type monster struct {
 	Name   string
 	MinLvl int64 // first level at which it can appear
@@ -26,42 +27,60 @@ type monster struct {
 	Atk    int64 // its attack bonus
 	DmgDie int64 // its damage die (dN)
 	HP     int64
-	Gold   int64 // reward on a kill
-	Boss   bool  // a named, high-stakes foe with outsized rewards
+	Gold   int64  // reward on a kill
+	Boss   bool   // a named, high-stakes foe with outsized rewards
+	Biome  string // terrain it haunts ("" = anywhere)
 }
 
-// bestiary, weakest to nastiest.
+// bestiary: the common foes (Biome "") roam everywhere; the themed ones below
+// only turn up in their terrain, so where you wander shapes what you fight.
 var bestiary = []monster{
-	{"a giant rat", 0, 10, 0, 4, 4, 1, false},
-	{"a goblin", 1, 12, 2, 6, 7, 3, false},
-	{"a kobold warren-scout", 2, 12, 3, 4, 6, 4, false},
-	{"an orc", 4, 13, 4, 8, 16, 8, false},
-	{"a gnoll pack-hunter", 6, 14, 4, 8, 24, 12, false},
-	{"an ogre", 9, 11, 5, 10, 38, 22, false},
-	{"a wyvern", 13, 15, 6, 8, 55, 45, false},
-	{"a young dragon", 18, 17, 7, 12, 85, 110, false},
+	{"a giant rat", 0, 10, 0, 4, 4, 1, false, ""},
+	{"a goblin", 1, 12, 2, 6, 7, 3, false, ""},
+	{"a kobold warren-scout", 2, 12, 3, 4, 6, 4, false, ""},
+	{"an orc", 4, 13, 4, 8, 16, 8, false, ""},
+	{"a gnoll pack-hunter", 6, 14, 4, 8, 24, 12, false, ""},
+	{"an ogre", 9, 11, 5, 10, 38, 22, false, ""},
+	{"a wyvern", 13, 15, 6, 8, 55, 45, false, ""},
+	{"a young dragon", 18, 17, 7, 12, 85, 110, false, ""},
+	// coast
+	{"a giant crab", 2, 14, 2, 6, 10, 5, false, "coast"},
+	{"a sahuagin raider", 5, 13, 4, 6, 18, 11, false, "coast"},
+	// mountain
+	{"a griffon", 8, 14, 5, 8, 30, 18, false, "mountain"},
+	{"a stone giant", 12, 12, 6, 12, 50, 30, false, "mountain"},
+	// forest
+	{"a dire wolf", 3, 13, 3, 8, 14, 6, false, "forest"},
+	{"a green hag", 10, 15, 5, 8, 36, 24, false, "forest"},
+	// swamp
+	{"a bog zombie", 4, 9, 3, 6, 20, 7, false, "swamp"},
+	{"a will-o'-wisp", 7, 16, 4, 6, 22, 16, false, "swamp"},
+	// plains
+	{"a bandit raider", 2, 13, 3, 6, 11, 6, false, "plains"},
+	{"a manticore", 11, 14, 5, 8, 44, 26, false, "plains"},
 }
 
 // bosses are rare, named legends — far above a normal foe in AC, HP, and damage,
 // but they pay out a fortune, several kills, and guaranteed top-tier loot. Each
-// gates on a minimum level so low-level idlers aren't fed to a god.
+// gates on a minimum level so low-level idlers aren't fed to a god, and some haunt
+// a particular terrain (the Kraken at the coast, Tiamat in the peaks).
 var bosses = []monster{
-	{"the Tarrasque", 12, 18, 8, 12, 160, 200, true},
-	{"the Kraken of the Sunless Deep", 16, 18, 9, 12, 210, 280, true},
-	{"the Lich-King Vol'kresh", 20, 19, 9, 10, 240, 360, true},
-	{"Tiamat, Queen of Dragons", 25, 20, 10, 12, 300, 480, true},
-	{"Asmodeus, Lord of the Nine Hells", 30, 20, 11, 12, 360, 640, true},
+	{"the Tarrasque", 12, 18, 8, 12, 160, 200, true, ""},
+	{"the Kraken of the Sunless Deep", 16, 18, 9, 12, 210, 280, true, "coast"},
+	{"the Lich-King Vol'kresh", 20, 19, 9, 10, 240, 360, true, "swamp"},
+	{"Tiamat, Queen of Dragons", 25, 20, 10, 12, 300, 480, true, "mountain"},
+	{"Asmodeus, Lord of the Nine Hells", 30, 20, 11, 12, 360, 640, true, ""},
 }
 
 // pickBoss returns an eligible boss and true, on the bossOdds chance, when the
-// player is high enough level to face one.
-func (m *Manager) pickBoss(level int64) (monster, bool) {
+// player is high enough level — and standing in the right terrain for it.
+func (m *Manager) pickBoss(level int64, biome string) (monster, bool) {
 	if m.roll(bossOdds) != 0 {
 		return monster{}, false
 	}
 	var eligible []monster
 	for _, b := range bosses {
-		if b.MinLvl <= level {
+		if b.MinLvl <= level && (b.Biome == "" || b.Biome == biome) {
 			eligible = append(eligible, b)
 		}
 	}
@@ -71,11 +90,12 @@ func (m *Manager) pickBoss(level int64) (monster, bool) {
 	return eligible[m.roll(len(eligible))], true
 }
 
-// pickMonster chooses a level-appropriate foe.
-func (m *Manager) pickMonster(level int64) monster {
+// pickMonster chooses a level-appropriate foe for the player's terrain. Common
+// foes roam anywhere; themed ones only appear in their biome.
+func (m *Manager) pickMonster(level int64, biome string) monster {
 	var eligible []monster
 	for _, mon := range bestiary {
-		if mon.MinLvl <= level {
+		if mon.MinLvl <= level && (mon.Biome == "" || mon.Biome == biome) {
 			eligible = append(eligible, mon)
 		}
 	}
@@ -102,8 +122,9 @@ func (m *Manager) fightMonster(ctx context.Context, p player) {
 	if isDowned(sheet, class) {
 		return // already down — can't fight
 	}
-	mon := m.pickMonster(sheet["level"])
-	if boss, ok := m.pickBoss(sheet["level"]); ok {
+	biome := biomeOf(sheet["mx"], sheet["my"])
+	mon := m.pickMonster(sheet["level"], biome)
+	if boss, ok := m.pickBoss(sheet["level"], biome); ok {
 		mon = boss
 		m.out.Say(p.network, p.channel, fmt.Sprintf(
 			"🌩️ the sky darkens and the ground splits — %s rises to challenge %s!", mon.Name, p.nick))
