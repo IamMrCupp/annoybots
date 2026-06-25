@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.27.0](https://github.com/IamMrCupp/annoybots/compare/v1.26.0...v1.27.0) (2026-06-25)
+
+
+### Features
+
+* **rpgweb:** show titles on the leaderboard, duel wins + draughts on the char page (closes [#112](https://github.com/IamMrCupp/annoybots/issues/112)) ([e00a7be](https://github.com/IamMrCupp/annoybots/commit/e00a7be163208d0182b390380b239c074479d86c))
+* **rpgweb:** surface titles, duel wins, draughts ([#112](https://github.com/IamMrCupp/annoybots/issues/112)) ([5590998](https://github.com/IamMrCupp/annoybots/commit/559099800b461b014e902b6f08374d34d163616b))
+
 ## [1.26.0](https://github.com/IamMrCupp/annoybots/compare/v1.25.0...v1.26.0) (2026-06-25)
 
 
