@@ -845,7 +845,7 @@ func (m *Manager) findItem(ctx context.Context, p player, level int64) {
 
 	name := ""
 	if rarities[rIdx].named {
-		name = legendaryNames[m.roll(len(legendaryNames))]
+		name = m.magicName(slot, rarities[rIdx].name == "legendary")
 		_ = m.store.SetStr(ctx, nameKey(p.key, slot), name)
 	} else {
 		_ = m.store.Del(ctx, nameKey(p.key, slot)) // clear any prior name on replace
