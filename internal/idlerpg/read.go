@@ -79,6 +79,7 @@ type Town struct {
 	Name    string
 	X, Y    int
 	Service string
+	Terrain string
 }
 
 // WorldView is everything the dashboard needs to draw the world map: every placed

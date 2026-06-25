@@ -9,14 +9,14 @@ func TestPickBossLevelGated(t *testing.T) {
 	m, _, _ := newMgr()
 	// Below every boss's MinLvl, no boss is ever eligible regardless of the roll.
 	for i := 0; i < 200; i++ {
-		if _, ok := m.pickBoss(5); ok {
+		if _, ok := m.pickBoss(5, ""); ok {
 			t.Fatal("a level-5 idler should never face a boss")
 		}
 	}
 	// At a high level, a boss eventually appears (bossOdds chance per call).
 	seen := false
 	for i := 0; i < 500; i++ {
-		if b, ok := m.pickBoss(40); ok {
+		if b, ok := m.pickBoss(40, ""); ok {
 			if !b.Boss || b.MinLvl > 40 {
 				t.Fatalf("eligible boss wrong: %+v", b)
 			}

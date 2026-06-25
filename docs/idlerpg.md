@@ -49,6 +49,14 @@ the NAMES list — you don't have to rejoin or speak to resume progress.
   monster (giant rat → young dragon) and a quick d20 fight resolves — attack rolls
   vs AC, damage both ways. **Works solo** (unlike PvP battles). Win → time toward
   your next level, **gold**, a kill, maybe loot; lose → bloodied, or downed.
+- **Terrain matters.** The land around each town is a biome — the coast (Lurk
+  Harbor), the peaks (Mount AFK), the forest (Quietford), the swamp (The Lag
+  Marsh), the plains. Common foes roam anywhere, but each biome has its own
+  specialists: sahuagin and giant crabs by the sea, griffons and stone giants in
+  the mountains, dire wolves and hags in the woods, bog zombies and will-o'-wisps
+  in the marsh, bandits and manticores on the plains. Some bosses are territorial
+  too — the Kraken only rises at the coast, Tiamat only in the peaks. Where you
+  wander shapes what you fight.
 - **Bosses.** Rarely, a named legend rises instead — the Tarrasque, Tiamat,
   Asmodeus and their kin. They're level-gated and brutally tough (you'll often
   lose), but a kill is a windfall: a fortune in gold, several kills toward your

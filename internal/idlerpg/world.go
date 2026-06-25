@@ -17,10 +17,12 @@ const (
 
 // town is a named landmark on the world map. Service is what you can do there:
 // "inn" (rest to heal), "market" (buy gear), or "temple" (revive when downed).
+// Terrain is the biome around it, which themes the monsters you meet nearby.
 type town struct {
 	Name    string
 	X, Y    int
 	Service string
+	Terrain string
 }
 
 // townRadius is how close (world units) you must be to a town to use its service.
@@ -28,12 +30,18 @@ const townRadius = 25
 
 // towns are fixed points of interest on the map.
 var towns = []town{
-	{"Idlecrest", 250, 250, "temple"},
-	{"Lurk Harbor", 70, 410, "market"},
-	{"Mount AFK", 420, 90, "inn"},
-	{"Quietford", 130, 150, "market"},
-	{"The Lag Marsh", 360, 380, "temple"},
-	{"Tab-Away Tavern", 200, 60, "inn"},
+	{"Idlecrest", 250, 250, "temple", "plains"},
+	{"Lurk Harbor", 70, 410, "market", "coast"},
+	{"Mount AFK", 420, 90, "inn", "mountain"},
+	{"Quietford", 130, 150, "market", "forest"},
+	{"The Lag Marsh", 360, 380, "temple", "swamp"},
+	{"Tab-Away Tavern", 200, 60, "inn", "plains"},
+}
+
+// biomeOf returns the terrain a position sits in — the nearest town's biome.
+func biomeOf(x, y int64) string {
+	t, _ := nearestTown(x, y)
+	return t.Terrain
 }
 
 // moveOnMap advances an online player one step: toward their travel destination if
