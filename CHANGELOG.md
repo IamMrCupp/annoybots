@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.24.0](https://github.com/IamMrCupp/annoybots/compare/v1.23.0...v1.24.0) (2026-06-25)
+
+
+### Features
+
+* **idlerpg:** boss encounters — rare named legends with big rewards (closes [#97](https://github.com/IamMrCupp/annoybots/issues/97)) ([852aac1](https://github.com/IamMrCupp/annoybots/commit/852aac14a501969191ce9ec5bc44fd87cc95ce5f))
+* **idlerpg:** boss encounters ([#97](https://github.com/IamMrCupp/annoybots/issues/97)) ([3225d28](https://github.com/IamMrCupp/annoybots/commit/3225d283f2bd79e144ace64f337cf7e0bee17ab5))
+* **idlerpg:** companions — rare boss-drop familiars with combat bonuses (closes [#99](https://github.com/IamMrCupp/annoybots/issues/99)) ([4541b7f](https://github.com/IamMrCupp/annoybots/commit/4541b7f00e3f17d86da0304a710d2a4bb4559f1d))
+* **idlerpg:** companions/familiars ([#99](https://github.com/IamMrCupp/annoybots/issues/99)) ([52b5649](https://github.com/IamMrCupp/annoybots/commit/52b5649b49d62a2c42b78832cd3280edba771c74))
+
 ## [1.23.0](https://github.com/IamMrCupp/annoybots/compare/v1.22.0...v1.23.0) (2026-06-25)
 
 
