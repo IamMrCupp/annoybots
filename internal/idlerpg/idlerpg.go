@@ -195,6 +195,9 @@ func (m *Manager) command(msg engine.Message, fields []string) {
 		case "pet", "companion":
 			m.out.Say(msg.Network, msg.Channel, m.petStatus(msg, fields))
 			return
+		case "duel", "spar":
+			m.duel(msg, fields)
+			return
 		case "rest":
 			m.rest(msg)
 			return
