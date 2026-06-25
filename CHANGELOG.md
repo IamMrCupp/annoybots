@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.26.0](https://github.com/IamMrCupp/annoybots/compare/v1.25.0...v1.26.0) (2026-06-25)
+
+
+### Features
+
+* **idlerpg:** friendly PvP duels ([#107](https://github.com/IamMrCupp/annoybots/issues/107)) ([1266402](https://github.com/IamMrCupp/annoybots/commit/12664026c430f69aaabc4e1fcaad9ec7b7efd743))
+* **idlerpg:** friendly PvP duels (closes [#107](https://github.com/IamMrCupp/annoybots/issues/107)) ([a413a16](https://github.com/IamMrCupp/annoybots/commit/a413a1682b8f7c130af9d45831487047a99f30f8))
+* **idlerpg:** healing draughts ([#110](https://github.com/IamMrCupp/annoybots/issues/110)) ([55404a7](https://github.com/IamMrCupp/annoybots/commit/55404a7debc97dc798742cef9ec7bd85df76667a))
+* **idlerpg:** portable healing draughts — buy at market, quaff anywhere (closes [#110](https://github.com/IamMrCupp/annoybots/issues/110)) ([d29b114](https://github.com/IamMrCupp/annoybots/commit/d29b114b3d08415578a58ad1c3b95a12016fb629))
+
 ## [1.25.0](https://github.com/IamMrCupp/annoybots/compare/v1.24.0...v1.25.0) (2026-06-25)
 
 
