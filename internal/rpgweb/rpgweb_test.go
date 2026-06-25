@@ -119,7 +119,7 @@ func TestWorldMapPage(t *testing.T) {
 		t.Fatalf("map status = %d; want 200", rr.Code)
 	}
 	body := rr.Body.String()
-	for _, want := range []string{"<svg", "alice", "Idlecrest", "back to the realm"} {
+	for _, want := range []string{"<svg", "alice", "Idlecrest", "back to the realm", "coast · market", "mountain · inn"} {
 		if !strings.Contains(body, want) {
 			t.Fatalf("world map missing %q\n%s", want, body)
 		}

@@ -300,6 +300,7 @@ const mapTmpl = `<!doctype html>
   .region-l { fill:#9a8255; font-style:italic; font-size:11px; }
   .frame { fill:none; stroke:#6b563b; }
   .town-l { fill:#5a3a22; font-size:12px; font-variant:small-caps; }
+  .biome-l { fill:#9a8255; font-size:8.5px; font-style:italic; }
   .dot { fill:#2f4a78; stroke:#e7d9b5; stroke-width:1.2; }
   .dot-l { fill:#463c26; font-size:9px; font-style:italic; }
   a { color:#e9b949; text-decoration:none; }
@@ -375,6 +376,7 @@ const mapTmpl = `<!doctype html>
   <circle cx="{{.X}}" cy="{{.Y}}" r="4.5" fill="#8c2f1c" stroke="#3a160d" stroke-width="1"/>
   <circle cx="{{.X}}" cy="{{.Y}}" r="1.6" fill="#f0e6c8"/>
   <text class="town-l" x="{{add .X 8}}" y="{{add .Y 4}}">{{.Name}}</text>
+  <text class="biome-l" x="{{add .X 8}}" y="{{add .Y 15}}">{{.Terrain}} · {{.Service}}</text>
   {{end}}
 
   <!-- wandering souls -->
