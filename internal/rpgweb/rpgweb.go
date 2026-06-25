@@ -153,6 +153,7 @@ const indexTmpl = `<!doctype html>
   tr:hover td { background:#15171d; }
   .rank { color:#7c8290; width:2.5rem; }
   .lvl { color:#7fd1a8; }
+  .ttl { color:#c9a227; font-style:italic; font-size:.85em; }
   .evil { color:#e06c75; } .good { color:#61afef; } .neutral { color:#abb2bf; }
   .quest { max-width:760px; background:#1a160c; border:1px solid #4a3c14; border-radius:8px; padding:1rem 1.25rem; margin:0 0 1rem; }
   .quest .obj { color:#e9b949; }
@@ -202,7 +203,7 @@ const indexTmpl = `<!doctype html>
   {{range $i, $c := .Board}}
   <tr>
     <td class="rank">{{add $i 1}}</td>
-    <td><a href="/p/{{pathesc $c.Key}}">{{$c.Name}}</a></td>
+    <td><a href="/p/{{pathesc $c.Key}}">{{$c.Name}}</a>{{if $c.Title}} <span class="ttl">{{$c.Title}}</span>{{end}}</td>
     <td class="lvl">{{$c.Level}}</td>
     <td class="muted">{{dur $c.TTL}}</td>
     <td>{{$c.Power}}</td>
@@ -250,8 +251,10 @@ const charTmpl = `<!doctype html>
   <tr><td class="k">hp</td><td>{{.HP}} <span class="muted">/ {{.MaxHP}}</span></td></tr>
   <tr><td class="k">gold</td><td>{{.Gold}}</td></tr>
   <tr><td class="k">kills</td><td>{{.Kills}}</td></tr>
+  {{if .DuelWins}}<tr><td class="k">duel wins</td><td>{{.DuelWins}}</td></tr>{{end}}
   <tr><td class="k">location</td><td class="muted">{{.Location}}</td></tr>
   {{if .Pet}}<tr><td class="k">companion</td><td>🐾 {{.Pet}}</td></tr>{{end}}
+  {{if .Draughts}}<tr><td class="k">draughts</td><td>🧪 {{.Draughts}}</td></tr>{{end}}
   <tr><td class="k">time to next</td><td class="muted">{{dur .TTL}}</td></tr>
   <tr><td class="k">power</td><td>{{.Power}}</td></tr>
 </table>
