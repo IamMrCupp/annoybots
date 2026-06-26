@@ -160,7 +160,11 @@ func (m *Manager) command(msg engine.Message, fields []string) {
 	if len(fields) >= 2 {
 		switch strings.ToLower(fields[1]) {
 		case "top":
-			m.out.Say(msg.Network, msg.Channel, m.leaderboard())
+			arg := ""
+			if len(fields) >= 3 {
+				arg = fields[2]
+			}
+			m.out.Say(msg.Network, msg.Channel, m.topBoard(arg))
 			return
 		case "items", "gear":
 			m.out.Say(msg.Network, msg.Channel, m.items(msg))
