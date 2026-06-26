@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.29.0](https://github.com/IamMrCupp/annoybots/compare/v1.28.0...v1.29.0) (2026-06-26)
+
+
+### Features
+
+* **idlerpg:** alternate leaderboards — top by kills/gold/duels (closes [#118](https://github.com/IamMrCupp/annoybots/issues/118)) ([c109b4d](https://github.com/IamMrCupp/annoybots/commit/c109b4d5e004a1841686a6858722a7777466bc5a))
+* **idlerpg:** alternate leaderboards ([#118](https://github.com/IamMrCupp/annoybots/issues/118)) ([2a0d537](https://github.com/IamMrCupp/annoybots/commit/2a0d537975374a3bd0ab7ef7196ab1ef8a7521f7))
+
 ## [1.28.0](https://github.com/IamMrCupp/annoybots/compare/v1.27.0...v1.28.0) (2026-06-25)
 
 
