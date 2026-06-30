@@ -27,6 +27,8 @@ var feats = []featDef{
 	{1 << 3, "Giant-Slayer (a boss falls)"},
 	{1 << 4, "Treasure Hunter (a legendary)"},
 	{1 << 5, "Deep Pockets (1000 gold)"},
+	{1 << 6, "Exterminator (5000 kills)"},
+	{1 << 7, "Dragon-Hoard (10000 gold)"},
 }
 
 func featName(bit int64) string {
@@ -72,11 +74,17 @@ func (m *Manager) checkCombatFeats(ctx context.Context, p player, boss bool) {
 	if s["kills"] >= 1000 {
 		m.awardFeat(ctx, p, 1<<2)
 	}
+	if s["kills"] >= 5000 {
+		m.awardFeat(ctx, p, 1<<6)
+	}
 	if boss {
 		m.awardFeat(ctx, p, 1<<3)
 	}
 	if s["gold"] >= 1000 {
 		m.awardFeat(ctx, p, 1<<5)
+	}
+	if s["gold"] >= 10000 {
+		m.awardFeat(ctx, p, 1<<7)
 	}
 }
 

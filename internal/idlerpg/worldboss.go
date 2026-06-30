@@ -27,6 +27,10 @@ var worldBosses = []string{
 	"Acererak the Devourer",
 	"the Tarrasque Ascendant",
 	"Lolth, Demon Queen of Spiders",
+	"Vecna, the Whispered One",
+	"the Worldsmÿður, Devourer of Stars",
+	"Orcus, Prince of the Undead",
+	"the Elder Brain of Xul'tharas",
 }
 
 func bossKey() string { return "rpg:wboss" }

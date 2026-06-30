@@ -29,27 +29,31 @@ var rarities = []rarity{
 var lootAdjs = []string{
 	"Flaming", "Frostbound", "Vicious", "Ancient", "Cursed", "Gilded", "Shadow",
 	"Storm", "Bloodforged", "Whispering", "Thorned", "Gloom", "Radiant",
-	"Wyrmscale", "Doomforged", "Spectral",
+	"Wyrmscale", "Doomforged", "Spectral", "Venomous", "Hallowed", "Obsidian",
+	"Searing", "Tempest", "Eclipse", "Ironbound", "Soulbound", "Glimmering",
+	"Howling", "Sundered", "Verdant", "Abyssal", "Runescribed",
 }
 
 var lootEpithets = []string{
 	"the Lurker", "the Abyss", "Doom", "Kings", "the Wyrm", "Night", "the Fallen",
 	"Frost", "Storms", "the Void", "Ash", "the Deep", "Ruin", "Embers",
+	"the Dawn", "the Eclipse", "the Titan", "Sorrows", "the Hollow", "the Pyre",
+	"the Serpent", "the Tempest", "Echoes", "the Maelstrom",
 }
 
 // slotNouns gives each equipment slot its own noun pool, so two different slots
 // can never generate the same name.
 var slotNouns = map[string][]string{
-	"ring":     {"Band", "Signet", "Loop", "Circle"},
-	"amulet":   {"Amulet", "Talisman", "Pendant", "Locket"},
-	"charm":    {"Charm", "Idol", "Token", "Sigil"},
-	"weapon":   {"Blade", "Edge", "Fang", "Reaver", "Cleaver"},
-	"helm":     {"Helm", "Crown", "Visage", "Casque"},
-	"tunic":    {"Mail", "Vestment", "Hauberk", "Wrap"},
-	"gloves":   {"Gauntlets", "Grips", "Talons", "Mitts"},
-	"leggings": {"Greaves", "Legguards", "Chausses"},
-	"shield":   {"Aegis", "Bulwark", "Wall", "Bastion"},
-	"boots":    {"Treads", "Striders", "Sabatons", "Stalkers"},
+	"ring":     {"Band", "Signet", "Loop", "Circle", "Coil", "Seal"},
+	"amulet":   {"Amulet", "Talisman", "Pendant", "Locket", "Phylactery", "Torc"},
+	"charm":    {"Charm", "Idol", "Token", "Sigil", "Fetish", "Ward"},
+	"weapon":   {"Blade", "Edge", "Fang", "Reaver", "Cleaver", "Maul", "Glaive"},
+	"helm":     {"Helm", "Crown", "Visage", "Casque", "Coif", "Diadem"},
+	"tunic":    {"Mail", "Vestment", "Hauberk", "Wrap", "Cuirass", "Shroud"},
+	"gloves":   {"Gauntlets", "Grips", "Talons", "Mitts", "Clutches", "Vices"},
+	"leggings": {"Greaves", "Legguards", "Chausses", "Cuisses", "Faulds"},
+	"shield":   {"Aegis", "Bulwark", "Wall", "Bastion", "Rampart", "Ward"},
+	"boots":    {"Treads", "Striders", "Sabatons", "Stalkers", "Greaves", "Steps"},
 }
 
 // magicName generates a name for an item in slot. Legendaries get an epithet title.

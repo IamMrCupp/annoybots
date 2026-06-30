@@ -18,6 +18,9 @@ type titleDef struct {
 // match, so order is the ranking. Each title gates on a single axis (the other
 // is 0) to keep the ladder legible.
 var titles = []titleDef{
+	{"the Godslayer", 0, 5000},
+	{"the Immortal", 150, 0},
+	{"the Worldbreaker", 0, 2500},
 	{"the Eternal", 100, 0},
 	{"the Annihilator", 0, 1000},
 	{"the Mythic", 75, 0},
