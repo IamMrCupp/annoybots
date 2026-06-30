@@ -994,6 +994,7 @@ func (m *Manager) findItem(ctx context.Context, p player, level int64) {
 	}
 	if rarities[rIdx].name == "legendary" {
 		m.awardFeat(ctx, p, 1<<4) // Treasure Hunter
+		m.bumpStat("legendaries", 1)
 	}
 }
 
