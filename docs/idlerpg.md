@@ -151,6 +151,9 @@ one-line summary (and your title).
   title (*Vicious Blade*, *Gilded Striders*) and legendaries a full epithet
   (*Whispering Greaves of Frost*). Names are drawn from per-slot pools, so two
   slots never collide and the same name rarely repeats.
+- **Salvage.** When a better item replaces the one in a slot, the old gear is
+  **salvaged into scrap gold** (scaled to its power) instead of being discarded —
+  so every drop is worth something, even the ones you don't keep.
 - **Enchanting.** `!rpg enchant <slot>` at a market spends gold to push an equipped
   item up **one rarity tier**. Drops are random; enchanting is deterministic agency
   over your gear — the high-end gold sink, with a steep escalating price so a

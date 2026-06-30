@@ -1051,6 +1051,14 @@ func (m *Manager) findItem(ctx context.Context, p player, level int64) {
 	if newPow <= curPow {
 		return // the find isn't an upgrade
 	}
+	// Salvage the old gear instead of discarding it — scrap gold for any item the
+	// new find replaces, so every drop is worth something.
+	scrap := int64(0)
+	if curPow > 0 {
+		scrap = curPow/3 + 1
+		_, _ = m.store.HIncr(ctx, sheetKey(p.key), "gold", scrap)
+		m.bumpStat("gold", scrap)
+	}
 	_ = m.store.HSet(ctx, sheetKey(p.key), itemField(slot), found)
 	_ = m.store.HSet(ctx, sheetKey(p.key), rarityField(slot), rIdx)
 
@@ -1066,6 +1074,9 @@ func (m *Manager) findItem(ctx context.Context, p player, level int64) {
 	out := fmt.Sprintf("%s found %s %s level %d %s", p.nick, article(label), label, found, slot)
 	if name != "" {
 		out += " — “" + name + "”"
+	}
+	if scrap > 0 {
+		out += fmt.Sprintf(" (salvaged the old one for %dg)", scrap)
 	}
 	m.out.Say(p.network, p.channel, out+"!")
 	if rarities[rIdx].named { // epic & legendary finds are feed-worthy; commons aren't
