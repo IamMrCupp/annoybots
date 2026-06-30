@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.37.0](https://github.com/IamMrCupp/annoybots/compare/v1.36.0...v1.37.0) (2026-06-30)
+
+
+### Features
+
+* **idlerpg:** hunt quests — party slays N foes before the deadline (closes [#152](https://github.com/IamMrCupp/annoybots/issues/152)) ([53efb32](https://github.com/IamMrCupp/annoybots/commit/53efb32758e0d73bc07251319f6741eac3fedf1d))
+* **idlerpg:** hunt quests ([#152](https://github.com/IamMrCupp/annoybots/issues/152)) ([48fb883](https://github.com/IamMrCupp/annoybots/commit/48fb883584e993b1b56ef1c7c74461ac454085be))
+
 ## [1.36.0](https://github.com/IamMrCupp/annoybots/compare/v1.35.0...v1.36.0) (2026-06-30)
 
 
