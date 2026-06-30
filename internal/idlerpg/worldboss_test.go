@@ -2,6 +2,7 @@ package idlerpg
 
 import (
 	"context"
+	"strings"
 	"testing"
 )
 
@@ -65,5 +66,17 @@ func TestRaidAdminSummons(t *testing.T) {
 	m.Handle(chanMsg("boss", "!rpg raid"))
 	if !r.has("already stalks the realm") {
 		t.Fatalf("double raid should be refused, got %q", r.last())
+	}
+}
+
+func TestInfoShowsWorldBoss(t *testing.T) {
+	m, _, _ := newMgr()
+	m.Handle(chanMsg("alice", "!rpg"))
+	if got := m.info(); strings.Contains(got, "WORLD BOSS") {
+		t.Fatalf("no raid yet, info should not mention one: %q", got)
+	}
+	m.spawnWorldBoss(context.Background(), "net", "#chan")
+	if got := m.info(); !strings.Contains(got, "WORLD BOSS") {
+		t.Fatalf("active raid should show in info, got %q", got)
 	}
 }
