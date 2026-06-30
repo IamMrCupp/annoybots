@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.32.0](https://github.com/IamMrCupp/annoybots/compare/v1.31.0...v1.32.0) (2026-06-30)
+
+
+### Features
+
+* **idlerpg:** enchant items — spend gold to upgrade rarity at a market (closes [#129](https://github.com/IamMrCupp/annoybots/issues/129)) ([e34950f](https://github.com/IamMrCupp/annoybots/commit/e34950f1b23ac0fceabc51cc53a56774e24ca0d1))
+* **idlerpg:** item enchanting ([#129](https://github.com/IamMrCupp/annoybots/issues/129)) ([ec5723d](https://github.com/IamMrCupp/annoybots/commit/ec5723dee79983f35c1b84af4805560571f07d92))
+
 ## [1.31.0](https://github.com/IamMrCupp/annoybots/compare/v1.30.0...v1.31.0) (2026-06-30)
 
 
