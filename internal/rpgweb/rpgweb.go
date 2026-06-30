@@ -149,14 +149,25 @@ func (s *Server) worldMap(w http.ResponseWriter, r *http.Request) {
 // admin group, sourced from the idlerpg package so it matches the in-channel
 // !rpg help exactly.
 type helpData struct {
-	Groups []idlerpg.HelpGroup
-	Admin  idlerpg.HelpGroup
+	Groups     []idlerpg.HelpGroup
+	Admin      idlerpg.HelpGroup
+	Classes    []idlerpg.ClassInfo
+	Races      []idlerpg.RaceInfo
+	Pets       []idlerpg.PetInfo
+	Alignments []string
 }
 
-// help renders the command reference at /help.
+// help renders the command reference + the character-options catalog at /help.
 func (s *Server) help(w http.ResponseWriter, _ *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	_ = s.helpTmpl.Execute(w, helpData{Groups: idlerpg.CommandHelp(), Admin: idlerpg.AdminHelp()})
+	_ = s.helpTmpl.Execute(w, helpData{
+		Groups:     idlerpg.CommandHelp(),
+		Admin:      idlerpg.AdminHelp(),
+		Classes:    idlerpg.Classes(),
+		Races:      idlerpg.Races(),
+		Pets:       idlerpg.Pets(),
+		Alignments: idlerpg.Alignments(),
+	})
 }
 
 // char renders one character's sheet at /p/<key>.
@@ -538,6 +549,8 @@ const helpTmpl = `<!doctype html>
   table { border-collapse:collapse; max-width:760px; width:100%; }
   td { text-align:left; padding:.35rem .75rem; border-bottom:1px solid #20232b; vertical-align:top; }
   .cmd { color:#7fd1a8; white-space:nowrap; }
+  .opt { color:#e9b949; white-space:nowrap; }
+  .bon { color:#7fd1a8; white-space:nowrap; }
   .muted { color:#6b7280; }
   a { color:#7fd1a8; text-decoration:none; }
   a:hover { text-decoration:underline; }
@@ -555,6 +568,27 @@ const helpTmpl = `<!doctype html>
   {{end}}
 </table>
 {{end}}
+
+<h2>Character options</h2>
+<p class="muted">Set once with <code>!rpg class</code>, <code>!rpg race</code>, and <code>!rpg align</code>. Companions can't be chosen — they're earned by slaying a boss.</p>
+<h3 style="color:#8aa0c6;font-size:.95rem;margin:1rem 0 .35rem;">Classes</h3>
+<table>
+  {{range .Classes}}<tr><td class="opt">{{.Name}}</td><td><span class="bon">{{.Ability}}</span> · {{.Power}} <span class="muted">— {{.Blurb}}</span></td></tr>
+  {{end}}
+</table>
+<h3 style="color:#8aa0c6;font-size:.95rem;margin:1rem 0 .35rem;">Races</h3>
+<table>
+  {{range .Races}}<tr><td class="opt">{{.Name}}</td><td><span class="bon">{{.Bonus}}</span> <span class="muted">— {{.Blurb}}</span></td></tr>
+  {{end}}
+</table>
+<h3 style="color:#8aa0c6;font-size:.95rem;margin:1rem 0 .35rem;">Companions <span class="muted">(earned, not chosen)</span></h3>
+<table>
+  {{range .Pets}}<tr><td class="opt">{{.Name}}</td><td><span class="bon">+{{.Atk}} atk, +{{.Dmg}} dmg</span> <span class="muted">— {{.Blurb}}</span></td></tr>
+  {{end}}
+</table>
+<h3 style="color:#8aa0c6;font-size:.95rem;margin:1rem 0 .35rem;">Alignments</h3>
+<p>{{range .Alignments}}<span class="opt">{{.}}</span> · {{end}}</p>
+
 <div class="admin">
 <h2>{{.Admin.Title}}</h2>
 <p class="muted">In-channel too, but only honored from a bot admin (same identity authorization as the admin console).</p>
