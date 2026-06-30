@@ -52,8 +52,12 @@ Turn the game on with the `idlerpg:` config block (off by default) — see
 - **Leveling.** Each level has a time-to-go; idle it down to zero and you level
   up. Levels get longer the higher you climb (~1.16× each), capped so no single
   level ever takes more than 30 days.
-- **Talking** adds time back — a few seconds per message, capped. Don't chat in a
-  channel where you're trying to win.
+- **Talking is punished — visibly.** Any message that isn't an `!rpg` command adds
+  time to your level clock, *scaled to your level*: a few seconds for a newbie, but
+  hours for a high-level legend (it's a slice of your current level's duration). The
+  bot **privately notifies you** of each penalty (`🤐 quiet — +Xs to your next
+  level`) — a personal nudge, not channel spam, just like the original IdleRPG.
+  Don't chat where you're trying to win.
 - **Leaving** is worse: parting, quitting, getting kicked, or changing nick all
   add a penalty (a kick stings most). The bot follows your nick change but charges
   you for it.
