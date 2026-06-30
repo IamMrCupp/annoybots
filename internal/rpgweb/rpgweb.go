@@ -6,6 +6,7 @@ package rpgweb
 
 import (
 	"context"
+	"fmt"
 	"html/template"
 	"net/http"
 	"net/url"
@@ -72,7 +73,16 @@ type pageData struct {
 	Board     []idlerpg.CharView
 	Quest     *idlerpg.QuestView
 	QuestLeft string
+	Feed      []feedRow
 }
+
+// feedRow is one rendered activity-feed line: the text plus a relative timestamp.
+type feedRow struct {
+	Text string
+	Ago  string
+}
+
+const feedSize = 30 // activity-feed entries shown on the dashboard
 
 func (s *Server) index(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path != "/" {
@@ -88,13 +98,34 @@ func (s *Server) index(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	quest, _ := idlerpg.ReadQuest(ctx, s.store)
+	events, _ := idlerpg.ReadFeed(ctx, s.store, feedSize)
 
 	data := pageData{Board: board, Quest: quest}
 	if quest != nil && quest.Kind != "map" {
 		data.QuestLeft = humanLeft(quest.Deadline - s.now().Unix())
 	}
+	now := s.now().Unix()
+	for _, e := range events {
+		data.Feed = append(data.Feed, feedRow{Text: e.Text, Ago: humanAgo(now - e.Ts)})
+	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	_ = s.tmpl.Execute(w, data)
+}
+
+// humanAgo renders an elapsed-seconds count as a compact "just now / 5m / 2h / 3d".
+func humanAgo(secs int64) string {
+	switch {
+	case secs < 10:
+		return "just now"
+	case secs < 60:
+		return fmt.Sprintf("%ds", secs)
+	case secs < 3600:
+		return fmt.Sprintf("%dm", secs/60)
+	case secs < 86400:
+		return fmt.Sprintf("%dh", secs/3600)
+	default:
+		return fmt.Sprintf("%dd", secs/86400)
+	}
 }
 
 // worldMap renders the persistent world map: every placed player + the towns.
@@ -183,6 +214,9 @@ const indexTmpl = `<!doctype html>
   .wp-end { stroke:#e9b949; }
   .party { fill:#7fd1a8; stroke:#0e0f13; stroke-width:3; }
   .muted { color:#6b7280; }
+  .feed { list-style:none; padding:0; margin:.5rem 0; max-width:760px; }
+  .feed li { padding:.3rem 0; border-bottom:1px solid #15171d; }
+  .feed .ago { display:inline-block; min-width:4rem; color:#5b6270; font-size:.82em; }
   a { color:#7fd1a8; text-decoration:none; }
   a:hover { text-decoration:underline; }
   footer { margin-top:2rem; color:#4b5563; font-size:.8rem; }
@@ -230,6 +264,14 @@ const indexTmpl = `<!doctype html>
   <tr><td colspan="6" class="muted">No idlers yet.</td></tr>
   {{end}}
 </table>
+
+{{if .Feed}}
+<h2>realm activity</h2>
+<ul class="feed">
+  {{range .Feed}}<li><span class="ago">{{.Ago}}</span> {{.Text}}</li>
+  {{end}}
+</ul>
+{{end}}
 
 <footer>annoybots · auto-refreshes every 30s · read-only view of the shared realm</footer>
 </body>

@@ -126,7 +126,7 @@ func (m *Manager) fightMonster(ctx context.Context, p player) {
 	mon := m.pickMonster(sheet["level"], biome)
 	if boss, ok := m.pickBoss(sheet["level"], biome); ok {
 		mon = boss
-		m.out.Say(p.network, p.channel, fmt.Sprintf(
+		m.drama(p.network, p.channel, fmt.Sprintf(
 			"🌩️ the sky darkens and the ground splits — %s rises to challenge %s!", mon.Name, p.nick))
 	}
 	m.resolveFight(ctx, p, sheet, class, mon)
@@ -211,14 +211,14 @@ func (m *Manager) resolveFight(ctx context.Context, p player, sheet map[string]i
 			_, _ = m.store.HIncr(ctx, sheetKey(p.key), "ttl", -reward)
 			_, _ = m.store.HIncr(ctx, sheetKey(p.key), "gold", mon.Gold)
 			_, _ = m.store.HIncr(ctx, sheetKey(p.key), "kills", bossKills)
-			m.out.Say(p.network, p.channel, fmt.Sprintf(
+			m.drama(p.network, p.channel, fmt.Sprintf(
 				"🏆 %s has slain %s%s! a legend is born — +%dg, %d kills, and %ds toward glory.",
 				p.nick, mon.Name, flourish, mon.Gold, bossKills, reward))
 			// guaranteed top-tier spoils: two drops rolled as if far higher level.
 			m.findItem(ctx, p, sheet["level"]+30)
 			m.findItem(ctx, p, sheet["level"]+30)
 			if pet := m.maybeTamePet(ctx, p.key); pet != "" {
-				m.out.Say(p.network, p.channel, fmt.Sprintf(
+				m.drama(p.network, p.channel, fmt.Sprintf(
 					"🐾 from the carnage a %s emerges and takes to %s — a new companion joins the hunt!", pet, p.nick))
 			}
 			m.checkCombatFeats(ctx, p, true)
@@ -228,7 +228,7 @@ func (m *Manager) resolveFight(ctx context.Context, p player, sheet map[string]i
 		_, _ = m.store.HIncr(ctx, sheetKey(p.key), "ttl", -reward)
 		_, _ = m.store.HIncr(ctx, sheetKey(p.key), "gold", mon.Gold)
 		_, _ = m.store.HIncr(ctx, sheetKey(p.key), "kills", 1)
-		m.out.Say(p.network, p.channel, fmt.Sprintf(
+		m.drama(p.network, p.channel, fmt.Sprintf(
 			"⚔️ %s slew %s%s — +%dg, %ds closer to the next level.", p.nick, mon.Name, flourish, mon.Gold, reward))
 		if m.roll(3) == 0 {
 			m.findItem(ctx, p, sheet["level"])
@@ -238,7 +238,7 @@ func (m *Manager) resolveFight(ctx context.Context, p player, sheet map[string]i
 	}
 
 	if pHP <= 0 {
-		m.out.Say(p.network, p.channel, fmt.Sprintf(
+		m.drama(p.network, p.channel, fmt.Sprintf(
 			"💀 %s was felled by %s and left for dead — they must recover before pressing on.", p.nick, mon.Name))
 		return
 	}

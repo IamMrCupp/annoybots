@@ -37,6 +37,9 @@ type Store interface {
 	SetStr(ctx context.Context, key, value string) error
 	GetStr(ctx context.Context, key string) (string, error)
 	Del(ctx context.Context, key string) error
+	// List ops — a capped, newest-first log (e.g. the IdleRPG activity feed).
+	ListPush(ctx context.Context, key, value string, limit int) error // prepend, then trim to cap newest
+	ListRange(ctx context.Context, key string, n int) ([]string, error)
 	Close() error
 }
 
@@ -170,6 +173,27 @@ func (s *redisStore) Del(ctx context.Context, key string) error {
 	return s.c.Del(ctx, s.k(key)).Err()
 }
 
+func (s *redisStore) ListPush(ctx context.Context, key, value string, limit int) error {
+	ctx, cancel := s.ctx(ctx)
+	defer cancel()
+	pipe := s.c.TxPipeline()
+	pipe.LPush(ctx, s.k(key), value)
+	if limit > 0 {
+		pipe.LTrim(ctx, s.k(key), 0, int64(limit-1))
+	}
+	_, err := pipe.Exec(ctx)
+	return err
+}
+
+func (s *redisStore) ListRange(ctx context.Context, key string, n int) ([]string, error) {
+	ctx, cancel := s.ctx(ctx)
+	defer cancel()
+	if n <= 0 {
+		return nil, nil
+	}
+	return s.c.LRange(ctx, s.k(key), 0, int64(n-1)).Result()
+}
+
 func (s *redisStore) Close() error { return s.c.Close() }
 
 // --- In-memory fallback (single process; used when Redis is off, and in tests) ---
@@ -180,6 +204,7 @@ type memStore struct {
 	zsets    map[string]map[string]int64
 	hashes   map[string]map[string]int64
 	strs     map[string]string
+	lists    map[string][]string
 }
 
 // NewMem returns an in-process Store.
@@ -189,6 +214,7 @@ func NewMem() Store {
 		zsets:    map[string]map[string]int64{},
 		hashes:   map[string]map[string]int64{},
 		strs:     map[string]string{},
+		lists:    map[string][]string{},
 	}
 }
 
@@ -304,7 +330,31 @@ func (m *memStore) Del(_ context.Context, key string) error {
 	delete(m.counters, key)
 	delete(m.zsets, key)
 	delete(m.hashes, key)
+	delete(m.lists, key)
 	return nil
+}
+
+func (m *memStore) ListPush(_ context.Context, key, value string, limit int) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	l := append([]string{value}, m.lists[key]...) // newest first
+	if limit > 0 && len(l) > limit {
+		l = l[:limit]
+	}
+	m.lists[key] = l
+	return nil
+}
+
+func (m *memStore) ListRange(_ context.Context, key string, n int) ([]string, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	l := m.lists[key]
+	if n > 0 && len(l) > n {
+		l = l[:n]
+	}
+	out := make([]string, len(l))
+	copy(out, l)
+	return out, nil
 }
 
 func (m *memStore) Close() error { return nil }

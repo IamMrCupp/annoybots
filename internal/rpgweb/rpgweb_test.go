@@ -51,6 +51,24 @@ func TestIndexShowsPlayers(t *testing.T) {
 	}
 }
 
+func TestIndexShowsActivityFeed(t *testing.T) {
+	st := state.NewMem()
+	// a real Manager records drama into the feed the dashboard reads.
+	log := slog.New(slog.NewTextHandler(io.Discard, nil))
+	m := idlerpg.New(st, noopSender{}, nil, time.Second, time.Second, time.Hour, time.Hour, log)
+	m.Handle(engine.Message{Network: "net", Channel: "#c", Nick: "alice", Text: "!rpg"})
+	m.Tick() // level-up → a feed entry
+
+	rr := httptest.NewRecorder()
+	New(st).Handler().ServeHTTP(rr, httptest.NewRequest(http.MethodGet, "/", nil))
+	body := rr.Body.String()
+	for _, want := range []string{"realm activity", "attained level"} {
+		if !strings.Contains(body, want) {
+			t.Fatalf("dashboard missing %q\n%s", want, body)
+		}
+	}
+}
+
 func TestIndexShowsMapQuest(t *testing.T) {
 	st := state.NewMem()
 	// A map quest exactly as internal/idlerpg persists one (key "rpg:quest").

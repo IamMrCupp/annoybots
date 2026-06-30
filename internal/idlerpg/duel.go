@@ -82,7 +82,7 @@ func (m *Manager) duel(msg engine.Message, fields []string) {
 		winnerNick, winnerKey, ws, ls = opp.nick, opp.key, oppWins, chWins
 	}
 	wins, _ := m.store.HIncr(ctx, sheetKey(winnerKey), duelWinsField(), 1)
-	m.out.Say(msg.Network, msg.Channel, fmt.Sprintf(
+	m.drama(msg.Network, msg.Channel, fmt.Sprintf(
 		"⚔️ %s [%d] and %s [%d] spar — %s takes it %d–%d! (friendly; %s's %s career win.)",
 		msg.Nick, chPow, target, oppPow, winnerNick, ws, ls, winnerNick, ordinal(wins)))
 }
