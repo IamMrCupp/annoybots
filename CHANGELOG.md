@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.33.0](https://github.com/IamMrCupp/annoybots/compare/v1.32.0...v1.33.0) (2026-06-30)
+
+
+### Features
+
+* **idlerpg:** blessing — buy a temporary combat buff at a temple (closes [#136](https://github.com/IamMrCupp/annoybots/issues/136)) ([46ef3c7](https://github.com/IamMrCupp/annoybots/commit/46ef3c78aa0118779f127df1dd8d0583712aaa6a))
+* **idlerpg:** temple blessing ([#136](https://github.com/IamMrCupp/annoybots/issues/136)) ([a555638](https://github.com/IamMrCupp/annoybots/commit/a555638067c18606f3e1b8c957edaaee821d87c8))
+* **rpgweb:** per-character activity feed ([#139](https://github.com/IamMrCupp/annoybots/issues/139)) ([53eb1dc](https://github.com/IamMrCupp/annoybots/commit/53eb1dc6b70c51709bba9e94e89fafe4259f771b))
+* **rpgweb:** per-character recent activity on character pages (closes [#139](https://github.com/IamMrCupp/annoybots/issues/139)) ([c2575ea](https://github.com/IamMrCupp/annoybots/commit/c2575eae0233e171245237348c747ff01abfa155))
+
 ## [1.32.0](https://github.com/IamMrCupp/annoybots/compare/v1.31.0...v1.32.0) (2026-06-30)
 
 
