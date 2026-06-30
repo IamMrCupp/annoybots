@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.39.0](https://github.com/IamMrCupp/annoybots/compare/v1.38.0...v1.39.0) (2026-06-30)
+
+
+### Features
+
+* **idlerpg:** salvage replaced gear ([#158](https://github.com/IamMrCupp/annoybots/issues/158)) ([1ba443b](https://github.com/IamMrCupp/annoybots/commit/1ba443b33abae06a3b5a5545dcc4c62f8ffe545a))
+* **idlerpg:** salvage replaced gear into scrap gold (closes [#158](https://github.com/IamMrCupp/annoybots/issues/158)) ([8452869](https://github.com/IamMrCupp/annoybots/commit/8452869884c35b1b424767f8c6fb12fe90801faa))
+
 ## [1.38.0](https://github.com/IamMrCupp/annoybots/compare/v1.37.0...v1.38.0) (2026-06-30)
 
 
