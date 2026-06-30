@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.34.0](https://github.com/IamMrCupp/annoybots/compare/v1.33.0...v1.34.0) (2026-06-30)
+
+
+### Features
+
+* **idlerpg:** world-boss raid events — shared-HP colossi with dashboard HP bar (closes [#141](https://github.com/IamMrCupp/annoybots/issues/141)) ([e9bd9f1](https://github.com/IamMrCupp/annoybots/commit/e9bd9f11ed25af40a474b90d3c58941bca906178))
+* **idlerpg:** world-boss raid events ([#141](https://github.com/IamMrCupp/annoybots/issues/141)) ([d72c057](https://github.com/IamMrCupp/annoybots/commit/d72c0578a260929d2830fb604d50af01bce7017f))
+
 ## [1.33.0](https://github.com/IamMrCupp/annoybots/compare/v1.32.0...v1.33.0) (2026-06-30)
 
 
