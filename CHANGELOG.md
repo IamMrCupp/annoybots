@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.32.0](https://github.com/IamMrCupp/annoybots/compare/v1.31.0...v1.32.0) (2026-06-30)
+
+
+### Features
+
+* **idlerpg:** enchant items — spend gold to upgrade rarity at a market (closes [#129](https://github.com/IamMrCupp/annoybots/issues/129)) ([e34950f](https://github.com/IamMrCupp/annoybots/commit/e34950f1b23ac0fceabc51cc53a56774e24ca0d1))
+* **idlerpg:** item enchanting ([#129](https://github.com/IamMrCupp/annoybots/issues/129)) ([ec5723d](https://github.com/IamMrCupp/annoybots/commit/ec5723dee79983f35c1b84af4805560571f07d92))
+* **idlerpg:** poison status effect — venomous foes, damage-over-time, cured by healing (closes [#133](https://github.com/IamMrCupp/annoybots/issues/133)) ([dffa83b](https://github.com/IamMrCupp/annoybots/commit/dffa83b5431494c6cc2fcf256c5510c1c1155bcd))
+* **idlerpg:** poison status effect ([#133](https://github.com/IamMrCupp/annoybots/issues/133)) ([632812c](https://github.com/IamMrCupp/annoybots/commit/632812cf8ab4dec848af7d4ee0925e075027ece7))
+
+
+### Documentation
+
+* **idlerpg:** world-class player guide ([#131](https://github.com/IamMrCupp/annoybots/issues/131)) ([4c0e8da](https://github.com/IamMrCupp/annoybots/commit/4c0e8da07e89ad8be43b5523ae02e4969742db4f))
+* **idlerpg:** world-class player guide rewrite — structured, TOC, all features (closes [#131](https://github.com/IamMrCupp/annoybots/issues/131)) ([74720cd](https://github.com/IamMrCupp/annoybots/commit/74720cded7319fc8fec939ebccaa55735f7d28a2))
+
 ## [1.31.0](https://github.com/IamMrCupp/annoybots/compare/v1.30.0...v1.31.0) (2026-06-30)
 
 
