@@ -420,7 +420,18 @@ func (m *Manager) info() string {
 	}
 	m.qmu.Unlock()
 
-	return fmt.Sprintf("the realm: %d idling now · top idler %s · %s.", online, lead, quest)
+	raid := ""
+	m.bmu.Lock()
+	if b := m.boss; b != nil {
+		pct := int64(0)
+		if b.MaxHP > 0 && b.HP > 0 {
+			pct = b.HP * 100 / b.MaxHP
+		}
+		raid = fmt.Sprintf(" · 🐲 WORLD BOSS: %s at %d%% HP — to arms!", b.Name, pct)
+	}
+	m.bmu.Unlock()
+
+	return fmt.Sprintf("the realm: %d idling now · top idler %s · %s%s.", online, lead, quest, raid)
 }
 
 // questStatus describes the active quest, or says there isn't one.
