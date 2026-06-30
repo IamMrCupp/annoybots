@@ -58,6 +58,16 @@ var bestiary = []monster{
 	// plains
 	{"a bandit raider", 2, 13, 3, 6, 11, 6, false, "plains"},
 	{"a manticore", 11, 14, 5, 8, 44, 26, false, "plains"},
+	// more common foes, filling the mid-to-high range
+	{"a skeleton warrior", 3, 13, 3, 6, 12, 5, false, ""},
+	{"a harpy", 7, 14, 4, 6, 26, 14, false, ""},
+	{"a basilisk", 10, 15, 5, 8, 40, 28, false, ""},
+	{"a chimera", 15, 16, 6, 10, 64, 60, false, ""},
+	{"an elder treant", 12, 16, 5, 12, 58, 34, false, "forest"},
+	{"a frost giant", 14, 15, 6, 12, 70, 52, false, "mountain"},
+	{"a drowned revenant", 9, 12, 4, 8, 34, 20, false, "coast"},
+	{"a hydra", 16, 16, 6, 10, 80, 75, false, "swamp"},
+	{"a centaur marauder", 8, 14, 4, 8, 30, 18, false, "plains"},
 }
 
 // bosses are rare, named legends — far above a normal foe in AC, HP, and damage,
@@ -70,6 +80,9 @@ var bosses = []monster{
 	{"the Lich-King Vol'kresh", 20, 19, 9, 10, 240, 360, true, "swamp"},
 	{"Tiamat, Queen of Dragons", 25, 20, 10, 12, 300, 480, true, "mountain"},
 	{"Asmodeus, Lord of the Nine Hells", 30, 20, 11, 12, 360, 640, true, ""},
+	{"the Bog-Mother Grymalkin", 18, 19, 9, 12, 230, 320, true, "swamp"},
+	{"Ymir the Frost Titan", 22, 19, 10, 12, 280, 420, true, "mountain"},
+	{"Leviathan of the Tides", 28, 20, 11, 12, 340, 580, true, "coast"},
 }
 
 // pickBoss returns an eligible boss and true, on the bossOdds chance, when the
