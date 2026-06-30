@@ -1,8 +1,10 @@
 # annoybots docs
 
 - **[commands.md](commands.md)** — every public, account, and admin command.
-- **[idlerpg.md](idlerpg.md)** — the IdleRPG game: leveling, items, battles,
-  quests, and the web dashboard.
+- **[idlerpg.md](idlerpg.md)** — the IdleRPG game: leveling, D&D characters,
+  monsters & bosses, loot & enchanting, towns, quests, companions, duels, titles &
+  feats, the web dashboard, and Dungeon-Master controls. Start here, or type
+  `!rpg help`.
 - **[accounts.md](accounts.md)** — link your identities across networks into one
   character.
 - **[plugins.md](plugins.md)** — eggdrop-style Lua scripting: add `!commands` with
