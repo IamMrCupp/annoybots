@@ -35,6 +35,7 @@ Opt in with `!rpg`, then "play" by being present and **quiet**. Full rules in
 | Command | What it does |
 |---|---|
 | `!rpg` | Enroll, or show your character. |
+| `!rpg help` (`commands`) | List the commands in-channel; full guide on the dashboard at `/help`. |
 | `!rpg status [name]` | A character sheet — yours, or a named player's. |
 | `!rpg sheet [name]` | The D&D ability block (STR/DEX/CON/INT/WIS/CHA + modifiers), HP, gold, kills. |
 | `!rpg race <human\|elf\|dwarf\|halfling\|half-orc\|gnome\|tiefling>` | Choose your heritage once — bakes ability bonuses into your scores. |
@@ -61,7 +62,8 @@ Opt in with `!rpg`, then "play" by being present and **quiet**. Full rules in
 | `!rpg gold <name> <amount>` | (admin) Grant or remove gold (negative removes). |
 
 Admin `!rpg` verbs use the same identity authorization as the admin console (op flag).
-The web dashboard also links each leaderboard name to a per-character page at `/p/<name>`.
+The web dashboard links each leaderboard name to a per-character page at `/p/<name>`,
+and serves the full command reference at `/help` (the same source as `!rpg help`).
 
 ### Leave a message
 

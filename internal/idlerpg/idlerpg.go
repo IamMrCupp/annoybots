@@ -178,6 +178,9 @@ func (m *Manager) command(msg engine.Message, fields []string) {
 		case "race":
 			m.setRace(msg, fields)
 			return
+		case "help", "commands", "?":
+			m.help(msg)
+			return
 		case "info":
 			m.out.Say(msg.Network, msg.Channel, m.info())
 			return
