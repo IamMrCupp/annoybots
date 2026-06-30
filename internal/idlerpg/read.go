@@ -37,6 +37,7 @@ type CharView struct {
 	HP         int64      // current hit points
 	MaxHP      int64      // hit-point ceiling
 	Poisoned   bool       // carrying venom (damage-over-time)
+	Blessed    bool       // under a temple blessing (combat buff)
 	Gold       int64      // coin from monster kills
 	Kills      int64      // monsters slain
 	TTL        int64      // seconds to the next level
@@ -171,6 +172,7 @@ func readChar(ctx context.Context, store state.Store, key string) CharView {
 		HP:         curHP(sheet, class),
 		MaxHP:      maxHP(sheet, class),
 		Poisoned:   poisoned(sheet),
+		Blessed:    blessed(sheet),
 		Gold:       sheet["gold"],
 		Kills:      sheet["kills"],
 		TTL:        sheet["ttl"],

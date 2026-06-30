@@ -152,6 +152,10 @@ func (m *Manager) resolveFight(ctx context.Context, p player, sheet map[string]i
 		pAtk += pet.Atk
 		pDmgBonus += pet.Dmg
 	}
+	if blessed(sheet) { // a temple blessing sharpens your blows
+		pAtk += blessAtk
+		pDmgBonus += blessDmg
+	}
 	cm := classCombat(class, sheet)
 	usedAbility := false
 	monHP := mon.HP

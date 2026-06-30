@@ -226,6 +226,9 @@ func (m *Manager) command(msg engine.Message, fields []string) {
 		case "revive":
 			m.revive(msg)
 			return
+		case "bless":
+			m.bless(msg)
+			return
 		case "pause", "resume", "push", "hog", "reset", "setlevel", "gold":
 			m.adminVerb(msg, fields)
 			return
@@ -478,6 +481,9 @@ func (m *Manager) sheet(msg engine.Message, fields []string) string {
 	hp := fmt.Sprintf("%d/%d", curHP(sheet, class), maxHP(sheet, class))
 	if poisoned(sheet) {
 		hp += "☠️"
+	}
+	if blessed(sheet) {
+		hp += "🕊️"
 	}
 	return fmt.Sprintf("%s (lvl %d) — HP %s · %dg · %d kills%s%s · %s",
 		m.charLine(ctx, name, pkey, sheet), sheet["level"], hp,

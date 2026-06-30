@@ -45,7 +45,7 @@ func CommandHelp() []HelpGroup {
 			{"!rpg town", "Where you are on the map (at a town, travelling, or roaming)."},
 			{"!rpg quest", "The active quest's party, objective, and time left."},
 			{"!rpg duel <name>", "A friendly best-of-three spar with a present player."},
-			{"!rpg rest / shop / buy <slot> / revive", "Town services — heal, buy gear, revive — at the matching town."},
+			{"!rpg rest / shop / buy <slot> / revive / bless", "Town services — heal, buy gear, revive, buy a combat blessing."},
 			{"!rpg buy potion / quaff", "Buy a healing draught at a market; quaff one anywhere to heal full."},
 			{"!rpg enchant <slot>", "At a market, spend gold to push an item up one rarity tier."},
 		}},
