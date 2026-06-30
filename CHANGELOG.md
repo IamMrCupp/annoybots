@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.38.0](https://github.com/IamMrCupp/annoybots/compare/v1.37.0...v1.38.0) (2026-06-30)
+
+
+### Features
+
+* **idlerpg:** content expansion — more foes, bosses, loot names, feats & titles (closes [#155](https://github.com/IamMrCupp/annoybots/issues/155)) ([aa43b5d](https://github.com/IamMrCupp/annoybots/commit/aa43b5d62608bb9c20c08f390121199c0f90b4ec))
+* **idlerpg:** content expansion ([#155](https://github.com/IamMrCupp/annoybots/issues/155)) ([503d1ec](https://github.com/IamMrCupp/annoybots/commit/503d1ec1edf3495e11fedfb1b4b3f338b4a6205f))
+
 ## [1.37.0](https://github.com/IamMrCupp/annoybots/compare/v1.36.0...v1.37.0) (2026-06-30)
 
 
