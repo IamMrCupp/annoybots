@@ -222,6 +222,9 @@ func (m *Manager) resolveFight(ctx context.Context, p player, sheet map[string]i
 					"🐾 from the carnage a %s emerges and takes to %s — a new companion joins the hunt!", pet, p.nick))
 			}
 			m.checkCombatFeats(ctx, p, true)
+			m.bumpStat("kills", 1)
+			m.bumpStat("bosses", 1)
+			m.bumpStat("gold", mon.Gold)
 			return
 		}
 		reward := m.pctOfTTL(ctx, p.key, 8, 14)
@@ -234,6 +237,8 @@ func (m *Manager) resolveFight(ctx context.Context, p player, sheet map[string]i
 			m.findItem(ctx, p, sheet["level"])
 		}
 		m.checkCombatFeats(ctx, p, false)
+		m.bumpStat("kills", 1)
+		m.bumpStat("gold", mon.Gold)
 		return
 	}
 

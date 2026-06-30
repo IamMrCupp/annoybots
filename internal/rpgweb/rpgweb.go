@@ -74,6 +74,7 @@ type pageData struct {
 	Quest     *idlerpg.QuestView
 	QuestLeft string
 	Feed      []feedRow
+	Stats     idlerpg.RealmStats
 }
 
 // feedRow is one rendered activity-feed line: the text plus a relative timestamp.
@@ -99,8 +100,9 @@ func (s *Server) index(w http.ResponseWriter, r *http.Request) {
 	}
 	quest, _ := idlerpg.ReadQuest(ctx, s.store)
 	events, _ := idlerpg.ReadFeed(ctx, s.store, feedSize)
+	stats, _ := idlerpg.ReadStats(ctx, s.store)
 
-	data := pageData{Board: board, Quest: quest}
+	data := pageData{Board: board, Quest: quest, Stats: stats}
 	if quest != nil && quest.Kind != "map" {
 		data.QuestLeft = humanLeft(quest.Deadline - s.now().Unix())
 	}
@@ -214,6 +216,12 @@ const indexTmpl = `<!doctype html>
   .wp-end { stroke:#e9b949; }
   .party { fill:#7fd1a8; stroke:#0e0f13; stroke-width:3; }
   .muted { color:#6b7280; }
+  .nav { margin:0 0 1.25rem; font-size:.95rem; color:#3a3f4b; }
+  .nav a { margin-right:1rem; }
+  .stats { display:flex; flex-wrap:wrap; gap:.6rem; margin:0 0 1.5rem; }
+  .stat { flex:1 1 7rem; min-width:7rem; background:#15171d; border:1px solid #20232b; border-radius:8px; padding:.6rem .8rem; }
+  .stat .num { display:block; font-size:1.5rem; color:#e9b949; line-height:1.1; }
+  .stat .lab { font-size:.75rem; color:#7c8290; text-transform:uppercase; letter-spacing:.05em; }
   .feed { list-style:none; padding:0; margin:.5rem 0; max-width:760px; }
   .feed li { padding:.3rem 0; border-bottom:1px solid #15171d; }
   .feed .ago { display:inline-block; min-width:4rem; color:#5b6270; font-size:.82em; }
@@ -223,8 +231,16 @@ const indexTmpl = `<!doctype html>
 </style>
 </head>
 <body>
+<nav class="nav"><a href="/">⚔ realm</a><a href="/map">🗺 map</a><a href="/help">📖 how to play</a></nav>
 <h1>⚔ the idle realm</h1>
-<p class="muted"><a href="/map">🗺 the realm map</a> · <a href="/help">📖 how to play</a> — see where everyone's wandering, or learn the commands.</p>
+<div class="stats">
+  <div class="stat"><span class="num">{{.Stats.Heroes}}</span><span class="lab">heroes</span></div>
+  <div class="stat"><span class="num">{{.Stats.Levels}}</span><span class="lab">levels gained</span></div>
+  <div class="stat"><span class="num">{{.Stats.Kills}}</span><span class="lab">monsters slain</span></div>
+  <div class="stat"><span class="num">{{.Stats.Bosses}}</span><span class="lab">bosses felled</span></div>
+  <div class="stat"><span class="num">{{.Stats.Gold}}</span><span class="lab">gold minted</span></div>
+  <div class="stat"><span class="num">{{.Stats.Legendaries}}</span><span class="lab">legendaries</span></div>
+</div>
 {{if .Quest}}
 <div class="quest">
   <strong>A quest is underway.</strong>
@@ -288,6 +304,8 @@ const charTmpl = `<!doctype html>
   body { background:#0e0f13; color:#d6d8de; font:15px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace; margin:0; padding:2rem; }
   h1 { font-size:1.4rem; margin:0 0 .25rem; color:#e9b949; }
   h1 .ttl { color:#c9a227; font-style:italic; font-weight:400; }
+  .nav { margin:0 0 1.25rem; font-size:.95rem; color:#3a3f4b; }
+  .nav a { margin-right:1rem; }
   .feat { display:inline-block; background:#1a160c; border:1px solid #4a3c14; border-radius:10px; padding:.1rem .55rem; margin:.15rem .15rem 0 0; font-size:.85em; color:#e9b949; }
   .sub { color:#8aa0c6; margin:0 0 1.5rem; }
   table { border-collapse:collapse; max-width:480px; width:100%; }
@@ -303,6 +321,7 @@ const charTmpl = `<!doctype html>
 </style>
 </head>
 <body>
+<nav class="nav"><a href="/">⚔ realm</a><a href="/map">🗺 map</a><a href="/help">📖 how to play</a></nav>
 <h1>{{.Name}}{{if .Title}} <span class="ttl">{{.Title}}</span>{{end}}</h1>
 <p class="sub">the <span class="{{.AlignClass}}">{{.Align}}{{if .Race}} {{.Race}}{{end}}{{if .Class}} {{.Class}}{{end}}</span></p>
 
@@ -354,6 +373,8 @@ const mapTmpl = `<!doctype html>
   body { background:#15110b; color:#d6c9a8; font:15px/1.5 Georgia,'Times New Roman',serif; margin:0; padding:2rem; }
   h1 { font-size:1.5rem; margin:0 0 .25rem; color:#e9b949; font-variant:small-caps; letter-spacing:.06em; }
   .sub { color:#9a8a64; margin:0 0 1rem; font-style:italic; }
+  .nav { margin:0 0 1.25rem; font-size:.95rem; color:#3a3f4b; }
+  .nav a { margin-right:1rem; }
   .world { display:block; width:100%; max-width:680px; margin:0 auto; background:#e7d9b5; border:2px solid #6b563b; border-radius:4px; box-shadow:0 4px 20px rgba(0,0,0,.5); }
   .coast { fill:#b9cfcb; stroke:#6b563b; stroke-width:1.3; }
   .wave { fill:none; stroke:#98b3ae; stroke-width:1; }
@@ -377,6 +398,7 @@ const mapTmpl = `<!doctype html>
 </style>
 </head>
 <body>
+<nav class="nav"><a href="/">⚔ realm</a><a href="/map">🗺 map</a><a href="/help">📖 how to play</a></nav>
 <h1>🗺 the realm map</h1>
 <p class="sub">{{len .Players}} souls abroad in the realm</p>
 <svg class="world" viewBox="0 0 {{.Size}} {{.Size}}" role="img" aria-label="fantasy map of the realm with towns and wandering players">
@@ -472,6 +494,8 @@ const helpTmpl = `<!doctype html>
   .sub { color:#8aa0c6; margin:0 0 1.5rem; max-width:720px; }
   h2 { font-size:1rem; color:#8aa0c6; margin:1.5rem 0 .5rem; }
   .admin h2 { color:#e9b949; }
+  .nav { margin:0 0 1.25rem; font-size:.95rem; color:#3a3f4b; }
+  .nav a { margin-right:1rem; }
   table { border-collapse:collapse; max-width:760px; width:100%; }
   td { text-align:left; padding:.35rem .75rem; border-bottom:1px solid #20232b; vertical-align:top; }
   .cmd { color:#7fd1a8; white-space:nowrap; }
@@ -482,6 +506,7 @@ const helpTmpl = `<!doctype html>
 </style>
 </head>
 <body>
+<nav class="nav"><a href="/">⚔ realm</a><a href="/map">🗺 map</a><a href="/help">📖 how to play</a></nav>
 <h1>📖 how to play</h1>
 <p class="sub">You "play" IdleRPG by being present and <strong>quiet</strong> in the channel — every tick you idle, you advance toward the next level. Talking sets you back; leaving sets you back more. Everything below is typed <strong>in the channel</strong> as <code>!rpg …</code>.</p>
 {{range .Groups}}

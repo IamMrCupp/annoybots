@@ -44,7 +44,8 @@ func TestIndexShowsPlayers(t *testing.T) {
 		t.Fatalf("status = %d; want 200", rr.Code)
 	}
 	body := rr.Body.String()
-	for _, want := range []string{"top idlers", "alice", "bob", "No quest underway"} {
+	for _, want := range []string{"top idlers", "alice", "bob", "No quest underway",
+		"heroes", "monsters slain", "bosses felled", `class="nav"`} {
 		if !strings.Contains(body, want) {
 			t.Fatalf("page missing %q\n%s", want, body)
 		}
