@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.36.0](https://github.com/IamMrCupp/annoybots/compare/v1.35.0...v1.36.0) (2026-06-30)
+
+
+### Features
+
+* **idlerpg:** surface the character-options catalog ([#147](https://github.com/IamMrCupp/annoybots/issues/147)) ([4151666](https://github.com/IamMrCupp/annoybots/commit/4151666c1da9ac2fdf42fc98cb7f1e0a8fab4755))
+* **idlerpg:** surface the class/race/companion/alignment catalog in help + dashboard (closes [#147](https://github.com/IamMrCupp/annoybots/issues/147)) ([6182c86](https://github.com/IamMrCupp/annoybots/commit/6182c86a0e0803bf0c0b94de30c2104b651c3507))
+* **idlerpg:** visible, level-scaled talk penalty ([#150](https://github.com/IamMrCupp/annoybots/issues/150)) ([55884b4](https://github.com/IamMrCupp/annoybots/commit/55884b474b13eba1baa960fed7f4d5a0f408aede))
+* **idlerpg:** visible, level-scaled talk penalty (closes [#150](https://github.com/IamMrCupp/annoybots/issues/150)) ([69056c7](https://github.com/IamMrCupp/annoybots/commit/69056c79dc324f49145f2009947115fdd9740d08))
+
+
+### Bug Fixes
+
+* **idlerpg:** send the talk penalty privately to the offender, not the channel ([776d4e3](https://github.com/IamMrCupp/annoybots/commit/776d4e3ce2d9cfe53b836d4039b22a6b3479fe80))
+
 ## [1.35.0](https://github.com/IamMrCupp/annoybots/compare/v1.34.0...v1.35.0) (2026-06-30)
 
 
