@@ -134,6 +134,21 @@ func TestHealthz(t *testing.T) {
 	}
 }
 
+func TestHelpPage(t *testing.T) {
+	rr := httptest.NewRecorder()
+	New(state.NewMem()).Handler().ServeHTTP(rr, httptest.NewRequest(http.MethodGet, "/help", nil))
+	if rr.Code != http.StatusOK {
+		t.Fatalf("help page status = %d; want 200", rr.Code)
+	}
+	body := rr.Body.String()
+	// public commands + the admin section + the play explanation all render.
+	for _, want := range []string{"how to play", "!rpg status", "!rpg duel", "Admin", "reset all yes", "back to the realm"} {
+		if !strings.Contains(body, want) {
+			t.Fatalf("help page missing %q", want)
+		}
+	}
+}
+
 func TestUnknownPath404(t *testing.T) {
 	rr := httptest.NewRecorder()
 	New(state.NewMem()).Handler().ServeHTTP(rr, httptest.NewRequest(http.MethodGet, "/nope", nil))

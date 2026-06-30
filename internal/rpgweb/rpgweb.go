@@ -26,6 +26,7 @@ type Server struct {
 	tmpl     *template.Template
 	charTmpl *template.Template
 	mapTmpl  *template.Template
+	helpTmpl *template.Template
 	now      func() time.Time
 }
 
@@ -47,6 +48,7 @@ func New(store state.Store) *Server {
 		tmpl:     template.Must(template.New("index").Funcs(tmplFuncs).Parse(indexTmpl)),
 		charTmpl: template.Must(template.New("char").Funcs(tmplFuncs).Parse(charTmpl)),
 		mapTmpl:  template.Must(template.New("map").Funcs(tmplFuncs).Parse(mapTmpl)),
+		helpTmpl: template.Must(template.New("help").Funcs(tmplFuncs).Parse(helpTmpl)),
 		now:      time.Now,
 	}
 }
@@ -56,6 +58,7 @@ func (s *Server) Handler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", s.index)
 	mux.HandleFunc("/map", s.worldMap)
+	mux.HandleFunc("/help", s.help)
 	mux.HandleFunc("/p/", s.char)
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
@@ -105,6 +108,20 @@ func (s *Server) worldMap(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	_ = s.mapTmpl.Execute(w, world)
+}
+
+// helpData is the /help page view model: the public command groups plus the
+// admin group, sourced from the idlerpg package so it matches the in-channel
+// !rpg help exactly.
+type helpData struct {
+	Groups []idlerpg.HelpGroup
+	Admin  idlerpg.HelpGroup
+}
+
+// help renders the command reference at /help.
+func (s *Server) help(w http.ResponseWriter, _ *http.Request) {
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	_ = s.helpTmpl.Execute(w, helpData{Groups: idlerpg.CommandHelp(), Admin: idlerpg.AdminHelp()})
 }
 
 // char renders one character's sheet at /p/<key>.
@@ -173,7 +190,7 @@ const indexTmpl = `<!doctype html>
 </head>
 <body>
 <h1>⚔ the idle realm</h1>
-<p class="muted"><a href="/map">🗺 the realm map</a> — see where everyone's wandering.</p>
+<p class="muted"><a href="/map">🗺 the realm map</a> · <a href="/help">📖 how to play</a> — see where everyone's wandering, or learn the commands.</p>
 {{if .Quest}}
 <div class="quest">
   <strong>A quest is underway.</strong>
@@ -397,5 +414,49 @@ const mapTmpl = `<!doctype html>
   {{end}}
 </svg>
 <footer><a href="/">&larr; back to the realm</a> · auto-refreshes every 30s</footer>
+</body>
+</html>`
+
+const helpTmpl = `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>annoybots · how to play</title>
+<style>
+  :root { color-scheme: dark; }
+  body { background:#0e0f13; color:#d6d8de; font:15px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace; margin:0; padding:2rem; }
+  h1 { font-size:1.4rem; color:#e9b949; margin:0 0 .25rem; }
+  .sub { color:#8aa0c6; margin:0 0 1.5rem; max-width:720px; }
+  h2 { font-size:1rem; color:#8aa0c6; margin:1.5rem 0 .5rem; }
+  .admin h2 { color:#e9b949; }
+  table { border-collapse:collapse; max-width:760px; width:100%; }
+  td { text-align:left; padding:.35rem .75rem; border-bottom:1px solid #20232b; vertical-align:top; }
+  .cmd { color:#7fd1a8; white-space:nowrap; }
+  .muted { color:#6b7280; }
+  a { color:#7fd1a8; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  footer { margin-top:2rem; color:#4b5563; font-size:.8rem; }
+</style>
+</head>
+<body>
+<h1>📖 how to play</h1>
+<p class="sub">You "play" IdleRPG by being present and <strong>quiet</strong> in the channel — every tick you idle, you advance toward the next level. Talking sets you back; leaving sets you back more. Everything below is typed <strong>in the channel</strong> as <code>!rpg …</code>.</p>
+{{range .Groups}}
+<h2>{{.Title}}</h2>
+<table>
+  {{range .Items}}<tr><td class="cmd">{{.Cmd}}</td><td>{{.Desc}}</td></tr>
+  {{end}}
+</table>
+{{end}}
+<div class="admin">
+<h2>{{.Admin.Title}}</h2>
+<p class="muted">In-channel too, but only honored from a bot admin (same identity authorization as the admin console).</p>
+<table>
+  {{range .Admin.Items}}<tr><td class="cmd">{{.Cmd}}</td><td>{{.Desc}}</td></tr>
+  {{end}}
+</table>
+</div>
+<footer><a href="/">&larr; back to the realm</a> · <a href="/map">the map</a></footer>
 </body>
 </html>`
