@@ -147,14 +147,15 @@ func (m *Manager) Handle(msg engine.Message) bool {
 		m.command(msg, fields)
 		return true
 	}
-	// Talking is the cardinal sin — penalize online players (visibly), and if
-	// they're on a quest, talking blows the whole quest.
+	// Talking is the cardinal sin — penalize online players. The penalty notice
+	// goes privately to the offender (classic IdleRPG behaviour) so it doesn't
+	// spam the channel; talking during a quest still blows the whole quest.
 	if p, ok := m.onlinePlayer(msg.Network, msg.Nick); ok {
 		ctx := context.Background()
 		sheet, _ := m.store.HGetAll(ctx, sheetKey(p.key))
 		pen := m.talkPenalty(sheet["level"], int64(len(msg.Text)))
 		_, _ = m.store.HIncr(ctx, sheetKey(p.key), "ttl", pen)
-		m.out.Say(msg.Network, msg.Channel, fmt.Sprintf("🤐 %s broke the silence — +%s to the next level.", msg.Nick, dur(pen)))
+		m.out.Say(msg.Network, msg.Nick, fmt.Sprintf("🤐 quiet — you broke the silence; +%s added to your next level.", dur(pen)))
 		m.questViolation(ctx, p.key, p.nick, "spoke up")
 	}
 	return false
