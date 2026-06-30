@@ -119,6 +119,10 @@ one-line summary (and your title).
 - **Events.** At random the gods intervene — a **godsend** (time forward), a
   **calamity** (time back, or an item loses its luster), or the **Hand of God**
   (a big swing either way).
+- **Blessing.** The flip side of poison, and a temple service: `!rpg bless`
+  spends gold for a blessing that lasts a handful of ticks, adding +attack and
+  +damage to your monster fights. Stack it before you go hunting a boss. `!rpg
+  sheet` flags it (🕊️).
 - **Poison.** Some foes are venomous — will-o'-wisps, green hags, bog zombies,
   sahuagin, wyverns, manticores. When one draws blood it leaves you **poisoned**,
   a damage-over-time that saps a little HP each tick until it wears off — or until
@@ -153,7 +157,8 @@ you are. While standing at a town you can use its service:
 - **Inn** (`!rpg rest`) — heal to full.
 - **Market** (`!rpg shop`, then `!rpg buy <slot>`) — buy a level-appropriate item.
   Also home to **`!rpg enchant <slot>`** and **`!rpg buy potion`**.
-- **Temple** (`!rpg revive`) — pay to clear the downed state and heal to full.
+- **Temple** (`!rpg revive`, `!rpg bless`) — clear the downed state and heal to
+  full, or buy a temporary combat blessing.
 
 **Healing draughts** are portable: buy them at a market (`!rpg buy potion`), carry
 a stack, and `!rpg quaff` one **anywhere** to restore full HP — the only way to

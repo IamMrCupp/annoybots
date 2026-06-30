@@ -52,6 +52,7 @@ Opt in with `!rpg`, then "play" by being present and **quiet**. Full rules in
 | `!rpg feats [name]` (`achievements`) | One-time achievements you've earned (first kill, first boss, a legendary, 1000 gold, …). |
 | `!rpg rest` / `!rpg shop` / `!rpg buy <slot>` / `!rpg revive` | Town services — heal, buy gear (gold), revive — usable while at the matching town. |
 | `!rpg buy potion` | Buy a healing draught at a market (gold). |
+| `!rpg bless` | At a temple, buy a temporary combat blessing (+attack/+damage in the wilds). |
 | `!rpg enchant <slot>` | At a market, spend gold to push an equipped item up one rarity tier. |
 | `!rpg quaff` (`drink`) | Drink a healing draught to restore full HP — works **anywhere** (self-rescue when downed in the wild). |
 | `!rpg pause` / `!rpg resume` | (admin) Freeze or resume the whole game. |
