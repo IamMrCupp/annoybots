@@ -58,6 +58,7 @@ func AdminHelp() HelpGroup {
 		{"!rpg pause / resume", "Freeze or resume the whole game."},
 		{"!rpg push <name> <secs>", "Move a player's clock (negative = toward the next level)."},
 		{"!rpg hog [name]", "Invoke the Hand of God on a named or random player."},
+		{"!rpg raid", "Summon a world boss for the realm to fight (an event, or to test)."},
 		{"!rpg setlevel <name> <n>", "Set a character's level."},
 		{"!rpg gold <name> <amt>", "Grant or remove gold (negative removes)."},
 		{"!rpg reset <name> | reset all yes", "Erase one character, or wipe the entire realm."},

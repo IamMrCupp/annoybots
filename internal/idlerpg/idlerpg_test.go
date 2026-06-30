@@ -271,8 +271,12 @@ func TestPresenceSeedsOnline(t *testing.T) {
 	}
 	// A NAMES sweep re-seeds her as present without a rejoin or a message.
 	m.OnPresent(event.Event{Kind: event.Present, Network: "net", Channel: "#chan", Nick: "alice"})
-	m.Tick() // now online → levels up
-	if !r.has("attained level 1") {
+	// Tick until she levels — a random event can add time on any single tick, so
+	// don't depend on the very first one landing the level-up.
+	for i := 0; i < 8 && !r.has("attained level"); i++ {
+		m.Tick()
+	}
+	if !r.has("attained level") {
 		t.Fatalf("presence-seeded idler should resume progress, got %v", r.lines)
 	}
 }

@@ -72,6 +72,24 @@ func TestIndexShowsActivityFeed(t *testing.T) {
 	}
 }
 
+func TestIndexShowsWorldBoss(t *testing.T) {
+	st := state.NewMem()
+	// a world boss exactly as internal/idlerpg persists one (key "rpg:wboss").
+	blob := `{"name":"Bahamut the World-Wyrm","hp":300,"maxhp":600,"net":"net","chan":"#c",` +
+		`"players":{"net|alice":"alice"},"lastpct":50}`
+	if err := st.SetStr(context.Background(), "rpg:wboss", blob); err != nil {
+		t.Fatal(err)
+	}
+	rr := httptest.NewRecorder()
+	New(st).Handler().ServeHTTP(rr, httptest.NewRequest(http.MethodGet, "/", nil))
+	body := rr.Body.String()
+	for _, want := range []string{"WORLD BOSS", "Bahamut the World-Wyrm", "bar-fill", "width:50%"} {
+		if !strings.Contains(body, want) {
+			t.Fatalf("dashboard missing world-boss %q\n%s", want, body)
+		}
+	}
+}
+
 func TestIndexShowsMapQuest(t *testing.T) {
 	st := state.NewMem()
 	// A map quest exactly as internal/idlerpg persists one (key "rpg:quest").

@@ -58,6 +58,7 @@ Opt in with `!rpg`, then "play" by being present and **quiet**. Full rules in
 | `!rpg pause` / `!rpg resume` | (admin) Freeze or resume the whole game. |
 | `!rpg push <name> <secs>` | (admin) Move a player's clock — negative is toward the next level. |
 | `!rpg hog [name]` | (admin) Invoke the Hand of God on a named player or a random one. |
+| `!rpg raid` | (admin) Summon a world boss for the realm to fight. |
 | `!rpg reset <name>` | (admin) Erase one character. |
 | `!rpg reset all yes` | (admin) Wipe the **entire** realm — every character + the active quest. The `yes` is required. |
 | `!rpg setlevel <name> <n>` | (admin) Set a character's level. |
