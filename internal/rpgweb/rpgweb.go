@@ -75,6 +75,7 @@ type pageData struct {
 	QuestLeft string
 	Feed      []feedRow
 	Stats     idlerpg.RealmStats
+	Boss      *idlerpg.WorldBossView
 }
 
 // feedRow is one rendered activity-feed line: the text plus a relative timestamp.
@@ -101,8 +102,9 @@ func (s *Server) index(w http.ResponseWriter, r *http.Request) {
 	quest, _ := idlerpg.ReadQuest(ctx, s.store)
 	events, _ := idlerpg.ReadFeed(ctx, s.store, feedSize)
 	stats, _ := idlerpg.ReadStats(ctx, s.store)
+	boss, _ := idlerpg.ReadWorldBoss(ctx, s.store)
 
-	data := pageData{Board: board, Quest: quest, Stats: stats}
+	data := pageData{Board: board, Quest: quest, Stats: stats, Boss: boss}
 	if quest != nil && quest.Kind != "map" {
 		data.QuestLeft = humanLeft(quest.Deadline - s.now().Unix())
 	}
@@ -237,6 +239,10 @@ const indexTmpl = `<!doctype html>
   .stat { flex:1 1 7rem; min-width:7rem; background:#15171d; border:1px solid #20232b; border-radius:8px; padding:.6rem .8rem; }
   .stat .num { display:block; font-size:1.5rem; color:#e9b949; line-height:1.1; }
   .stat .lab { font-size:.75rem; color:#7c8290; text-transform:uppercase; letter-spacing:.05em; }
+  .boss { max-width:760px; background:#1d1212; border:1px solid #5a2b2b; border-radius:8px; padding:.8rem 1rem; margin:0 0 1.5rem; }
+  .boss strong { color:#e06c75; }
+  .bar { height:14px; background:#2a1414; border-radius:7px; overflow:hidden; margin-top:.5rem; }
+  .bar-fill { height:100%; background:linear-gradient(90deg,#e06c75,#e9b949); transition:width .5s; }
   .feed { list-style:none; padding:0; margin:.5rem 0; max-width:760px; }
   .feed li { padding:.3rem 0; border-bottom:1px solid #15171d; }
   .feed .ago { display:inline-block; min-width:4rem; color:#5b6270; font-size:.82em; }
@@ -256,6 +262,13 @@ const indexTmpl = `<!doctype html>
   <div class="stat"><span class="num">{{.Stats.Gold}}</span><span class="lab">gold minted</span></div>
   <div class="stat"><span class="num">{{.Stats.Legendaries}}</span><span class="lab">legendaries</span></div>
 </div>
+{{if .Boss}}
+<div class="boss">
+  <strong>🐲 WORLD BOSS — {{.Boss.Name}}</strong>
+  <span class="muted">{{.Boss.HP}} / {{.Boss.MaxHP}} HP · {{.Boss.Players}} heroes fighting</span>
+  <div class="bar"><div class="bar-fill" style="width:{{.Boss.Pct}}%"></div></div>
+</div>
+{{end}}
 {{if .Quest}}
 <div class="quest">
   <strong>A quest is underway.</strong>

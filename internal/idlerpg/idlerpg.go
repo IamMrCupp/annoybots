@@ -68,6 +68,9 @@ type Manager struct {
 	qmu   sync.Mutex
 	quest *quest // the active quest, nil when none
 
+	bmu  sync.Mutex
+	boss *worldBoss // the active world-boss raid, nil when none
+
 	rmu sync.Mutex
 	rng *rand.Rand
 }
@@ -100,6 +103,7 @@ func New(store state.Store, out engine.Sender, resolve Resolver, interval, baseT
 		rng:    rand.New(rand.NewSource(time.Now().UnixNano())),
 	}
 	m.loadQuest(context.Background())
+	m.loadBoss(context.Background())
 	return m
 }
 
@@ -229,7 +233,7 @@ func (m *Manager) command(msg engine.Message, fields []string) {
 		case "bless":
 			m.bless(msg)
 			return
-		case "pause", "resume", "push", "hog", "reset", "setlevel", "gold":
+		case "pause", "resume", "push", "hog", "reset", "setlevel", "gold", "raid":
 			m.adminVerb(msg, fields)
 			return
 		}
@@ -545,6 +549,17 @@ func (m *Manager) adminVerb(msg engine.Message, fields []string) {
 		}
 		m.handOfGod(ctx, p)
 
+	case "raid":
+		// !rpg raid — summon a world boss on demand (for an event, or to test).
+		m.bmu.Lock()
+		active := m.boss != nil
+		m.bmu.Unlock()
+		if active {
+			m.out.Say(msg.Network, msg.Channel, "a world boss already stalks the realm.")
+			return
+		}
+		m.spawnWorldBoss(ctx, msg.Network, msg.Channel)
+
 	case "reset":
 		// !rpg reset <name>  — wipe one character.
 		// !rpg reset all yes — wipe the entire realm.
@@ -649,6 +664,7 @@ func (m *Manager) wipeAll(ctx context.Context) int {
 	m.qmu.Lock()
 	m.quest = nil
 	m.qmu.Unlock()
+	m.clearBoss(ctx)
 	m.mu.Lock()
 	m.online = map[string]player{}
 	m.mu.Unlock()
@@ -777,6 +793,8 @@ func (m *Manager) Tick() {
 	m.maybeEvent(context.Background())
 	m.maybeMonster(context.Background())
 	m.questTick(context.Background())
+	m.worldBossTick(context.Background())  // advance an active raid
+	m.maybeWorldBoss(context.Background()) // or rarely raise one
 	for _, p := range m.snapshot() {
 		ctx := context.Background()
 		key := sheetKey(p.key)
