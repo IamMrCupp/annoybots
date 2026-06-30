@@ -469,6 +469,15 @@ func (m *Manager) questStatus() string {
 	if q == nil {
 		return "no quest underway. keep idling — the gods call the worthy when they please."
 	}
+	if q.Kind == "hunt" {
+		left := q.Deadline - m.now().Unix()
+		return fmt.Sprintf("🏹 hunt in progress: %s must slay %d foes — %d down, %s left. one peep or departure and it's ruined.",
+			strings.Join(questNicks(q), ", "), q.Target, q.Progress, dur(left))
+	}
+	if q.Kind == "map" {
+		return fmt.Sprintf("🗺️ map quest in progress: %s journey to %s (leg %d of 2). one stray word or step and it's ruined.",
+			strings.Join(questNicks(q), ", "), q.Desc, q.Stage+1)
+	}
 	left := q.Deadline - m.now().Unix()
 	return fmt.Sprintf("⚔️ quest in progress: %s must %s. %s remaining — one peep or departure and it's ruined.",
 		strings.Join(questNicks(q), ", "), q.Desc, dur(left))

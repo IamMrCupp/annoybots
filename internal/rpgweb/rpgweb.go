@@ -282,11 +282,13 @@ const indexTmpl = `<!doctype html>
 {{end}}
 {{if .Quest}}
 <div class="quest">
-  <strong>A quest is underway.</strong>
+  <strong>{{if eq .Quest.Kind "hunt"}}A hunt is underway.{{else}}A quest is underway.{{end}}</strong>
   {{if eq .Quest.Kind "map"}}<span class="muted">(leg {{add .Quest.Stage 1}} of 2)</span>
+  {{else if eq .Quest.Kind "hunt"}}<span class="muted">({{.Quest.Progress}} / {{.Quest.Target}} foes slain · {{.QuestLeft}} left)</span>
   {{else}}<span class="muted">({{.QuestLeft}} left)</span>{{end}}<br>
   {{range $i, $m := .Quest.Members}}{{if $i}}, {{end}}{{$m}}{{end}}
-  must <span class="obj">{{.Quest.Desc}}</span>.
+  {{if eq .Quest.Kind "hunt"}}must <span class="obj">slay {{.Quest.Target}} foes together</span>.
+  {{else}}must <span class="obj">{{.Quest.Desc}}</span>.{{end}}
   <div class="muted">One word or departure and the whole party is flung backward.</div>
   {{if eq .Quest.Kind "map"}}
   <svg class="map" viewBox="-20 -20 {{add .Quest.MapSize 40}} {{add .Quest.MapSize 40}}" role="img" aria-label="quest map">
