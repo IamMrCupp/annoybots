@@ -173,9 +173,24 @@ func (s *Server) char(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
+	data := charData{CharView: cv}
+	events, _ := idlerpg.ReadCharFeed(ctx, s.store, cv.Name, charFeedSize)
+	now := s.now().Unix()
+	for _, e := range events {
+		data.Recent = append(data.Recent, feedRow{Text: e.Text, Ago: humanAgo(now - e.Ts)})
+	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	_ = s.charTmpl.Execute(w, cv)
+	_ = s.charTmpl.Execute(w, data)
 }
+
+// charData is the character page view model: the character plus its recent
+// activity (its slice of the realm feed).
+type charData struct {
+	idlerpg.CharView
+	Recent []feedRow
+}
+
+const charFeedSize = 12 // recent events shown on a character page
 
 // humanLeft renders a remaining-seconds count, clamped at zero.
 func humanLeft(secs int64) string {
@@ -306,6 +321,9 @@ const charTmpl = `<!doctype html>
   h1 .ttl { color:#c9a227; font-style:italic; font-weight:400; }
   .nav { margin:0 0 1.25rem; font-size:.95rem; color:#3a3f4b; }
   .nav a { margin-right:1rem; }
+  .feed { list-style:none; padding:0; margin:.5rem 0; max-width:760px; }
+  .feed li { padding:.3rem 0; border-bottom:1px solid #15171d; }
+  .feed .ago { display:inline-block; min-width:4rem; color:#5b6270; font-size:.82em; }
   .feat { display:inline-block; background:#1a160c; border:1px solid #4a3c14; border-radius:10px; padding:.1rem .55rem; margin:.15rem .15rem 0 0; font-size:.85em; color:#e9b949; }
   .sub { color:#8aa0c6; margin:0 0 1.5rem; }
   table { border-collapse:collapse; max-width:480px; width:100%; }
@@ -355,6 +373,14 @@ const charTmpl = `<!doctype html>
 {{if .Feats}}
 <h2 style="font-size:1rem;color:#8aa0c6;margin:1.5rem 0 .5rem;">feats</h2>
 <p>{{range .Feats}}<span class="feat">🎖️ {{.}}</span> {{end}}</p>
+{{end}}
+
+{{if .Recent}}
+<h2 style="font-size:1rem;color:#8aa0c6;margin:1.5rem 0 .5rem;">recent</h2>
+<ul class="feed">
+  {{range .Recent}}<li><span class="ago">{{.Ago}}</span> {{.Text}}</li>
+  {{end}}
+</ul>
 {{end}}
 
 <footer><a href="/">&larr; back to the realm</a></footer>
