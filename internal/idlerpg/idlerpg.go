@@ -28,9 +28,9 @@ var itemSlots = []string{"ring", "amulet", "charm", "weapon", "helm", "tunic", "
 func itemField(slot string) string { return "item:" + slot }
 
 const (
-	growth     = 1.16           // time-to-level multiplier per level
-	ttlCap     = 30 * 24 * 3600 // never make a single level take more than 30 days
-	talkCapSec = 60             // max penalty seconds for one message
+	growth      = 1.16           // time-to-level multiplier per level
+	ttlCap      = 30 * 24 * 3600 // never make a single level take more than 30 days
+	talkCharCap = 40             // a single message's character contribution is capped here
 )
 
 // player is who's currently online (present + enrolled), where to announce, and
@@ -147,17 +147,43 @@ func (m *Manager) Handle(msg engine.Message) bool {
 		m.command(msg, fields)
 		return true
 	}
-	// Talking is the cardinal sin — penalize online players, and if they're on a
-	// quest, talking blows the whole quest.
+	// Talking is the cardinal sin — penalize online players (visibly), and if
+	// they're on a quest, talking blows the whole quest.
 	if p, ok := m.onlinePlayer(msg.Network, msg.Nick); ok {
-		pen := int64(len(msg.Text))
-		if pen > talkCapSec {
-			pen = talkCapSec
-		}
-		_, _ = m.store.HIncr(context.Background(), sheetKey(p.key), "ttl", pen)
-		m.questViolation(context.Background(), p.key, p.nick, "spoke up")
+		ctx := context.Background()
+		sheet, _ := m.store.HGetAll(ctx, sheetKey(p.key))
+		pen := m.talkPenalty(sheet["level"], int64(len(msg.Text)))
+		_, _ = m.store.HIncr(ctx, sheetKey(p.key), "ttl", pen)
+		m.out.Say(msg.Network, msg.Channel, fmt.Sprintf("🤐 %s broke the silence — +%s to the next level.", msg.Nick, dur(pen)))
+		m.questViolation(ctx, p.key, p.nick, "spoke up")
 	}
 	return false
+}
+
+// talkPenalty is the time (seconds) added to a talker's clock for a message of
+// msgLen chars at the given level. It scales with the level's own duration, so it
+// bites proportionally at every level — a few seconds for a newbie, hours for a
+// legend — floored and capped to a small slice of the level so a single slip
+// stings without instantly delevelling you.
+func (m *Manager) talkPenalty(level, msgLen int64) int64 {
+	if msgLen > talkCharCap {
+		msgLen = talkCharCap
+	}
+	if msgLen < 1 {
+		msgLen = 1
+	}
+	pen := msgLen * (1 + level/4)
+	levelTime := m.ttlFor(level)
+	if floor := levelTime / 300; pen < floor { // at least ~0.33% of the level
+		pen = floor
+	}
+	if ceil := levelTime / 20; ceil > 0 && pen > ceil { // never more than ~5% of the level
+		pen = ceil
+	}
+	if pen < 1 {
+		pen = 1
+	}
+	return pen
 }
 
 func (m *Manager) command(msg engine.Message, fields []string) {
