@@ -327,7 +327,7 @@ const charTmpl = `<!doctype html>
 
 <table>
   <tr><td class="k">level</td><td class="lvl">{{.Level}}</td></tr>
-  <tr><td class="k">hp</td><td>{{.HP}} <span class="muted">/ {{.MaxHP}}</span></td></tr>
+  <tr><td class="k">hp</td><td>{{.HP}} <span class="muted">/ {{.MaxHP}}</span>{{if .Poisoned}} <span title="poisoned">☠️</span>{{end}}</td></tr>
   <tr><td class="k">gold</td><td>{{.Gold}}</td></tr>
   <tr><td class="k">kills</td><td>{{.Kills}}</td></tr>
   {{if .DuelWins}}<tr><td class="k">duel wins</td><td>{{.DuelWins}}</td></tr>{{end}}

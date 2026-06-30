@@ -123,10 +123,11 @@ func serviceHint(service string) string {
 // rest heals to full at an inn.
 func (m *Manager) rest(msg engine.Message) {
 	m.townService(msg, "inn", func(ctx context.Context, pkey string, sheet map[string]int64, t *town) string {
-		if sheet["dmg"] == 0 {
-			return msg.Nick + " is already at full health."
+		if sheet["dmg"] == 0 && !poisoned(sheet) {
+			return msg.Nick + " is already hale and unpoisoned."
 		}
 		_ = m.store.HSet(ctx, sheetKey(pkey), "dmg", 0)
+		m.curePoison(ctx, pkey)
 		return fmt.Sprintf("%s rests at %s and recovers to full HP.", msg.Nick, t.Name)
 	})
 }
@@ -182,6 +183,7 @@ func (m *Manager) revive(msg engine.Message) {
 		}
 		_, _ = m.store.HIncr(ctx, sheetKey(pkey), "gold", -price)
 		_ = m.store.HSet(ctx, sheetKey(pkey), "dmg", 0)
+		m.curePoison(ctx, pkey)
 		return fmt.Sprintf("the temple of %s revives %s — full HP, -%dg.", t.Name, msg.Nick, price)
 	})
 }

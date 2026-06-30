@@ -475,8 +475,12 @@ func (m *Manager) sheet(msg engine.Message, fields []string) string {
 	if sheet["pots"] > 0 {
 		pots = fmt.Sprintf(" · %d🧪", sheet["pots"])
 	}
-	return fmt.Sprintf("%s (lvl %d) — HP %d/%d · %dg · %d kills%s%s · %s",
-		m.charLine(ctx, name, pkey, sheet), sheet["level"], curHP(sheet, class), maxHP(sheet, class),
+	hp := fmt.Sprintf("%d/%d", curHP(sheet, class), maxHP(sheet, class))
+	if poisoned(sheet) {
+		hp += "☠️"
+	}
+	return fmt.Sprintf("%s (lvl %d) — HP %s · %dg · %d kills%s%s · %s",
+		m.charLine(ctx, name, pkey, sheet), sheet["level"], hp,
 		sheet["gold"], sheet["kills"], pots, abil, abilityLine(sheet))
 }
 
@@ -770,7 +774,8 @@ func (m *Manager) Tick() {
 	for _, p := range m.snapshot() {
 		ctx := context.Background()
 		key := sheetKey(p.key)
-		m.moveOnMap(ctx, p) // wander the world map (or travel to a town)
+		m.moveOnMap(ctx, p)  // wander the world map (or travel to a town)
+		m.tickStatus(ctx, p) // poison and other timed effects sap/decay
 		if m.tickHP(ctx, p.key) {
 			continue // downed and recovering — no progress this tick
 		}
