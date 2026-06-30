@@ -131,6 +131,7 @@ its service:
 
 - **Inn** (`!rpg rest`) — heal to full.
 - **Market** (`!rpg shop`, then `!rpg buy <slot>`) — spend gold on a
+- **Enchanting** (`!rpg enchant <slot>`) — at a market, pay gold to push an equipped item up one rarity tier (common → … → legendary). The high-end gold sink; deterministic agency over your gear, with a steep escalating price.
   level-appropriate item. The gold sink for everything monsters drop.
 - **Temple** (`!rpg revive`) — pay to clear the downed state and heal to full.
 

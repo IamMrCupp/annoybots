@@ -220,6 +220,9 @@ func (m *Manager) command(msg engine.Message, fields []string) {
 		case "buy":
 			m.buy(msg, fields)
 			return
+		case "enchant":
+			m.enchant(msg, fields)
+			return
 		case "revive":
 			m.revive(msg)
 			return

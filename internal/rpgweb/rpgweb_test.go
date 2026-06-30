@@ -54,16 +54,18 @@ func TestIndexShowsPlayers(t *testing.T) {
 
 func TestIndexShowsActivityFeed(t *testing.T) {
 	st := state.NewMem()
-	// a real Manager records drama into the feed the dashboard reads.
-	log := slog.New(slog.NewTextHandler(io.Discard, nil))
-	m := idlerpg.New(st, noopSender{}, nil, time.Second, time.Second, time.Hour, time.Hour, log)
-	m.Handle(engine.Message{Network: "net", Channel: "#c", Nick: "alice", Text: "!rpg"})
-	m.Tick() // level-up → a feed entry
+	// Seed the activity feed exactly as internal/idlerpg persists it (a JSON entry
+	// on the "rpg:feed" list). Deterministic — unlike driving a real tick, where a
+	// random monster could down the player and preempt the level-up.
+	entry := `{"ts":1,"text":"✨ alice has attained level 5!"}`
+	if err := st.ListPush(context.Background(), "rpg:feed", entry, 150); err != nil {
+		t.Fatal(err)
+	}
 
 	rr := httptest.NewRecorder()
 	New(st).Handler().ServeHTTP(rr, httptest.NewRequest(http.MethodGet, "/", nil))
 	body := rr.Body.String()
-	for _, want := range []string{"realm activity", "attained level"} {
+	for _, want := range []string{"realm activity", "attained level 5"} {
 		if !strings.Contains(body, want) {
 			t.Fatalf("dashboard missing %q\n%s", want, body)
 		}
