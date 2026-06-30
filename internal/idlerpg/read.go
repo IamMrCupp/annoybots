@@ -70,6 +70,10 @@ type QuestView struct {
 	X2, Y2  int
 	Stage   int
 	MapSize int
+
+	// Hunt quests: foes slain so far, and how many are needed.
+	Target   int64
+	Progress int64
 }
 
 // MapDot is a player's position on the world map.
@@ -235,6 +239,7 @@ func ReadQuest(ctx context.Context, store state.Store) (*QuestView, error) {
 		Kind: q.Kind, Desc: q.Desc, Members: members, Deadline: q.Deadline,
 		X: q.X, Y: q.Y, X1: q.X1, Y1: q.Y1, X2: q.X2, Y2: q.Y2,
 		Stage: q.Stage, MapSize: mapSize,
+		Target: q.Target, Progress: q.Progress,
 	}, nil
 }
 

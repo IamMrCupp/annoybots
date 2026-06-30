@@ -201,6 +201,10 @@ Every so often the gods draft a party of online idlers onto a **quest**
 
 - **Timed quest** — stay present and **silent** until the timer runs out, and the
   whole party's clock jumps forward.
+- **Hunt quest** — the party must *collectively slay a target number of monsters*
+  before the timer runs out. Every monster any member fells counts toward the
+  shared total; `!rpg quest` and the dashboard show live progress. Reach it in
+  time to win; run out the clock and the hunt fails.
 - **Map quest** — the party *journeys* to two waypoints in sequence, moving a step
   each tick. Reaching the end wins; the dashboard draws the route and the party's
   moving position.

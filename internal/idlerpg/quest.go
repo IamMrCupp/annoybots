@@ -61,6 +61,10 @@ type quest struct {
 	X2    int `json:"x2,omitempty"`
 	Y2    int `json:"y2,omitempty"`
 	Stage int `json:"stage,omitempty"` // 0 → heading to waypoint 1; 1 → heading to waypoint 2
+
+	// Hunt quests: the party must collectively slay Target monsters before Deadline.
+	Target   int64 `json:"target,omitempty"`
+	Progress int64 `json:"progress,omitempty"`
 }
 
 // loadQuest rehydrates an in-flight quest from the store at startup.
@@ -95,6 +99,10 @@ func (m *Manager) questTick(ctx context.Context) {
 		switch q.Kind {
 		case "map":
 			m.advanceMapQuest(ctx)
+		case "hunt":
+			if m.now().Unix() >= q.Deadline { // ran out of time → failure
+				m.failHuntQuest(ctx)
+			}
 		default: // "time"
 			if m.now().Unix() >= q.Deadline {
 				m.completeQuest(ctx)
@@ -118,9 +126,12 @@ func (m *Manager) startQuest(ctx context.Context) {
 	if len(party) < questPartyMin {
 		return
 	}
-	if m.roll(2) == 0 {
+	switch m.roll(3) {
+	case 0:
 		m.startMapQuest(ctx, party)
-	} else {
+	case 1:
+		m.startHuntQuest(ctx, party)
+	default:
 		m.startTimeQuest(ctx, party)
 	}
 }
@@ -168,6 +179,53 @@ func (m *Manager) startMapQuest(ctx context.Context, party []player) {
 	m.activate(ctx, q, fmt.Sprintf(
 		"🗺️ a quest begins! %s set out to %s — a journey from [%d,%d] to [%d,%d], then on to [%d,%d]. one stray word or wandering step and the party is lost.",
 		strings.Join(nicksOf(party), ", "), q.Desc, q.X, q.Y, q.X1, q.Y1, q.X2, q.Y2))
+}
+
+// startHuntQuest launches a slay-N-foes-before-the-clock quest.
+func (m *Manager) startHuntQuest(ctx context.Context, party []player) {
+	q := m.newQuest("hunt", party)
+	q.Deadline = m.now().Add(m.questDuration).Unix()
+	q.Target = int64(len(party)*4 + 6) // scales with the party size
+	q.Progress = 0
+	m.activate(ctx, q, fmt.Sprintf(
+		"🏹 a hunt begins! %s must together slay %d foes within %s. every monster any of them fells counts — but a stray word or departure still ends it.",
+		strings.Join(nicksOf(party), ", "), q.Target, dur(int64(m.questDuration/time.Second))))
+}
+
+// failHuntQuest ends a hunt that ran out the clock without reaching its target.
+func (m *Manager) failHuntQuest(ctx context.Context) {
+	m.qmu.Lock()
+	q := m.quest
+	m.quest = nil
+	m.qmu.Unlock()
+	if q == nil {
+		return
+	}
+	_ = m.store.Del(ctx, questKey())
+	m.out.Say(q.Network, q.Channel, fmt.Sprintf(
+		"🌑 the hunt fails — the party slew only %d of %d foes before time ran out. they slink home empty-handed.", q.Progress, q.Target))
+}
+
+// questKillCredit counts a monster kill toward an active hunt quest, if the
+// killer is on the party. Completes the hunt when the target is reached.
+func (m *Manager) questKillCredit(ctx context.Context, key string) {
+	m.qmu.Lock()
+	q := m.quest
+	if q == nil || q.Kind != "hunt" {
+		m.qmu.Unlock()
+		return
+	}
+	if _, ok := q.Members[key]; !ok {
+		m.qmu.Unlock()
+		return
+	}
+	q.Progress++
+	done := q.Progress >= q.Target
+	m.qmu.Unlock()
+	m.saveQuest(ctx, q)
+	if done {
+		m.completeQuest(ctx)
+	}
 }
 
 // advanceMapQuest moves the party one step toward its current waypoint, advancing
@@ -267,8 +325,11 @@ func (m *Manager) completeQuest(ctx context.Context) {
 		_, _ = m.store.HIncr(ctx, sheetKey(key), "ttl", -amt)
 	}
 	headline := "the quest is complete"
-	if q.Kind == "map" {
+	switch q.Kind {
+	case "map":
 		headline = "the party reached its destination"
+	case "hunt":
+		headline = "the hunt is done"
 	}
 	m.out.Say(q.Network, q.Channel, fmt.Sprintf(
 		"🏆 %s! %s %s and return triumphant — the gods speed each of them toward their next level.",

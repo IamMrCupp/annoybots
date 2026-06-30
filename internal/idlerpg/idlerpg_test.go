@@ -301,7 +301,8 @@ func TestQuestStartAndComplete(t *testing.T) {
 	enrollOnline(m, "alice")
 	enrollOnline(m, "bob")
 
-	m.startQuest(ctx)
+	// Force a timed quest specifically (startQuest now picks among time/map/hunt).
+	m.startTimeQuest(ctx, m.draftParty())
 	if m.quest == nil {
 		t.Fatal("a quest should have started with two idlers online")
 	}
