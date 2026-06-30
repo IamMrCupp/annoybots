@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.31.0](https://github.com/IamMrCupp/annoybots/compare/v1.30.0...v1.31.0) (2026-06-30)
+
+
+### Features
+
+* **idlerpg:** persistent activity feed + live dashboard panel (closes [#124](https://github.com/IamMrCupp/annoybots/issues/124)) ([b81a9a5](https://github.com/IamMrCupp/annoybots/commit/b81a9a5fda900eebe6e77860efce25a1706fa20b))
+* **idlerpg:** realm activity feed ([#124](https://github.com/IamMrCupp/annoybots/issues/124)) ([f6ad16d](https://github.com/IamMrCupp/annoybots/commit/f6ad16dad6c00d3dd33211907ea5b1aea03c0cd1))
+* **rpgweb:** realm stats overview + unified nav ([#127](https://github.com/IamMrCupp/annoybots/issues/127)) ([589d9f0](https://github.com/IamMrCupp/annoybots/commit/589d9f0c3629d809cf9a690afbb8e3ce765c4727))
+* **rpgweb:** realm stats overview + unified nav across the dashboard (closes [#127](https://github.com/IamMrCupp/annoybots/issues/127)) ([14bcc12](https://github.com/IamMrCupp/annoybots/commit/14bcc12ccf037fa32070f9691dbe972fd07aeddf))
+
 ## [1.30.0](https://github.com/IamMrCupp/annoybots/compare/v1.29.0...v1.30.0) (2026-06-30)
 
 
