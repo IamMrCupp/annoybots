@@ -35,10 +35,10 @@ func CommandHelp() []HelpGroup {
 			{"!rpg feats [name]", "One-time achievements you've earned."},
 		}},
 		{"Your character", []HelpItem{
-			{"!rpg race <…>", "Choose your heritage once — bakes ability bonuses into your scores."},
-			{"!rpg class <…>", "Pick a class — sharpens your attacks and feeds your HP."},
-			{"!rpg align <…>", "Set your alignment on the D&D 9-point grid (affects combat)."},
-			{"!rpg pet (companion)", "Your companion and the combat bonus it grants."},
+			{"!rpg race <" + strings.Join(raceNames(), "|") + ">", "Choose your heritage once — bakes ability bonuses into your scores."},
+			{"!rpg class <" + strings.Join(classNames(), "|") + ">", "Pick a class — sharpens your attacks and feeds your HP."},
+			{"!rpg align <good|neutral|evil> [+ lawful|neutral|chaotic]", "Set your alignment on the D&D 9-point grid (affects combat)."},
+			{"!rpg pet (companion)", "Your companion (a wolf, boar, hawk, imp, or owlbear — earned by slaying a boss)."},
 		}},
 		{"World & combat", []HelpItem{
 			{"!rpg travel <town>", "Set off for a town; you walk there over the next ticks."},

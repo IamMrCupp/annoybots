@@ -187,8 +187,9 @@ func TestHelpPage(t *testing.T) {
 		t.Fatalf("help page status = %d; want 200", rr.Code)
 	}
 	body := rr.Body.String()
-	// public commands + the admin section + the play explanation all render.
-	for _, want := range []string{"how to play", "!rpg status", "!rpg duel", "Admin", "reset all yes", "back to the realm"} {
+	// public commands + the admin section + the catalog all render.
+	for _, want := range []string{"how to play", "!rpg status", "!rpg duel", "Admin", "reset all yes", "back to the realm",
+		"Character options", "fighter", "tiefling", "owlbear", "chaotic evil"} {
 		if !strings.Contains(body, want) {
 			t.Fatalf("help page missing %q", want)
 		}
