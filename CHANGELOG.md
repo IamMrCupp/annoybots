@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.35.0](https://github.com/IamMrCupp/annoybots/compare/v1.34.0...v1.35.0) (2026-06-30)
+
+
+### Features
+
+* **idlerpg:** show active raid in !rpg info ([05e03d9](https://github.com/IamMrCupp/annoybots/commit/05e03d953124287144373f79dd4e03b28e56941a))
+* **idlerpg:** surface an active world boss in !rpg info (closes [#143](https://github.com/IamMrCupp/annoybots/issues/143)) ([d1d8b09](https://github.com/IamMrCupp/annoybots/commit/d1d8b096deaa55c18c0c661342898027553df802))
+
 ## [1.34.0](https://github.com/IamMrCupp/annoybots/compare/v1.33.0...v1.34.0) (2026-06-30)
 
 
