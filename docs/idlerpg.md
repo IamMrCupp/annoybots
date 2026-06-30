@@ -1,142 +1,226 @@
 # IdleRPG
 
-The classic IRC idle game, reborn. You "play" by being present in a channel and
-**doing nothing**. Every tick you sit there quietly, you advance toward the next
-level. Talking sets you back; leaving sets you back more. It's the same dumb,
-compelling loop [idlerpg.net](http://idlerpg.net) ran for years — now cross-platform
-and persistent.
+The classic IRC idle game, reborn — and grown into a small D&D-flavored RPG that
+plays itself while you do nothing. You "play" by being present in a channel and
+**staying quiet**. Every tick you sit there in silence, you advance toward the
+next level. Talking sets you back; leaving sets you back more. It's the same dumb,
+compelling loop [idlerpg.net](http://idlerpg.net) ran for years — now cross-platform,
+persistent, and layered with monsters, bosses, loot, towns, quests, companions,
+duels, titles, and a live web dashboard.
 
-Turn it on with the `idlerpg:` block (off by default):
+The whole thing is **opt-in and zero-effort**: type `!rpg` once and then forget
+about it. Everything below happens on its own.
 
-```yaml
-idlerpg:
-  enabled: true
-  interval: "60s"        # how often the game ticks
-  base_ttl: "5m"         # time from level 0 to 1 (grows ~1.16x per level after)
-  quest_interval: "6h"   # average gap between quests
-  quest_duration: "1h"   # how long a quest runs
-```
+## Contents
 
-## Playing
+- [Quick start](#quick-start)
+- [How leveling works](#how-leveling-works)
+- [Your character](#your-character) — abilities, race, class, alignment, HP
+- [Combat & the wilds](#combat--the-wilds) — monsters, biomes, bosses, companions, battles, duels, events
+- [Loot, gear & power](#loot-gear--power) — rarity, magic names, enchanting
+- [Gold, towns & potions](#gold-towns--potions)
+- [Progression](#progression) — titles & feats
+- [The world map & quests](#the-world-map--quests)
+- [Leaderboards](#leaderboards)
+- [The web dashboard](#the-web-dashboard)
+- [One character everywhere](#one-character-everywhere)
+- [Admin / Dungeon-Master controls](#admin--dungeon-master-controls)
+- [Running a dedicated IdleRPG bot](#running-a-dedicated-idlerpg-bot)
+- [Configuration](#configuration)
 
-- **`!rpg`** enrolls you (and shows your sheet after that). That's the whole
-  opt-in. From then on, just *be in the channel*.
+The full command list is in [commands.md](commands.md), or type **`!rpg help`** in
+channel (the dashboard mirrors it at `/help`).
+
+---
+
+## Quick start
+
+1. **`!rpg`** — enroll. You're level 0. Running it again shows your character.
+2. **Be present and quiet.** Idle the channel; your level's timer ticks down.
+3. *(optional, once)* pick a **`!rpg race`** and **`!rpg class`**, and set your
+   **`!rpg align`**ment. These shape your combat and HP.
+4. Watch the drama unfold — monster fights, loot, level-ups — in channel and on
+   the [web dashboard](#the-web-dashboard).
+
+That's it. Everything else is discovery.
+
+Turn the game on with the `idlerpg:` config block (off by default) — see
+[Configuration](#configuration).
+
+## How leveling works
+
 - **Leveling.** Each level has a time-to-go; idle it down to zero and you level
-  up. Levels get longer the higher you climb (~1.16x each), capped so no single
-  level takes more than 30 days.
+  up. Levels get longer the higher you climb (~1.16× each), capped so no single
+  level ever takes more than 30 days.
 - **Talking** adds time back — a few seconds per message, capped. Don't chat in a
   channel where you're trying to win.
 - **Leaving** is worse: parting, quitting, getting kicked, or changing nick all
   add a penalty (a kick stings most). The bot follows your nick change but charges
   you for it.
+- **Restart-proof.** After a bot restart, idlers already sitting in the channel
+  are picked back up from the NAMES list — you don't have to rejoin or speak to
+  resume progress. Your whole character persists in the shared store.
 
-After a bot restart, idlers already sitting in the channel are picked back up from
-the NAMES list — you don't have to rejoin or speak to resume progress.
+## Your character
 
-## What happens while you idle
+`!rpg sheet` shows your full D&D character block. `!rpg status` shows the
+one-line summary (and your title).
 
-- **Items.** On level-up you may find gear for one of ten slots (weapon, shield,
-  ring, …). Each drop rolls a **rarity** (common → uncommon → rare → epic →
-  legendary) that multiplies its power, and the rarest finds come **named** —
-  epics get a slot-appropriate title (*Vicious Blade*, *Gilded Striders*) and
-  legendaries a full epithet (*Whispering Greaves of Frost*). Names are drawn from
-  per-slot pools, so two slots never collide. Better gear (by effective power)
-  replaces worse; your total is your **power**. `!rpg items` shows your kit.
-- **Battles.** Leveling up pits you against a random online player, weighted by
-  power, with a chance of a critical hit. Win and your clock speeds up; lose and
-  it slows (and takes HP).
+- **Abilities.** Six scores — STR, DEX, CON, INT, WIS, CHA — rolled at creation
+  (4d6-drop-lowest) with the usual modifiers. They feed combat, HP, and class.
+- **Race** (`!rpg race <human|elf|dwarf|halfling|half-orc|gnome|tiefling>`).
+  Chosen once at creation; bakes small, permanent ability bonuses into your rolled
+  scores (half-orc +2 STR, elf +2 DEX, …).
+- **Class** (`!rpg class <fighter|ranger|rogue|cleric|bard|wizard>`). Mechanical:
+  each keys off a primary ability (fighter STR, wizard INT, rogue/ranger DEX,
+  cleric WIS, bard CHA) whose modifier sharpens your attacks and whose hit die
+  feeds your HP — and each grants a **signature combat ability** in monster
+  fights: fighter's Extra Attack, wizard's Arcane Bolt, rogue's Sneak Attack,
+  ranger's Hunter's Mark, cleric's Healing Word, bard's Cutting Words.
+- **Alignment** — the full D&D 9-point grid. An ethical axis (`!rpg align lawful|
+  neutral|chaotic`) crossed with a moral axis (`good|neutral|evil`), or set both
+  at once (`!rpg align chaotic evil`). Good fights at +11% power and evil crits
+  twice as often (PvP); lawful adds +AC and chaotic +attack in monster fights.
+- **HP.** Derived from CON, level, and your class hit die. Losing a fight deals
+  damage; at 0 HP you're **downed** — no progress until you heal back (a little
+  each tick, or instantly with a [healing draught](#gold-towns--potions) or at a
+  temple). `!rpg sheet` shows `HP cur/max`.
+
+## Combat & the wilds
+
 - **Monster encounters.** At random a wandering idler runs into a level-scaled
   monster (giant rat → young dragon) and a quick d20 fight resolves — attack rolls
-  vs AC, damage both ways. **Works solo** (unlike PvP battles). Win → time toward
-  your next level, **gold**, a kill, maybe loot; lose → bloodied, or downed.
+  vs AC, damage both ways. **Works solo** (unlike the PvP battle below). Win → time
+  toward your next level, **gold**, a kill, maybe loot; lose → bloodied, or downed.
 - **Terrain matters.** The land around each town is a biome — the coast (Lurk
   Harbor), the peaks (Mount AFK), the forest (Quietford), the swamp (The Lag
   Marsh), the plains. Common foes roam anywhere, but each biome has its own
   specialists: sahuagin and giant crabs by the sea, griffons and stone giants in
   the mountains, dire wolves and hags in the woods, bog zombies and will-o'-wisps
-  in the marsh, bandits and manticores on the plains. Some bosses are territorial
-  too — the Kraken only rises at the coast, Tiamat only in the peaks. Where you
-  wander shapes what you fight.
-- **Bosses.** Rarely, a named legend rises instead — the Tarrasque, Tiamat,
-  Asmodeus and their kin. They're level-gated and brutally tough (you'll often
-  lose), but a kill is a windfall: a fortune in gold, several kills toward your
-  titles, a big jump toward the next level, and **guaranteed top-tier loot**.
-- **Feats.** One-time achievements you cross exactly once — First Blood (first
-  kill), Centurion (100 kills), Warlord (1000), Giant-Slayer (a boss falls),
-  Treasure Hunter (a legendary drop), Deep Pockets (1000 gold). Each is announced
-  the moment you earn it; `!rpg feats` lists yours and they badge your dashboard
-  page.
-- **Duels.** `!rpg duel <name>` challenges a present player to a friendly
-  best-of-three spar — effective power (gear + alignment + class) plus luck.
-  It's bragging rights only: no clock changes, no HP, no rewards, just a career
-  win tally. Can't be farmed, only enjoyed.
+  in the marsh, bandits and manticores on the plains. **Where you wander shapes
+  what you fight.**
+- **Bosses.** Rarely, a named legend rises instead — the Tarrasque, the Kraken,
+  the Lich-King, Tiamat, Asmodeus. They're level-gated and brutally tough (you'll
+  often lose), and some are territorial (the Kraken only at the coast, Tiamat only
+  in the peaks). But a kill is a windfall: a fortune in gold, several kills toward
+  your titles, a big jump toward the next level, **guaranteed top-tier loot**, and
+  sometimes a companion.
 - **Companions.** Slay a boss and a beast may take to you — a wolf, dire boar,
   hawk, imp, or owlbear. Your companion fights at your side in every monster
   encounter, adding a small passive bonus to your attack and damage. `!rpg pet`
   shows yours; it also rides on your dashboard page.
+- **PvP battles.** Leveling up pits you against a random online player, weighted by
+  power, with a chance of a critical hit. Win and your clock speeds up; lose and it
+  slows (and takes HP). This is automatic — it just happens on level-up.
+- **Duels.** `!rpg duel <name>` challenges a present player to a friendly
+  best-of-three spar — effective power (gear + alignment + class) plus luck. It's
+  bragging rights only: no clock changes, no HP, no rewards, just a career win
+  tally. Can't be farmed, only enjoyed.
 - **Events.** At random the gods intervene — a **godsend** (time forward), a
   **calamity** (time back, or an item loses its luster), or the **Hand of God**
   (a big swing either way).
-- **Alignment** — the full D&D 9-point grid: an ethical axis (`!rpg align lawful|
-  neutral|chaotic`) crossed with the moral axis (`good|neutral|evil`), or both at
-  once (`!rpg align chaotic evil`). Good fights at +11% power and evil crits twice
-  as often (PvP); lawful adds +AC and chaotic +attack in monster fights.
-- **Race** (`!rpg race <human|elf|dwarf|…>`). Chosen once at creation; bakes small,
-  permanent ability bonuses into your rolled scores (half-orc +2 STR, elf +2 DEX, …).
-- **Healing draughts.** Buy potions at a market (`!rpg buy potion`) and carry a
-  stack; `!rpg quaff` drinks one to restore full HP **anywhere** — the only way to
-  pick yourself up after being downed far from a temple. A gold sink with a
-  purpose. Your stock shows on `!rpg sheet`.
-- **HP.** Derived from CON, level, and your class hit die. Losing a fight (and,
-  later, monsters) deals damage; at 0 HP you're **downed** — no progress until you
-  heal back, which happens a little each tick. `!rpg sheet` shows `HP cur/max`.
-- **Class** (`!rpg class <fighter|ranger|rogue|cleric|bard|wizard>`). Mechanical:
-  each keys off a primary ability (fighter STR, wizard INT, rogue/ranger DEX,
-  cleric WIS, bard CHA) whose modifier is added to your attack power, whose hit die
-  feeds your HP, and which grants a **signature combat ability** in monster fights —
-  fighter's Extra Attack, wizard's Arcane Bolt, rogue's Sneak Attack, ranger's
-  Hunter's Mark, cleric's Healing Word, bard's Cutting Words.
-- **Titles.** As you rack up kills and levels you earn an honorific that rides
-  next to your name — combat renown (the Brave → Slayer → Bloodied → Dragonslayer
-  → Annihilator) and legend (the Seasoned → Veteran → Ascended → Mythic →
-  Eternal). Your most prestigious earned title shows in your status and on the
-  dashboard. Nothing to opt into; it's derived from your sheet.
 
-## Quests
+## Loot, gear & power
 
-Every so often the gods draft a party of online idlers onto a quest (`!rpg quest`
-shows the active one). There are two kinds, chosen at random:
+- **Items & rarity.** On level-up (and from monster kills) you may find gear for
+  one of ten slots (weapon, shield, ring, …). Each drop rolls a **rarity** (common
+  → uncommon → rare → epic → legendary) that multiplies its power. Better gear (by
+  effective power) replaces worse; your total is your **power**. `!rpg items`
+  shows your kit.
+- **Magic names.** The rarest finds come **named** — epics get a slot-appropriate
+  title (*Vicious Blade*, *Gilded Striders*) and legendaries a full epithet
+  (*Whispering Greaves of Frost*). Names are drawn from per-slot pools, so two
+  slots never collide and the same name rarely repeats.
+- **Enchanting.** `!rpg enchant <slot>` at a market spends gold to push an equipped
+  item up **one rarity tier**. Drops are random; enchanting is deterministic agency
+  over your gear — the high-end gold sink, with a steep escalating price so a
+  fortune in boss gold has somewhere to go. Reaching epic/legendary renames the
+  item.
+
+## Gold, towns & potions
+
+Monster and boss kills mint **gold**. The world map's landmarks are functional
+stops where you spend it. `!rpg travel <town>` heads you toward one — you walk
+there over the next ticks (arrival is announced) — and `!rpg town` tells you where
+you are. While standing at a town you can use its service:
+
+- **Inn** (`!rpg rest`) — heal to full.
+- **Market** (`!rpg shop`, then `!rpg buy <slot>`) — buy a level-appropriate item.
+  Also home to **`!rpg enchant <slot>`** and **`!rpg buy potion`**.
+- **Temple** (`!rpg revive`) — pay to clear the downed state and heal to full.
+
+**Healing draughts** are portable: buy them at a market (`!rpg buy potion`), carry
+a stack, and `!rpg quaff` one **anywhere** to restore full HP — the only way to
+pick yourself up after being downed far from a temple. Your stock shows on
+`!rpg sheet`.
+
+## Progression
+
+Two long-term tracks build alongside your level:
+
+- **Titles.** As you rack up kills and levels you earn an honorific that rides next
+  to your name — combat renown (the Brave → Slayer → Bloodied → Dragonslayer →
+  Annihilator) and legend (the Seasoned → Veteran → Ascended → Mythic → Eternal).
+  Your most prestigious earned title shows in your status, on the leaderboard, and
+  on your dashboard page. It's derived from your sheet — nothing to opt into.
+- **Feats.** One-time achievements you cross exactly once — First Blood (first
+  kill), Centurion (100 kills), Warlord (1000), Giant-Slayer (a boss falls),
+  Treasure Hunter (a legendary), Deep Pockets (1000 gold). Each is announced the
+  moment you earn it; `!rpg feats` lists yours and they badge your dashboard page.
+
+## The world map & quests
+
+The realm is a 500×500 map. Every online player wanders a step each tick (it's
+cosmetic — movement doesn't affect leveling, but it *does* decide your
+[biome](#combat--the-wilds)). The [dashboard map](#the-web-dashboard) draws
+everyone as a dot, with the towns and their terrain marked.
+
+Every so often the gods draft a party of online idlers onto a **quest**
+(`!rpg quest` shows the active one). Two kinds, chosen at random:
 
 - **Timed quest** — stay present and **silent** until the timer runs out, and the
   whole party's clock jumps forward.
-- **Map quest** — the party *journeys* across the realm (a 500×500 grid) to two
-  waypoints in sequence, moving a step each tick. Reaching the end wins. The web
-  dashboard draws the map: the two waypoints, the route, and the party's moving
-  position.
+- **Map quest** — the party *journeys* to two waypoints in sequence, moving a step
+  each tick. Reaching the end wins; the dashboard draws the route and the party's
+  moving position.
 
 Either way it's a shared, fragile pact: if *any* quester talks, parts, quits, is
 kicked, or changes nick, the quest collapses and the **entire party** is shoved
-backward.
+backward. Quests survive a bot restart, and the cadence is tunable (see
+[Configuration](#configuration)).
 
-A quest survives a bot restart (its state is persisted), and the cadence is tunable
-— drop `quest_interval` to `15m` and `quest_duration` to `5m` on a test channel if
-you want to actually watch one play out.
+## Leaderboards
 
-## Towns
+`!rpg top` ranks by level. Add a category to rank differently:
+`!rpg top kills`, `!rpg top gold`, or `!rpg top duels`. The web dashboard shows
+the level leaderboard with titles, and a realm-wide stats overview.
 
-The world map's landmarks are functional stops. `!rpg travel <town>` heads you
-toward one — you walk there over the next ticks (arrival is announced), and
-`!rpg town` tells you where you are. While you're standing at a town you can use
-its service:
+## The web dashboard
 
-- **Inn** (`!rpg rest`) — heal to full.
-- **Market** (`!rpg shop`, then `!rpg buy <slot>`) — spend gold on a
-- **Enchanting** (`!rpg enchant <slot>`) — at a market, pay gold to push an equipped item up one rarity tier (common → … → legendary). The high-end gold sink; deterministic agency over your gear, with a steep escalating price.
-  level-appropriate item. The gold sink for everything monsters drop.
-- **Temple** (`!rpg revive`) — pay to clear the downed state and heal to full.
+A separate read-only service renders the realm as a web page. It reads the same
+Redis the bots write, so it's just a view — it never touches the game, and
+auto-refreshes every 30s. Pages:
 
-The dashboard character page shows where each character is (at a town, travelling,
-or roaming).
+- **Home (`/`)** — the realm-stats overview (heroes, levels gained, monsters slain,
+  bosses felled, gold minted, legendaries), the level leaderboard with titles, the
+  active quest, and a **live activity feed** of the realm's dramatic moments
+  (level-ups, kills, boss fights, deaths, duels, feats, legendary finds) so the
+  world has a visible memory beyond the channel.
+- **Map (`/map`)** — the fantasy world map: every player as a wandering dot, the
+  towns and their biomes, and an active map-quest's route.
+- **Character (`/p/<name>`)** — a hero's full page: title, abilities, HP/gold/kills,
+  duel wins, companion, draughts, equipment with rarity names, and earned feats.
+- **How to play (`/help`)** — the full command reference (same source as
+  `!rpg help`).
+
+Running it:
+
+- **Docker Compose:** it's the `dashboard` service — browse <http://localhost:8080>.
+- **Kubernetes:** `kubectl apply -k deploy/k8s/dashboard -n annoybots`, then
+  `kubectl -n annoybots port-forward svc/rpg-dashboard 8080:80` (or wire an Ingress).
+
+It needs the shared Redis, so IdleRPG state only shows up when `botnet.enabled:
+true`. With state in-memory there's nothing for the dashboard to read.
 
 ## One character everywhere
 
@@ -145,23 +229,29 @@ identities (see [accounts.md](accounts.md)) and you're a single hero whether you
 idle from IRC or Discord — something the original idlerpg never did. Unlinked, you
 get a per-network character, which is fine too.
 
-## Running the game (admin / DM)
+## Admin / Dungeon-Master controls
 
-Admins (same identity auth as the console) get DM controls in-channel:
-`!rpg pause` / `!rpg resume` freeze the game; `!rpg push <name> <secs>` and
-`!rpg hog [name]` nudge fate; `!rpg setlevel <name> <n>` and `!rpg gold <name>
-<amt>` adjust a character; **`!rpg reset <name>`** erases one character and
-**`!rpg reset all yes`** wipes the whole realm for a fresh start.
+Bot admins (matched by the same verified identity as the admin console — the op
+flag) get Dungeon-Master controls. **These are typed in channel**, like all `!rpg`
+commands — "DM" here means Dungeon Master, not direct message — but only an admin
+is heeded; everyone else gets a brush-off.
 
-- **Realm activity feed.** The dashboard home page shows a live, newest-first feed of the realm's dramatic moments — level-ups, monster and boss kills, deaths, duels, feats, godsends, and legendary finds — so the world has a visible memory beyond the channel.
+- `!rpg pause` / `!rpg resume` — freeze or resume the whole game.
+- `!rpg push <name> <secs>` — move a player's clock (negative = toward the next level).
+- `!rpg hog [name]` — invoke the Hand of God on a named or random player.
+- `!rpg setlevel <name> <n>` — set a character's level.
+- `!rpg gold <name> <amt>` — grant or remove gold.
+- `!rpg reset <name>` — erase one character.
+- `!rpg reset all yes` — wipe the **entire** realm for a fresh start (the `yes` is
+  a required guard).
 
-## A dedicated IdleRPG bot
+## Running a dedicated IdleRPG bot
 
-Want a "legit" game bot that *only* runs IdleRPG — no triggers, no ambient
-chatter, no Markov babble, no karma/dice/8-ball, no quotes? You can carve all of
-that away. Two switches do it:
+Want a "legit" game bot that *only* runs IdleRPG — no triggers, no ambient chatter,
+no Markov babble, no karma/dice/8-ball, no quotes? Carve all of that away with two
+switches:
 
-1. **Turn off the optional command subsystems.** Each defaults on; set it off:
+1. **Turn off the optional command subsystems** (each defaults on):
 
    ```yaml
    games:    { enabled: false }   # name++ / !karma / !roll / !8ball
@@ -174,21 +264,23 @@ that away. Two switches do it:
    triggers, and `enabled: false` on interjections, quotes, banter, and Markov,
    plus `commands: false`.
 
-The result reacts to `!rpg` and nothing else. A complete, ready-to-edit example
-is in [`configs/idlerpg.yaml`](../configs/idlerpg.yaml) — copy it, point it at
-your network, and run it like any other bot (or as a service in the Compose
-stack). It still needs Redis for game state.
+The result reacts to `!rpg` and nothing else. A complete, ready-to-edit example is
+in [`configs/idlerpg.yaml`](../configs/idlerpg.yaml) — copy it, point it at your
+network, and run it like any other bot (or as a service in the Compose stack). It
+still needs Redis for game state.
 
-## The web dashboard
+## Configuration
 
-A separate read-only service renders the realm as a web page — the top idlers, the
-active quest, per-character pages (`/p/<name>`), and a **world map** (`/map`) where
-every player wanders as a dot and the towns are marked. It reads the same Redis the
-bots write, so it's just a view; it never touches the game. Auto-refreshes.
+```yaml
+idlerpg:
+  enabled: true
+  interval: "60s"        # how often the game ticks
+  base_ttl: "5m"         # time from level 0 to 1 (grows ~1.16x per level after)
+  quest_interval: "6h"   # average gap between quests
+  quest_duration: "1h"   # how long a quest runs
+```
 
-- **Docker Compose:** it's the `dashboard` service — browse <http://localhost:8080>.
-- **Kubernetes:** `kubectl apply -k deploy/k8s/dashboard -n annoybots`, then
-  `kubectl -n annoybots port-forward svc/rpg-dashboard 8080:80` (or wire an Ingress).
-
-It needs the shared Redis, so IdleRPG state only shows up when `botnet.enabled:
-true`. With state in-memory there's nothing for the dashboard to read.
+For a test channel where you want to *watch* things happen, shrink the timers —
+e.g. `interval: "5s"`, `base_ttl: "30s"`, `quest_interval: "15m"`,
+`quest_duration: "5m"`. Game state lives in the shared store, so set
+`botnet.enabled: true` (Redis) for anything to persist or appear on the dashboard.
