@@ -152,6 +152,8 @@ Admins (same identity auth as the console) get DM controls in-channel:
 <amt>` adjust a character; **`!rpg reset <name>`** erases one character and
 **`!rpg reset all yes`** wipes the whole realm for a fresh start.
 
+- **Realm activity feed.** The dashboard home page shows a live, newest-first feed of the realm's dramatic moments — level-ups, monster and boss kills, deaths, duels, feats, godsends, and legendary finds — so the world has a visible memory beyond the channel.
+
 ## A dedicated IdleRPG bot
 
 Want a "legit" game bot that *only* runs IdleRPG — no triggers, no ambient

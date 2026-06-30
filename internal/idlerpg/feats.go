@@ -56,7 +56,7 @@ func (m *Manager) awardFeat(ctx context.Context, p player, bit int64) {
 		return // already earned
 	}
 	_ = m.store.HSet(ctx, sheetKey(p.key), "feats", sheet["feats"]|bit)
-	m.out.Say(p.network, p.channel, fmt.Sprintf("🎖️ %s earns a feat — %s!", p.nick, featName(bit)))
+	m.drama(p.network, p.channel, fmt.Sprintf("🎖️ %s earns a feat — %s!", p.nick, featName(bit)))
 }
 
 // checkCombatFeats awards the kill/gold/boss milestones after a winning fight.

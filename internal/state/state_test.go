@@ -60,6 +60,24 @@ func runContract(t *testing.T, s Store) {
 		t.Fatalf("after ZRem, board has %d entries; want 2", len(all))
 	}
 
+	// list ops: newest-first, capped
+	for _, v := range []string{"a", "b", "c", "d"} {
+		if err := s.ListPush(ctx, "feed", v, 3); err != nil {
+			t.Fatalf("ListPush: %v", err)
+		}
+	}
+	got, err := s.ListRange(ctx, "feed", 10)
+	if err != nil {
+		t.Fatalf("ListRange: %v", err)
+	}
+	// pushed a,b,c,d with cap 3 → newest 3, newest first: d,c,b
+	if len(got) != 3 || got[0] != "d" || got[1] != "c" || got[2] != "b" {
+		t.Fatalf("ListRange = %v; want [d c b]", got)
+	}
+	if first, _ := s.ListRange(ctx, "feed", 1); len(first) != 1 || first[0] != "d" {
+		t.Fatalf("ListRange n=1 = %v; want [d]", first)
+	}
+
 	// hash (player sheet)
 	if v, err := s.HIncr(ctx, "player:x", "level", 1); err != nil || v != 1 {
 		t.Fatalf("HIncr = %d, %v; want 1", v, err)

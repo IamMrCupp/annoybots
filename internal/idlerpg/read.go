@@ -233,3 +233,19 @@ func ReadQuest(ctx context.Context, store state.Store) (*QuestView, error) {
 		Stage: q.Stage, MapSize: mapSize,
 	}, nil
 }
+
+// ReadFeed returns the most recent activity-feed events, newest first.
+func ReadFeed(ctx context.Context, store state.Store, n int) ([]FeedEvent, error) {
+	raw, err := store.ListRange(ctx, feedKey, n)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]FeedEvent, 0, len(raw))
+	for _, s := range raw {
+		var e FeedEvent
+		if json.Unmarshal([]byte(s), &e) == nil && e.Text != "" {
+			out = append(out, e)
+		}
+	}
+	return out, nil
+}

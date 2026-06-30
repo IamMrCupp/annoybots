@@ -784,7 +784,7 @@ func (m *Manager) Tick() {
 		}
 		_ = m.store.HSet(ctx, key, "ttl", m.ttlFor(lvl))
 		_, _ = m.store.ZIncr(ctx, boardKey(), p.key, 1)
-		m.out.Say(p.network, p.channel, fmt.Sprintf("✨ %s has attained level %d! the idle is strong with this one.", p.nick, lvl))
+		m.drama(p.network, p.channel, fmt.Sprintf("✨ %s has attained level %d! the idle is strong with this one.", p.nick, lvl))
 		m.findItem(ctx, p, lvl)
 		m.battle(ctx, p, lvl)
 	}
@@ -892,7 +892,7 @@ func (m *Manager) pctOfTTL(ctx context.Context, key string, lo, hi int) int64 {
 func (m *Manager) godsend(ctx context.Context, p player) {
 	amt := m.pctOfTTL(ctx, p.key, 5, 12)
 	_, _ = m.store.HIncr(ctx, sheetKey(p.key), "ttl", -amt)
-	m.out.Say(p.network, p.channel, fmt.Sprintf("🍀 godsend! the gods smile on %s — %ds closer to the next level.", p.nick, amt))
+	m.drama(p.network, p.channel, fmt.Sprintf("🍀 godsend! the gods smile on %s — %ds closer to the next level.", p.nick, amt))
 }
 
 func (m *Manager) calamity(ctx context.Context, p player) {
@@ -909,24 +909,24 @@ func (m *Manager) calamity(ctx context.Context, p player) {
 			slot := owned[m.roll(len(owned))]
 			nl := sheet[itemField(slot)] * 9 / 10
 			_ = m.store.HSet(ctx, sheetKey(p.key), itemField(slot), nl)
-			m.out.Say(p.network, p.channel, fmt.Sprintf("💀 calamity! %s's %s loses its luster — now level %d.", p.nick, slot, nl))
+			m.drama(p.network, p.channel, fmt.Sprintf("💀 calamity! %s's %s loses its luster — now level %d.", p.nick, slot, nl))
 			return
 		}
 	}
 	amt := m.pctOfTTL(ctx, p.key, 5, 12)
 	_, _ = m.store.HIncr(ctx, sheetKey(p.key), "ttl", amt)
-	m.out.Say(p.network, p.channel, fmt.Sprintf("💀 calamity! disaster befalls %s — %ds further from the next level.", p.nick, amt))
+	m.drama(p.network, p.channel, fmt.Sprintf("💀 calamity! disaster befalls %s — %ds further from the next level.", p.nick, amt))
 }
 
 func (m *Manager) handOfGod(ctx context.Context, p player) {
 	amt := m.pctOfTTL(ctx, p.key, 15, 30)
 	if m.roll(2) == 0 {
 		_, _ = m.store.HIncr(ctx, sheetKey(p.key), "ttl", -amt)
-		m.out.Say(p.network, p.channel, fmt.Sprintf("✋ the Hand of God carries %s %ds forward!", p.nick, amt))
+		m.drama(p.network, p.channel, fmt.Sprintf("✋ the Hand of God carries %s %ds forward!", p.nick, amt))
 		return
 	}
 	_, _ = m.store.HIncr(ctx, sheetKey(p.key), "ttl", amt)
-	m.out.Say(p.network, p.channel, fmt.Sprintf("✋ the Hand of God flings %s %ds backward!", p.nick, amt))
+	m.drama(p.network, p.channel, fmt.Sprintf("✋ the Hand of God flings %s %ds backward!", p.nick, amt))
 }
 
 // randomOnline picks any online player.
@@ -989,6 +989,9 @@ func (m *Manager) findItem(ctx context.Context, p player, level int64) {
 		out += " — “" + name + "”"
 	}
 	m.out.Say(p.network, p.channel, out+"!")
+	if rarities[rIdx].named { // epic & legendary finds are feed-worthy; commons aren't
+		m.record(out + "!")
+	}
 	if rarities[rIdx].name == "legendary" {
 		m.awardFeat(ctx, p, 1<<4) // Treasure Hunter
 	}
