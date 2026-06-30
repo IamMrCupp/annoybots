@@ -199,6 +199,9 @@ func (m *Manager) resolveFight(ctx context.Context, p player, sheet map[string]i
 
 	if taken := startHP - pHP; taken > 0 {
 		m.damage(ctx, p.key, taken)
+		if venomous[mon.Name] { // a venom-bearer that drew blood leaves you poisoned
+			m.applyPoison(ctx, p, poisonTicks)
+		}
 	}
 
 	if monHP <= 0 {

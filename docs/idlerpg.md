@@ -119,6 +119,12 @@ one-line summary (and your title).
 - **Events.** At random the gods intervene — a **godsend** (time forward), a
   **calamity** (time back, or an item loses its luster), or the **Hand of God**
   (a big swing either way).
+- **Poison.** Some foes are venomous — will-o'-wisps, green hags, bog zombies,
+  sahuagin, wyverns, manticores. When one draws blood it leaves you **poisoned**,
+  a damage-over-time that saps a little HP each tick until it wears off — or until
+  you heal to full (a quaffed draught, an inn rest, or a temple revive all purge
+  it). It makes the swamp and forest genuinely dangerous. `!rpg sheet` flags it
+  (`HP 40/40☠️`), as does your dashboard page.
 
 ## Loot, gear & power
 

@@ -42,12 +42,17 @@ func (m *Manager) quaff(msg engine.Message) {
 		return
 	}
 	class, _ := m.store.GetStr(ctx, classKey(pkey))
-	if curHP(sheet, class) >= maxHP(sheet, class) {
+	if curHP(sheet, class) >= maxHP(sheet, class) && !poisoned(sheet) {
 		m.out.Say(msg.Network, msg.Channel, msg.Nick+" is already at full health — no need to quaff.")
 		return
 	}
 	_ = m.store.HSet(ctx, sheetKey(pkey), "dmg", 0)
+	m.curePoison(ctx, pkey) // a draught also purges venom
 	n, _ := m.store.HIncr(ctx, sheetKey(pkey), "pots", -1)
+	cured := ""
+	if poisoned(sheet) {
+		cured = " the venom is purged, and"
+	}
 	m.out.Say(msg.Network, msg.Channel, fmt.Sprintf(
-		"🧪 %s quaffs a healing draught and is restored to full HP. (%d left)", msg.Nick, n))
+		"🧪 %s quaffs a healing draught —%s they're restored to full HP. (%d left)", msg.Nick, cured, n))
 }
