@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.30.0](https://github.com/IamMrCupp/annoybots/compare/v1.29.0...v1.30.0) (2026-06-30)
+
+
+### Features
+
+* **idlerpg:** !rpg help command + dashboard /help page from a shared source (closes [#121](https://github.com/IamMrCupp/annoybots/issues/121)) ([15e990a](https://github.com/IamMrCupp/annoybots/commit/15e990a96bef62787f58ca6bb7a4794c26c9447a))
+* **idlerpg:** help command + dashboard /help page ([#121](https://github.com/IamMrCupp/annoybots/issues/121)) ([9fe3235](https://github.com/IamMrCupp/annoybots/commit/9fe3235e0c59980973a17dd5629ac4a847166813))
+
 ## [1.29.0](https://github.com/IamMrCupp/annoybots/compare/v1.28.0...v1.29.0) (2026-06-26)
 
 
