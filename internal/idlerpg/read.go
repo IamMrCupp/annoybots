@@ -253,3 +253,23 @@ func ReadFeed(ctx context.Context, store state.Store, n int) ([]FeedEvent, error
 	}
 	return out, nil
 }
+
+// ReadCharFeed returns up to n recent feed events that mention a character by its
+// display name — that hero's own slice of the realm's activity, newest first.
+func ReadCharFeed(ctx context.Context, store state.Store, name string, n int) ([]FeedEvent, error) {
+	all, err := ReadFeed(ctx, store, feedCap)
+	if err != nil {
+		return nil, err
+	}
+	needle := strings.ToLower(name)
+	out := make([]FeedEvent, 0, n)
+	for _, e := range all {
+		if strings.Contains(strings.ToLower(e.Text), needle) {
+			out = append(out, e)
+			if len(out) >= n {
+				break
+			}
+		}
+	}
+	return out, nil
+}
