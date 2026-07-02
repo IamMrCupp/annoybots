@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.43.0](https://github.com/IamMrCupp/annoybots/compare/v1.42.0...v1.43.0) (2026-07-02)
+
+
+### Features
+
+* **rpgweb:** Hall of Fame ([#169](https://github.com/IamMrCupp/annoybots/issues/169)) ([a32134b](https://github.com/IamMrCupp/annoybots/commit/a32134b3ca859d0098ade7eb5ff9894fd835ea53))
+* **rpgweb:** Hall of Fame page — every leaderboard at /hall (closes [#169](https://github.com/IamMrCupp/annoybots/issues/169)) ([0c4a617](https://github.com/IamMrCupp/annoybots/commit/0c4a617900ddba958876a411be11cc6b84393bf0))
+
 ## [1.42.0](https://github.com/IamMrCupp/annoybots/compare/v1.41.0...v1.42.0) (2026-07-02)
 
 
