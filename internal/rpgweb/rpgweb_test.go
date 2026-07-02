@@ -203,3 +203,19 @@ func TestUnknownPath404(t *testing.T) {
 		t.Fatalf("unknown path = %d; want 404", rr.Code)
 	}
 }
+
+func TestHallPage(t *testing.T) {
+	st := state.NewMem()
+	seed(st) // alice, bob
+	rr := httptest.NewRecorder()
+	New(st).Handler().ServeHTTP(rr, httptest.NewRequest(http.MethodGet, "/hall", nil))
+	if rr.Code != http.StatusOK {
+		t.Fatalf("hall status = %d; want 200", rr.Code)
+	}
+	body := rr.Body.String()
+	for _, want := range []string{"Hall of Fame", "Level", "Kills", "Gold", "Duel wins", "Rebirths", "alice"} {
+		if !strings.Contains(body, want) {
+			t.Fatalf("hall page missing %q", want)
+		}
+	}
+}

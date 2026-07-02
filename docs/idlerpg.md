@@ -249,6 +249,8 @@ auto-refreshes every 30s. Pages:
   towns and their biomes, and an active map-quest's route.
 - **Character (`/p/<name>`)** — a hero's full page: title, abilities, HP/gold/kills,
   duel wins, companion, draughts, equipment with rarity names, and earned feats.
+- **Hall of Fame (`/hall`)** — every leaderboard side by side: top by level, kills,
+  gold, duel wins, and rebirths.
 - **How to play (`/help`)** — the full command reference (same source as
   `!rpg help`).
 

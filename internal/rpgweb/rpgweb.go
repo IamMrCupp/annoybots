@@ -28,6 +28,7 @@ type Server struct {
 	charTmpl *template.Template
 	mapTmpl  *template.Template
 	helpTmpl *template.Template
+	hallTmpl *template.Template
 	now      func() time.Time
 }
 
@@ -50,6 +51,7 @@ func New(store state.Store) *Server {
 		charTmpl: template.Must(template.New("char").Funcs(tmplFuncs).Parse(charTmpl)),
 		mapTmpl:  template.Must(template.New("map").Funcs(tmplFuncs).Parse(mapTmpl)),
 		helpTmpl: template.Must(template.New("help").Funcs(tmplFuncs).Parse(helpTmpl)),
+		hallTmpl: template.Must(template.New("hall").Funcs(tmplFuncs).Parse(hallTmpl)),
 		now:      time.Now,
 	}
 }
@@ -59,6 +61,7 @@ func (s *Server) Handler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", s.index)
 	mux.HandleFunc("/map", s.worldMap)
+	mux.HandleFunc("/hall", s.hall)
 	mux.HandleFunc("/help", s.help)
 	mux.HandleFunc("/p/", s.char)
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, _ *http.Request) {
@@ -155,6 +158,34 @@ type helpData struct {
 	Races      []idlerpg.RaceInfo
 	Pets       []idlerpg.PetInfo
 	Alignments []string
+}
+
+// hallBoard is one named ranking column on the Hall of Fame.
+type hallBoard struct {
+	Title string
+	Unit  string
+	Rows  []idlerpg.RankRow
+}
+
+const hallSize = 10 // entries per Hall-of-Fame column
+
+// hall renders the Hall of Fame at /hall — every leaderboard, side by side.
+func (s *Server) hall(w http.ResponseWriter, r *http.Request) {
+	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
+	defer cancel()
+	boards := []hallBoard{
+		{"⚔ Level", "lvl", nil},
+		{"💀 Kills", "kills", nil},
+		{"💰 Gold", "g", nil},
+		{"🗡 Duel wins", "wins", nil},
+		{"🌟 Rebirths", "★", nil},
+	}
+	fields := []string{"level", "kills", "gold", "duelw", "reb"}
+	for i := range boards {
+		boards[i].Rows, _ = idlerpg.ReadRanking(ctx, s.store, fields[i], hallSize)
+	}
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	_ = s.hallTmpl.Execute(w, boards)
 }
 
 // help renders the command reference + the character-options catalog at /help.
@@ -264,7 +295,7 @@ const indexTmpl = `<!doctype html>
 </style>
 </head>
 <body>
-<nav class="nav"><a href="/">⚔ realm</a><a href="/map">🗺 map</a><a href="/help">📖 how to play</a></nav>
+<nav class="nav"><a href="/">⚔ realm</a><a href="/map">🗺 map</a><a href="/hall">🏆 hall of fame</a><a href="/help">📖 how to play</a></nav>
 <h1>⚔ the idle realm</h1>
 <div class="stats">
   <div class="stat"><span class="num">{{.Stats.Heroes}}</span><span class="lab">heroes</span></div>
@@ -366,7 +397,7 @@ const charTmpl = `<!doctype html>
 </style>
 </head>
 <body>
-<nav class="nav"><a href="/">⚔ realm</a><a href="/map">🗺 map</a><a href="/help">📖 how to play</a></nav>
+<nav class="nav"><a href="/">⚔ realm</a><a href="/map">🗺 map</a><a href="/hall">🏆 hall of fame</a><a href="/help">📖 how to play</a></nav>
 <h1>{{if .Rebirths}}<span class="ttl">★{{.Rebirths}}</span> {{end}}{{.Name}}{{if .Title}} <span class="ttl">{{.Title}}</span>{{end}}</h1>
 <p class="sub">the <span class="{{.AlignClass}}">{{.Align}}{{if .Race}} {{.Race}}{{end}}{{if .Class}} {{.Class}}{{end}}</span></p>
 
@@ -452,7 +483,7 @@ const mapTmpl = `<!doctype html>
 </style>
 </head>
 <body>
-<nav class="nav"><a href="/">⚔ realm</a><a href="/map">🗺 map</a><a href="/help">📖 how to play</a></nav>
+<nav class="nav"><a href="/">⚔ realm</a><a href="/map">🗺 map</a><a href="/hall">🏆 hall of fame</a><a href="/help">📖 how to play</a></nav>
 <h1>🗺 the realm map</h1>
 <p class="sub">{{len .Players}} souls abroad in the realm</p>
 <svg class="world" viewBox="0 0 {{.Size}} {{.Size}}" role="img" aria-label="fantasy map of the realm with towns and wandering players">
@@ -562,7 +593,7 @@ const helpTmpl = `<!doctype html>
 </style>
 </head>
 <body>
-<nav class="nav"><a href="/">⚔ realm</a><a href="/map">🗺 map</a><a href="/help">📖 how to play</a></nav>
+<nav class="nav"><a href="/">⚔ realm</a><a href="/map">🗺 map</a><a href="/hall">🏆 hall of fame</a><a href="/help">📖 how to play</a></nav>
 <h1>📖 how to play</h1>
 <p class="sub">You "play" IdleRPG by being present and <strong>quiet</strong> in the channel — every tick you idle, you advance toward the next level. Talking sets you back; leaving sets you back more. Everything below is typed <strong>in the channel</strong> as <code>!rpg …</code>.</p>
 {{range .Groups}}
@@ -602,5 +633,57 @@ const helpTmpl = `<!doctype html>
 </table>
 </div>
 <footer><a href="/">&larr; back to the realm</a> · <a href="/map">the map</a></footer>
+</body>
+</html>`
+
+const hallTmpl = `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="refresh" content="60">
+<title>annoybots · hall of fame</title>
+<style>
+  :root { color-scheme: dark; }
+  body { background:#0e0f13; color:#d6d8de; font:15px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace; margin:0; padding:2rem; }
+  h1 { font-size:1.4rem; color:#e9b949; margin:0 0 .25rem; }
+  .sub { color:#8aa0c6; margin:0 0 1.5rem; }
+  .nav { margin:0 0 1.25rem; font-size:.95rem; color:#3a3f4b; }
+  .nav a { margin-right:1rem; color:#7fd1a8; text-decoration:none; }
+  .nav a:hover { text-decoration:underline; }
+  .halls { display:flex; flex-wrap:wrap; gap:1.5rem; }
+  .board { flex:1 1 13rem; min-width:12rem; }
+  .board h2 { font-size:1rem; color:#8aa0c6; margin:0 0 .5rem; }
+  table { border-collapse:collapse; width:100%; }
+  td { padding:.25rem .4rem; border-bottom:1px solid #20232b; }
+  .rank { color:#7c8290; width:1.8rem; }
+  .val { color:#e9b949; text-align:right; white-space:nowrap; }
+  .gold td:first-child + td a { color:#e9b949; }
+  a { color:#7fd1a8; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  .muted { color:#6b7280; }
+  footer { margin-top:2rem; color:#4b5563; font-size:.8rem; }
+</style>
+</head>
+<body>
+<nav class="nav"><a href="/">⚔ realm</a><a href="/map">🗺 map</a><a href="/hall">🏆 hall of fame</a><a href="/help">📖 how to play</a></nav>
+<h1>🏆 Hall of Fame</h1>
+<p class="sub">the realm's greatest — ranked every way that matters.</p>
+<div class="halls">
+{{range .}}
+  {{$unit := .Unit}}
+  <div class="board">
+    <h2>{{.Title}}</h2>
+    <table>
+      {{range $i, $r := .Rows}}
+      <tr><td class="rank">{{add $i 1}}</td><td><a href="/p/{{pathesc $r.Key}}">{{$r.Name}}</a></td><td class="val">{{$r.Value}}{{if $unit}}<span class="muted"> {{$unit}}</span>{{end}}</td></tr>
+      {{else}}
+      <tr><td colspan="3" class="muted">no one yet.</td></tr>
+      {{end}}
+    </table>
+  </div>
+{{end}}
+</div>
+<footer>annoybots · auto-refreshes every 60s · <a href="/">&larr; back to the realm</a></footer>
 </body>
 </html>`

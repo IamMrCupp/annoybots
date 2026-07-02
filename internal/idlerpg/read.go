@@ -264,6 +264,42 @@ func ReadFeed(ctx context.Context, store state.Store, n int) ([]FeedEvent, error
 	return out, nil
 }
 
+// RankRow is one entry in a Hall-of-Fame ranking.
+type RankRow struct {
+	Name  string
+	Key   string
+	Value int64
+}
+
+// ReadRanking ranks every character by a sheet field, descending. "level" uses the
+// leaderboard score directly; any other field (kills, gold, duelw, reb) is read
+// from each sheet. Returns at most n rows.
+func ReadRanking(ctx context.Context, store state.Store, field string, n int) ([]RankRow, error) {
+	members, err := store.ZTop(ctx, boardKey(), 5000)
+	if err != nil {
+		return nil, err
+	}
+	rows := make([]RankRow, 0, len(members))
+	for _, e := range members {
+		v := e.Score
+		if field != "level" {
+			s, _ := store.HGetAll(ctx, sheetKey(e.Member))
+			v = s[field]
+		}
+		rows = append(rows, RankRow{Name: displayName(e.Member), Key: e.Member, Value: v})
+	}
+	sort.Slice(rows, func(i, j int) bool {
+		if rows[i].Value != rows[j].Value {
+			return rows[i].Value > rows[j].Value
+		}
+		return rows[i].Name < rows[j].Name
+	})
+	if n > 0 && len(rows) > n {
+		rows = rows[:n]
+	}
+	return rows, nil
+}
+
 // ReadCharFeed returns up to n recent feed events that mention a character by its
 // display name — that hero's own slice of the realm's activity, newest first.
 func ReadCharFeed(ctx context.Context, store state.Store, name string, n int) ([]FeedEvent, error) {

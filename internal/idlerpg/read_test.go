@@ -136,3 +136,30 @@ func TestReadQuest(t *testing.T) {
 		t.Fatalf("members should be sorted [alice bob], got %v", q.Members)
 	}
 }
+
+func TestReadRanking(t *testing.T) {
+	st := state.NewMem()
+	ctx := context.Background()
+	// alice: lvl 5, 300 kills, 900 gold; bob: lvl 8, 100 kills, 5000 gold
+	st.HSet(ctx, sheetKey("net|alice"), "level", 5)
+	st.HSet(ctx, sheetKey("net|alice"), "kills", 300)
+	st.HSet(ctx, sheetKey("net|alice"), "gold", 900)
+	st.ZIncr(ctx, boardKey(), "net|alice", 5)
+	st.HSet(ctx, sheetKey("net|bob"), "level", 8)
+	st.HSet(ctx, sheetKey("net|bob"), "kills", 100)
+	st.HSet(ctx, sheetKey("net|bob"), "gold", 5000)
+	st.ZIncr(ctx, boardKey(), "net|bob", 8)
+
+	byLevel, _ := ReadRanking(ctx, st, "level", 10)
+	if len(byLevel) != 2 || byLevel[0].Name != "bob" {
+		t.Fatalf("level ranking wrong: %+v", byLevel)
+	}
+	byKills, _ := ReadRanking(ctx, st, "kills", 10)
+	if byKills[0].Name != "alice" || byKills[0].Value != 300 {
+		t.Fatalf("kills ranking wrong: %+v", byKills)
+	}
+	byGold, _ := ReadRanking(ctx, st, "gold", 10)
+	if byGold[0].Name != "bob" || byGold[0].Value != 5000 {
+		t.Fatalf("gold ranking wrong: %+v", byGold)
+	}
+}
