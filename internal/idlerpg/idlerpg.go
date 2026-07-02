@@ -260,6 +260,9 @@ func (m *Manager) command(msg engine.Message, fields []string) {
 		case "bless":
 			m.bless(msg)
 			return
+		case "rebirth", "ascend", "prestige":
+			m.rebirth(msg)
+			return
 		case "pause", "resume", "push", "hog", "reset", "setlevel", "gold", "raid":
 			m.adminVerb(msg, fields)
 			return
@@ -861,7 +864,11 @@ func (m *Manager) Tick() {
 		if err != nil {
 			continue
 		}
-		_ = m.store.HSet(ctx, key, "ttl", m.ttlFor(lvl))
+		reb := int64(0)
+		if s, _ := m.store.HGetAll(ctx, key); s != nil {
+			reb = s["reb"]
+		}
+		_ = m.store.HSet(ctx, key, "ttl", m.ttlForReb(lvl, reb))
 		_, _ = m.store.ZIncr(ctx, boardKey(), p.key, 1)
 		m.drama(p.network, p.channel, fmt.Sprintf("✨ %s has attained level %d! the idle is strong with this one.", p.nick, lvl))
 		m.findItem(ctx, p, lvl)

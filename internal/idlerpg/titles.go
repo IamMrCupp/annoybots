@@ -49,8 +49,9 @@ func titleFor(sheet map[string]int64) string {
 // the plain "iammrcupp the true neutral wizard" before then.
 func (m *Manager) charLine(ctx context.Context, nick, pkey string, sheet map[string]int64) string {
 	desc := m.charDesc(ctx, pkey, sheet)
+	pre := stars(sheet["reb"]) // prestige stars lead the name
 	if t := titleFor(sheet); t != "" {
-		return nick + " " + t + ", " + desc
+		return pre + nick + " " + t + ", " + desc
 	}
-	return nick + " the " + desc
+	return pre + nick + " the " + desc
 }

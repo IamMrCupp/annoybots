@@ -34,6 +34,7 @@ type CharView struct {
 	Key        string     // canonical character key (network|nick, or a linked account)
 	Name       string     // display name: the key with any "network|" prefix stripped
 	Level      int64      // current level
+	Rebirths   int64      // prestige count (times reborn)
 	HP         int64      // current hit points
 	MaxHP      int64      // hit-point ceiling
 	Poisoned   bool       // carrying venom (damage-over-time)
@@ -173,6 +174,7 @@ func readChar(ctx context.Context, store state.Store, key string) CharView {
 		Key:        key,
 		Name:       displayName(key),
 		Level:      sheet["level"],
+		Rebirths:   sheet["reb"],
 		HP:         curHP(sheet, class),
 		MaxHP:      maxHP(sheet, class),
 		Poisoned:   poisoned(sheet),

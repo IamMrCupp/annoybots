@@ -232,6 +232,7 @@ const indexTmpl = `<!doctype html>
   .rank { color:#7c8290; width:2.5rem; }
   .lvl { color:#7fd1a8; }
   .ttl { color:#c9a227; font-style:italic; font-size:.85em; }
+  .star { color:#e9b949; font-size:.85em; }
   .evil { color:#e06c75; } .good { color:#61afef; } .neutral { color:#abb2bf; }
   .quest { max-width:760px; background:#1a160c; border:1px solid #4a3c14; border-radius:8px; padding:1rem 1.25rem; margin:0 0 1rem; }
   .quest .obj { color:#e9b949; }
@@ -311,7 +312,7 @@ const indexTmpl = `<!doctype html>
   {{range $i, $c := .Board}}
   <tr>
     <td class="rank">{{add $i 1}}</td>
-    <td><a href="/p/{{pathesc $c.Key}}">{{$c.Name}}</a>{{if $c.Title}} <span class="ttl">{{$c.Title}}</span>{{end}}</td>
+    <td>{{if $c.Rebirths}}<span class="star">★{{$c.Rebirths}}</span> {{end}}<a href="/p/{{pathesc $c.Key}}">{{$c.Name}}</a>{{if $c.Title}} <span class="ttl">{{$c.Title}}</span>{{end}}</td>
     <td class="lvl">{{$c.Level}}</td>
     <td class="muted">{{dur $c.TTL}}</td>
     <td>{{$c.Power}}</td>
@@ -366,7 +367,7 @@ const charTmpl = `<!doctype html>
 </head>
 <body>
 <nav class="nav"><a href="/">⚔ realm</a><a href="/map">🗺 map</a><a href="/help">📖 how to play</a></nav>
-<h1>{{.Name}}{{if .Title}} <span class="ttl">{{.Title}}</span>{{end}}</h1>
+<h1>{{if .Rebirths}}<span class="ttl">★{{.Rebirths}}</span> {{end}}{{.Name}}{{if .Title}} <span class="ttl">{{.Title}}</span>{{end}}</h1>
 <p class="sub">the <span class="{{.AlignClass}}">{{.Align}}{{if .Race}} {{.Race}}{{end}}{{if .Class}} {{.Class}}{{end}}</span></p>
 
 <table>

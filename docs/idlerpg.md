@@ -21,6 +21,7 @@ about it. Everything below happens on its own.
 - [Gold, towns & potions](#gold-towns--potions)
 - [Progression](#progression) — titles & feats
 - [The world map & quests](#the-world-map--quests)
+- [Rebirth (prestige)](#rebirth-prestige)
 - [Leaderboards](#leaderboards)
 - [The web dashboard](#the-web-dashboard)
 - [One character everywhere](#one-character-everywhere)
@@ -191,6 +192,15 @@ Two long-term tracks build alongside your level:
   kill), Centurion (100 kills), Warlord (1000), Giant-Slayer (a boss falls),
   Treasure Hunter (a legendary), Deep Pockets (1000 gold). Each is announced the
   moment you earn it; `!rpg feats` lists yours and they badge your dashboard page.
+
+## Rebirth (prestige)
+
+Reached level 50? `!rpg rebirth` lets you **ascend**: your level and leaderboard
+rank reset to 0, but you **keep** your gold, gear, kills, feats, and titles — and
+gain a **permanent +5% leveling speed** per rebirth (up to +50%), plus prestige
+stars (★) that ride by your name in channel and on the dashboard. It's a
+new-game-plus for the truly dedicated: give up your rank for a faster, stronger
+climb the next time around.
 
 ## The world map & quests
 
