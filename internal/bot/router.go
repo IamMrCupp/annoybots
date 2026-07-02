@@ -66,6 +66,20 @@ func (r *Router) Action(network, target, text string) {
 	}
 }
 
+// Notice routes an IRC NOTICE to the transport that owns network if it supports
+// one; otherwise it falls back to a normal message (engine.Noticer).
+func (r *Router) Notice(network, target, text string) {
+	s, ok := r.byNetwork[network]
+	if !ok {
+		return
+	}
+	if n, ok := s.(engine.Noticer); ok {
+		n.Notice(network, target, text)
+		return
+	}
+	s.Say(network, target, text)
+}
+
 // Join asks the owning transport to join a channel.
 func (r *Router) Join(network, channel string) {
 	if t, ok := r.byNetwork[network]; ok {

@@ -31,6 +31,7 @@ type outMsg struct {
 	target string
 	text   string
 	action bool
+	notice bool
 }
 
 // conn is a single network connection plus its outbound pacing.
@@ -407,9 +408,12 @@ func (c *conn) sendLoop(ctx context.Context) {
 				}
 			}
 			var err error
-			if msg.action {
+			switch {
+			case msg.notice:
+				err = c.ic.Notice(msg.target, msg.text)
+			case msg.action:
 				err = c.ic.Action(msg.target, msg.text)
-			} else {
+			default:
 				err = c.ic.Privmsg(msg.target, msg.text)
 			}
 			if err != nil {
@@ -441,6 +445,12 @@ func (m *Manager) Identify(network, password string) bool {
 
 func (m *Manager) Say(network, target, text string) {
 	m.enqueue(network, outMsg{target: target, text: text})
+}
+
+// Notice queues an IRC NOTICE (engine.Noticer) — for automated, don't-auto-reply
+// messages like the IdleRPG talk penalty.
+func (m *Manager) Notice(network, target, text string) {
+	m.enqueue(network, outMsg{target: target, text: text, notice: true})
 }
 
 // Action queues a CTCP ACTION / "/me" (engine.Sender).

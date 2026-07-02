@@ -23,6 +23,13 @@ type Sender interface {
 	Action(network, target, text string)
 }
 
+// Noticer is an optional capability: transports with a distinct "notice" channel
+// (IRC NOTICE) implement it. Callers type-assert a Sender to it and fall back to
+// Say when it's absent (e.g. Discord, which has no NOTICE).
+type Noticer interface {
+	Notice(network, target, text string)
+}
+
 // Duration is a time.Duration that unmarshals from a human string like "30s".
 type Duration time.Duration
 
