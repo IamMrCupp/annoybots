@@ -58,10 +58,14 @@ func (m *Manager) moveOnMap(ctx context.Context, p player) {
 		_ = m.store.HSet(ctx, sheetKey(p.key), "my", int64(m.roll(worldSize)+1))
 		return
 	}
-	// Travelling to a town: walk toward it, announce on arrival.
+	// Travelling to a town: walk toward it, announce on arrival. A mount speeds it.
 	if dest := sheet["dest"]; dest > 0 && int(dest) <= len(towns) {
 		t := towns[dest-1]
-		nx, ny, reached := stepToward(int(x), int(y), t.X, t.Y, worldStep)
+		step := worldStep
+		if m.mountOf(ctx, p.key) != "" {
+			step += mountBonus
+		}
+		nx, ny, reached := stepToward(int(x), int(y), t.X, t.Y, step)
 		_ = m.store.HSet(ctx, sheetKey(p.key), "mx", int64(nx))
 		_ = m.store.HSet(ctx, sheetKey(p.key), "my", int64(ny))
 		if reached {
