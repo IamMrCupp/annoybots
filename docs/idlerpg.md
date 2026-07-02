@@ -125,6 +125,9 @@ one-line summary (and your title).
 - **Events.** At random the gods intervene — a **godsend** (time forward), a
   **calamity** (time back, or an item loses its luster), or the **Hand of God**
   (a big swing either way).
+- **The wandering merchant.** Sometimes a passing trader finds you and gifts a
+  purse of gold, a healing draught, or a shortcut toward your next level — a little
+  kindness amid the monsters.
 - **Blessing.** The flip side of poison, and a temple service: `!rpg bless`
   spends gold for a blessing that lasts a handful of ticks, adding +attack and
   +damage to your monster fights. Stack it before you go hunting a boss. `!rpg

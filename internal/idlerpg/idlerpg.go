@@ -963,13 +963,15 @@ func (m *Manager) maybeEvent(ctx context.Context) {
 	if !ok {
 		return
 	}
-	switch m.roll(3) {
+	switch m.roll(4) {
 	case 0:
 		m.godsend(ctx, p)
 	case 1:
 		m.calamity(ctx, p)
-	default:
+	case 2:
 		m.handOfGod(ctx, p)
+	default:
+		m.merchant(ctx, p)
 	}
 }
 
