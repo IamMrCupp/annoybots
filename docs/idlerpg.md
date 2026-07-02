@@ -159,6 +159,11 @@ one-line summary (and your title).
 - **Salvage.** When a better item replaces the one in a slot, the old gear is
   **salvaged into scrap gold** (scaled to its power) instead of being discarded —
   so every drop is worth something, even the ones you don't keep.
+- **Stash.** `!rpg stash <slot>` banks an equipped item and frees the slot; `!rpg
+  stash` lists what you've banked; `!rpg equip <#>` puts a stashed item back on
+  (swapping the current one into the stash). Hold a spare legendary, or swap gear
+  for different fights. (Auto-upgrades still salvage the old item for gold — the
+  stash is for *deliberate* banking.)
 - **Enchanting.** `!rpg enchant <slot>` at a market spends gold to push an equipped
   item up **one rarity tier**. Drops are random; enchanting is deterministic agency
   over your gear — the high-end gold sink, with a steep escalating price so a
