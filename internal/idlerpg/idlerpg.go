@@ -155,10 +155,20 @@ func (m *Manager) Handle(msg engine.Message) bool {
 		sheet, _ := m.store.HGetAll(ctx, sheetKey(p.key))
 		pen := m.talkPenalty(sheet["level"], int64(len(msg.Text)))
 		_, _ = m.store.HIncr(ctx, sheetKey(p.key), "ttl", pen)
-		m.out.Say(msg.Network, msg.Nick, fmt.Sprintf("🤐 quiet — you broke the silence; +%s added to your next level.", dur(pen)))
+		m.notify(msg.Network, msg.Nick, fmt.Sprintf("🤐 quiet — you broke the silence; +%s added to your next level.", dur(pen)))
 		m.questViolation(ctx, p.key, p.nick, "spoke up")
 	}
 	return false
+}
+
+// notify sends a private message to a nick — a true IRC NOTICE when the transport
+// supports one (classic IdleRPG behaviour), else a plain private message.
+func (m *Manager) notify(network, nick, text string) {
+	if n, ok := m.out.(engine.Noticer); ok {
+		n.Notice(network, nick, text)
+		return
+	}
+	m.out.Say(network, nick, text)
 }
 
 // talkPenalty is the time (seconds) added to a talker's clock for a message of
