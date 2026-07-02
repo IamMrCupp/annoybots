@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.40.0](https://github.com/IamMrCupp/annoybots/compare/v1.39.0...v1.40.0) (2026-07-02)
+
+
+### Features
+
+* **idlerpg:** rebirth / prestige ([#161](https://github.com/IamMrCupp/annoybots/issues/161)) ([c6bd679](https://github.com/IamMrCupp/annoybots/commit/c6bd679b0e56e2ed4501bbd48569df47dc8169db))
+* **idlerpg:** rebirth/prestige — ascend at level 50 for permanent speed + stars (closes [#161](https://github.com/IamMrCupp/annoybots/issues/161)) ([0fc5b3d](https://github.com/IamMrCupp/annoybots/commit/0fc5b3d9ebf73a2f2144dec5fc81d334e485d929))
+
 ## [1.39.0](https://github.com/IamMrCupp/annoybots/compare/v1.38.0...v1.39.0) (2026-06-30)
 
 
