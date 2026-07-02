@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.44.0](https://github.com/IamMrCupp/annoybots/compare/v1.43.0...v1.44.0) (2026-07-02)
+
+
+### Features
+
+* **idlerpg:** wandering merchant event ([cd58a91](https://github.com/IamMrCupp/annoybots/commit/cd58a915ed7107ff3949d1a8c83a25ec65efbfa6))
+* **idlerpg:** wandering merchant event — gifts gold, a potion, or a shortcut (closes [#171](https://github.com/IamMrCupp/annoybots/issues/171)) ([7369fdf](https://github.com/IamMrCupp/annoybots/commit/7369fdf66ec43cf1e004a501a0f789546db24b20))
+
 ## [1.43.0](https://github.com/IamMrCupp/annoybots/compare/v1.42.0...v1.43.0) (2026-07-02)
 
 
