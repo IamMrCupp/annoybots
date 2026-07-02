@@ -33,6 +33,7 @@ func CommandHelp() []HelpGroup {
 			{"!rpg info", "Realm summary: idlers online, the top player, the active quest."},
 			{"!rpg top [kills|gold|duels]", "Leaderboards — by level (default), or kills/gold/duels."},
 			{"!rpg feats [name]", "One-time achievements you've earned."},
+			{"!rpg rebirth", "At level 50+, reset to level 0 for permanent prestige (★) and faster leveling — you keep gold, gear & glory."},
 		}},
 		{"Your character", []HelpItem{
 			{"!rpg race <" + strings.Join(raceNames(), "|") + ">", "Choose your heritage once — bakes ability bonuses into your scores."},
