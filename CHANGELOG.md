@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.45.0](https://github.com/IamMrCupp/annoybots/compare/v1.44.0...v1.45.0) (2026-07-02)
+
+
+### Features
+
+* **idlerpg:** inventory / stash ([#175](https://github.com/IamMrCupp/annoybots/issues/175)) ([1959594](https://github.com/IamMrCupp/annoybots/commit/19595942d30584817d56c5b389260599e62ea3d6))
+* **idlerpg:** inventory/stash — bank and swap gear (closes [#175](https://github.com/IamMrCupp/annoybots/issues/175)) ([615a798](https://github.com/IamMrCupp/annoybots/commit/615a79817af07f90b5004652a546616bbea755ff))
+
 ## [1.44.0](https://github.com/IamMrCupp/annoybots/compare/v1.43.0...v1.44.0) (2026-07-02)
 
 
