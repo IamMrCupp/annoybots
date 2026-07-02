@@ -30,6 +30,7 @@ func CommandHelp() []HelpGroup {
 			{"!rpg status [name]", "A character sheet — yours, or a named player's."},
 			{"!rpg sheet [name]", "The D&D ability block (STR/DEX/…), HP, gold, kills, draughts."},
 			{"!rpg items (gear)", "Your equipped gear and total power."},
+			{"!rpg stash [slot] / equip <#>", "Bank an equipped item, list your stash, or equip a stashed one."},
 			{"!rpg info", "Realm summary: idlers online, the top player, the active quest."},
 			{"!rpg top [kills|gold|duels]", "Leaderboards — by level (default), or kills/gold/duels."},
 			{"!rpg feats [name]", "One-time achievements you've earned."},

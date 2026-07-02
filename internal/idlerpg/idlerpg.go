@@ -210,6 +210,12 @@ func (m *Manager) command(msg engine.Message, fields []string) {
 		case "items", "gear":
 			m.out.Say(msg.Network, msg.Channel, m.items(msg))
 			return
+		case "stash":
+			m.stash(msg, fields)
+			return
+		case "equip":
+			m.equip(msg, fields)
+			return
 		case "align":
 			m.setAlign(msg, fields)
 			return
@@ -700,6 +706,9 @@ func (m *Manager) wipeChar(ctx context.Context, key string) {
 	}
 	_ = m.store.Del(ctx, classKey(key))
 	_ = m.store.Del(ctx, raceKey(key))
+	_ = m.store.Del(ctx, stashKey(key))
+	_ = m.store.Del(ctx, mountKey(key))
+	_ = m.store.Del(ctx, petKey(key))
 	_ = m.store.Del(ctx, sheetKey(key))
 	_ = m.store.ZRem(ctx, boardKey(), key)
 	m.mu.Lock()
@@ -720,6 +729,9 @@ func (m *Manager) wipeAll(ctx context.Context) int {
 		}
 		_ = m.store.Del(ctx, classKey(e.Member))
 		_ = m.store.Del(ctx, raceKey(e.Member))
+		_ = m.store.Del(ctx, stashKey(e.Member))
+		_ = m.store.Del(ctx, mountKey(e.Member))
+		_ = m.store.Del(ctx, petKey(e.Member))
 		_ = m.store.Del(ctx, sheetKey(e.Member))
 	}
 	_ = m.store.Del(ctx, boardKey())
