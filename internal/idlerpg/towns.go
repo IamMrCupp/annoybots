@@ -147,8 +147,12 @@ func (m *Manager) buy(msg engine.Message, fields []string) {
 		m.buyPotion(msg)
 		return
 	}
+	if len(fields) >= 3 && strings.EqualFold(fields[2], "mount") {
+		m.buyMount(msg)
+		return
+	}
 	if len(fields) < 3 || !isItemSlot(fields[2]) {
-		m.out.Say(msg.Network, msg.Channel, "usage: !rpg buy <slot|potion>. slots: "+strings.Join(itemSlots, ", "))
+		m.out.Say(msg.Network, msg.Channel, "usage: !rpg buy <slot|potion|mount>. slots: "+strings.Join(itemSlots, ", "))
 		return
 	}
 	slot := strings.ToLower(fields[2])
