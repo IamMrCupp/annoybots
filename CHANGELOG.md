@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.42.0](https://github.com/IamMrCupp/annoybots/compare/v1.41.0...v1.42.0) (2026-07-02)
+
+
+### Features
+
+* **idlerpg:** mounts ([462328c](https://github.com/IamMrCupp/annoybots/commit/462328c2b96725d19787c4d30b0d64b48d10ff36))
+* **idlerpg:** mounts — buy a steed for double travel speed to towns ([8ae53ad](https://github.com/IamMrCupp/annoybots/commit/8ae53ade08f1b05de215ef2b0171ee714148f885))
+
 ## [1.41.0](https://github.com/IamMrCupp/annoybots/compare/v1.40.0...v1.41.0) (2026-07-02)
 
 
