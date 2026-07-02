@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.41.0](https://github.com/IamMrCupp/annoybots/compare/v1.40.0...v1.41.0) (2026-07-02)
+
+
+### Features
+
+* **irc:** deliver the talk penalty as a true IRC NOTICE (closes [#164](https://github.com/IamMrCupp/annoybots/issues/164)) ([9590e84](https://github.com/IamMrCupp/annoybots/commit/9590e84624193db0107400b5702493400c57bcfb))
+* **irc:** true NOTICE for the talk penalty ([#164](https://github.com/IamMrCupp/annoybots/issues/164)) ([c5a6678](https://github.com/IamMrCupp/annoybots/commit/c5a667894e80ef63ec1f2875c0b800a4b6c9ede3))
+
 ## [1.40.0](https://github.com/IamMrCupp/annoybots/compare/v1.39.0...v1.40.0) (2026-07-02)
 
 
