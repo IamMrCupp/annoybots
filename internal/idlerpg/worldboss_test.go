@@ -80,3 +80,24 @@ func TestInfoShowsWorldBoss(t *testing.T) {
 		t.Fatalf("active raid should show in info, got %q", got)
 	}
 }
+
+func TestWorldBossTracksTopDamager(t *testing.T) {
+	m, r, st := newMgr()
+	ctx := context.Background()
+	m.Handle(chanMsg("alice", "!rpg"))
+	m.Handle(chanMsg("bob", "!rpg"))
+	// alice hits far harder than bob
+	st.HSet(ctx, sheetKey("net|alice"), itemField("weapon"), 100000)
+	st.HSet(ctx, sheetKey("net|alice"), "ttl", 100000)
+	st.HSet(ctx, sheetKey("net|bob"), "ttl", 100000)
+	m.spawnWorldBoss(ctx, "net", "#chan")
+	for i := 0; i < 50; i++ {
+		m.worldBossTick(ctx)
+		if bv, _ := ReadWorldBoss(ctx, st); bv == nil {
+			break
+		}
+	}
+	if !r.has("struck the hardest") || !r.has("alice") {
+		t.Fatalf("victory should crown the top damager (alice), got %v", r.lines)
+	}
+}

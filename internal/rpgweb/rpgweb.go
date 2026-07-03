@@ -308,7 +308,7 @@ const indexTmpl = `<!doctype html>
 {{if .Boss}}
 <div class="boss">
   <strong>🐲 WORLD BOSS — {{.Boss.Name}}</strong>
-  <span class="muted">{{.Boss.HP}} / {{.Boss.MaxHP}} HP · {{.Boss.Players}} heroes fighting</span>
+  <span class="muted">{{.Boss.HP}} / {{.Boss.MaxHP}} HP · {{.Boss.Players}} heroes fighting{{if .Boss.TopName}} · ⭐ {{.Boss.TopName}} leads ({{.Boss.TopDmg}} dmg){{end}}</span>
   <div class="bar"><div class="bar-fill" style="width:{{.Boss.Pct}}%"></div></div>
 </div>
 {{end}}
