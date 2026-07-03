@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.46.0](https://github.com/IamMrCupp/annoybots/compare/v1.45.0...v1.46.0) (2026-07-03)
+
+
+### Features
+
+* **idlerpg:** player trading — give gold or a stashed item (closes [#178](https://github.com/IamMrCupp/annoybots/issues/178)) ([8a2146e](https://github.com/IamMrCupp/annoybots/commit/8a2146e815ea4cde44afc80de37b80722aa717b6))
+* **idlerpg:** player trading ([#178](https://github.com/IamMrCupp/annoybots/issues/178)) ([3dae5d0](https://github.com/IamMrCupp/annoybots/commit/3dae5d0852d1c06dfb2a4b301e1d7dd9a9258e11))
+
 ## [1.45.0](https://github.com/IamMrCupp/annoybots/compare/v1.44.0...v1.45.0) (2026-07-02)
 
 
