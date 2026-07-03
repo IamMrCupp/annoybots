@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.48.0](https://github.com/IamMrCupp/annoybots/compare/v1.47.0...v1.48.0) (2026-07-03)
+
+
+### Features
+
+* **idlerpg:** !rpg who ([35763b4](https://github.com/IamMrCupp/annoybots/commit/35763b4b54cdf86ac66de2200a8385e55ba738b8))
+* **idlerpg:** !rpg who — list who's idling right now (closes [#184](https://github.com/IamMrCupp/annoybots/issues/184)) ([509be0a](https://github.com/IamMrCupp/annoybots/commit/509be0a0b4c5ded520cde70bc0d924c0ffc09807))
+
 ## [1.47.0](https://github.com/IamMrCupp/annoybots/compare/v1.46.0...v1.47.0) (2026-07-03)
 
 
