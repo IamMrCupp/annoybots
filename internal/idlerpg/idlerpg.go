@@ -255,6 +255,9 @@ func (m *Manager) command(msg engine.Message, fields []string) {
 		case "duel", "spar":
 			m.duel(msg, fields)
 			return
+		case "give", "gift":
+			m.give(msg, fields)
+			return
 		case "quaff", "drink":
 			m.quaff(msg)
 			return

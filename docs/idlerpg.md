@@ -118,6 +118,9 @@ one-line summary (and your title).
 - **PvP battles.** Leveling up pits you against a random online player, weighted by
   power, with a chance of a critical hit. Win and your clock speeds up; lose and it
   slows (and takes HP). This is automatic — it just happens on level-up.
+- **Trading.** Share the wealth: `!rpg give <name> <amount>` hands gold to another
+  player, and `!rpg give <name> item <#>` passes a stashed item into their stash.
+  A straight transfer — help a friend or hand down gear.
 - **Duels.** `!rpg duel <name>` challenges a present player to a friendly
   best-of-three spar — effective power (gear + alignment + class) plus luck. It's
   bragging rights only: no clock changes, no HP, no rewards, just a career win
