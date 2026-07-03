@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.49.0](https://github.com/IamMrCupp/annoybots/compare/v1.48.0...v1.49.0) (2026-07-03)
+
+
+### Features
+
+* **idlerpg:** fellowship bonus — idle together, level faster (closes [#187](https://github.com/IamMrCupp/annoybots/issues/187)) ([b51fce3](https://github.com/IamMrCupp/annoybots/commit/b51fce3819d166e461ad4250acc0c5f67a912823))
+* **idlerpg:** fellowship co-op bonus ([#187](https://github.com/IamMrCupp/annoybots/issues/187)) ([9e5f422](https://github.com/IamMrCupp/annoybots/commit/9e5f422eb96191d629c144ce28a7d061f77b0e76))
+
 ## [1.48.0](https://github.com/IamMrCupp/annoybots/compare/v1.47.0...v1.48.0) (2026-07-03)
 
 
