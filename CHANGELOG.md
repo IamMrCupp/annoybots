@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.47.0](https://github.com/IamMrCupp/annoybots/compare/v1.46.0...v1.47.0) (2026-07-03)
+
+
+### Features
+
+* **idlerpg:** world-boss damage tracking + top-contributor bonus (closes [#181](https://github.com/IamMrCupp/annoybots/issues/181)) ([acbc0d5](https://github.com/IamMrCupp/annoybots/commit/acbc0d54e8fd386c7538b762ee3baf3c33e90c85))
+* **idlerpg:** world-boss top-contributor reward ([#181](https://github.com/IamMrCupp/annoybots/issues/181)) ([2895048](https://github.com/IamMrCupp/annoybots/commit/2895048e12a07f54b8c817014b4c43feec646b02))
+
 ## [1.46.0](https://github.com/IamMrCupp/annoybots/compare/v1.45.0...v1.46.0) (2026-07-03)
 
 
