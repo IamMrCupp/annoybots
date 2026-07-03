@@ -53,6 +53,9 @@ Turn the game on with the `idlerpg:` config block (off by default) — see
 - **Leveling.** Each level has a time-to-go; idle it down to zero and you level
   up. Levels get longer the higher you climb (~1.16× each), capped so no single
   level ever takes more than 30 days.
+- **Fellowship.** Idling isn't lonely: when several heroes are online together,
+  everyone levels a little faster (+5% per companion, up to +30%). Company is
+  strictly better — `!rpg who` shows the current bonus.
 - **Talking is punished — visibly.** Any message that isn't an `!rpg` command adds
   time to your level clock, *scaled to your level*: a few seconds for a newbie, but
   hours for a high-level legend (it's a slice of your current level's duration). The
