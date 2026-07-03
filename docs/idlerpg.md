@@ -139,7 +139,7 @@ one-line summary (and your title).
   Bahamut, the Kraken Sovereign, Acererak — rises with a vast shared HP pool and
   a time limit. **Every** online idler automatically strikes it each tick, and the
   dashboard shows a live HP bar. Bring it down before it departs and *all*
-  participants share the spoils (gold, a great leap toward the next level, a kill).
+  participants share the spoils (gold, a great leap toward the next level, a kill). The **top damage-dealer** also claims a champion's purse — so it pays to hit hard.
   Admins can summon one on demand with `!rpg raid`.
 - **Poison.** Some foes are venomous — will-o'-wisps, green hags, bog zombies,
   sahuagin, wyverns, manticores. When one draws blood it leaves you **poisoned**,

@@ -40,8 +40,10 @@ type WorldBossView struct {
 	Name    string
 	HP      int64
 	MaxHP   int64
-	Pct     int64 // remaining HP as a percentage, for the bar
-	Players int   // how many heroes have struck it
+	Pct     int64  // remaining HP as a percentage, for the bar
+	Players int    // how many heroes have struck it
+	TopName string // the current biggest contributor
+	TopDmg  int64  // their damage so far
 }
 
 // ReadWorldBoss returns the active raid, or nil if none.
@@ -58,7 +60,11 @@ func ReadWorldBoss(ctx context.Context, store state.Store) (*WorldBossView, erro
 	if b.MaxHP > 0 && b.HP > 0 {
 		pct = b.HP * 100 / b.MaxHP
 	}
-	return &WorldBossView{Name: b.Name, HP: b.HP, MaxHP: b.MaxHP, Pct: pct, Players: len(b.Players)}, nil
+	topKey, topDmg := topDamager(b.Damage)
+	return &WorldBossView{
+		Name: b.Name, HP: b.HP, MaxHP: b.MaxHP, Pct: pct, Players: len(b.Players),
+		TopName: b.Players[topKey], TopDmg: topDmg,
+	}, nil
 }
 
 // worldBoss is the active raid. Exported fields round-trip through JSON.
@@ -70,6 +76,7 @@ type worldBoss struct {
 	Network  string            `json:"net"`      // where it was raised / is announced
 	Channel  string            `json:"chan"`
 	Players  map[string]string `json:"players"` // participant key -> display nick
+	Damage   map[string]int64  `json:"dmg"`     // participant key -> total damage dealt
 	LastPct  int64             `json:"lastpct"` // last announced HP percentage milestone
 }
 
@@ -82,6 +89,9 @@ func (m *Manager) loadBoss(ctx context.Context) {
 	var b worldBoss
 	if json.Unmarshal([]byte(blob), &b) != nil {
 		return
+	}
+	if b.Damage == nil { // tolerate pre-damage-tracking blobs
+		b.Damage = map[string]int64{}
 	}
 	m.bmu.Lock()
 	m.boss = &b
@@ -135,6 +145,7 @@ func (m *Manager) spawnWorldBoss(ctx context.Context, network, channel string) {
 		Network:  network,
 		Channel:  channel,
 		Players:  map[string]string{},
+		Damage:   map[string]int64{},
 		LastPct:  100,
 	}
 	m.bmu.Lock()
@@ -167,8 +178,13 @@ func (m *Manager) worldBossTick(ctx context.Context) {
 	var total int64
 	for _, p := range m.snapshot() {
 		s, _ := m.store.HGetAll(ctx, sheetKey(p.key))
-		total += worldBossDamage(s)
+		dmg := worldBossDamage(s)
+		total += dmg
 		b.Players[p.key] = p.nick
+		if b.Damage == nil {
+			b.Damage = map[string]int64{}
+		}
+		b.Damage[p.key] += dmg
 	}
 	if total == 0 {
 		return // nobody around to fight this tick
@@ -201,6 +217,7 @@ func (m *Manager) rewardWorldBoss(ctx context.Context, b *worldBoss) {
 	share := b.MaxHP/(n*2) + 100
 	m.drama(b.Network, b.Channel, fmt.Sprintf(
 		"🏆 %s is SLAIN by %d hero(es)! the spoils are shared — +%dg and a great leap forward to each.", b.Name, len(b.Players), share))
+	topKey, topDmg := topDamager(b.Damage)
 	for key, nick := range b.Players {
 		_, _ = m.store.HIncr(ctx, sheetKey(key), "gold", share)
 		_, _ = m.store.HIncr(ctx, sheetKey(key), "kills", 1)
@@ -211,4 +228,24 @@ func (m *Manager) rewardWorldBoss(ctx context.Context, b *worldBoss) {
 	}
 	m.bumpStat("bosses", 1)
 	m.bumpStat("gold", share*n)
+	// crown the top contributor with a bonus purse for landing the most damage.
+	if topKey != "" && topDmg > 0 {
+		bonus := share
+		_, _ = m.store.HIncr(ctx, sheetKey(topKey), "gold", bonus)
+		m.bumpStat("gold", bonus)
+		m.drama(b.Network, b.Channel, fmt.Sprintf(
+			"⭐ %s struck the hardest (%d damage) and claims the champion's purse — +%dg extra!", b.Players[topKey], topDmg, bonus))
+	}
+}
+
+// topDamager returns the key and damage of the biggest contributor to a raid.
+func topDamager(dmg map[string]int64) (string, int64) {
+	var bestKey string
+	var best int64
+	for k, v := range dmg {
+		if v > best || (v == best && k < bestKey) {
+			bestKey, best = k, v
+		}
+	}
+	return bestKey, best
 }
