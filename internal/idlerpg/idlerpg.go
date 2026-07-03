@@ -231,6 +231,9 @@ func (m *Manager) command(msg engine.Message, fields []string) {
 		case "info":
 			m.out.Say(msg.Network, msg.Channel, m.info())
 			return
+		case "who", "online":
+			m.out.Say(msg.Network, msg.Channel, m.who(msg))
+			return
 		case "quest":
 			m.out.Say(msg.Network, msg.Channel, m.questStatus())
 			return

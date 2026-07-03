@@ -241,6 +241,11 @@ backward. Quests survive a bot restart, and the cadence is tunable (see
 
 ## Leaderboards
 
+`!rpg who` lists who's idling right now (highest level first) — handy for finding
+someone to duel, trade with, or party up.
+
+
+
 `!rpg top` ranks by level. Add a category to rank differently:
 `!rpg top kills`, `!rpg top gold`, or `!rpg top duels`. The web dashboard shows
 the level leaderboard with titles, and a realm-wide stats overview.

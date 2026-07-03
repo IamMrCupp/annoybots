@@ -32,6 +32,7 @@ func CommandHelp() []HelpGroup {
 			{"!rpg items (gear)", "Your equipped gear and total power."},
 			{"!rpg stash [slot] / equip <#>", "Bank an equipped item, list your stash, or equip a stashed one."},
 			{"!rpg info", "Realm summary: idlers online, the top player, the active quest."},
+			{"!rpg who (online)", "Who's idling right now, highest level first."},
 			{"!rpg top [kills|gold|duels]", "Leaderboards — by level (default), or kills/gold/duels."},
 			{"!rpg feats [name]", "One-time achievements you've earned."},
 			{"!rpg rebirth", "At level 50+, reset to level 0 for permanent prestige (★) and faster leveling — you keep gold, gear & glory."},
