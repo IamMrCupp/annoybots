@@ -876,7 +876,9 @@ func (m *Manager) Tick() {
 	m.questTick(context.Background())
 	m.worldBossTick(context.Background())  // advance an active raid
 	m.maybeWorldBoss(context.Background()) // or rarely raise one
-	for _, p := range m.snapshot() {
+	roster := m.snapshot()
+	step = step * fellowshipPct(len(roster)) / 100 // idling together speeds everyone up
+	for _, p := range roster {
 		ctx := context.Background()
 		key := sheetKey(p.key)
 		m.moveOnMap(ctx, p)  // wander the world map (or travel to a town)

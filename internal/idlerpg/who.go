@@ -44,5 +44,9 @@ func (m *Manager) who(msg engine.Message) string {
 	for i, r := range rows {
 		parts[i] = fmt.Sprintf("%s (lvl %d)", r.nick, r.level)
 	}
-	return fmt.Sprintf("🧍 idling now (%d): %s", len(rows), strings.Join(parts, ", "))
+	fellow := ""
+	if b := fellowshipPct(len(rows)) - 100; b > 0 {
+		fellow = fmt.Sprintf(" — 🤝 fellowship: +%d%% leveling for all", b)
+	}
+	return fmt.Sprintf("🧍 idling now (%d): %s%s", len(rows), strings.Join(parts, ", "), fellow)
 }
