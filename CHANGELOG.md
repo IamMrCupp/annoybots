@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.53.0](https://github.com/IamMrCupp/annoybots/compare/v1.52.0...v1.53.0) (2026-07-10)
+
+
+### Features
+
+* **idlerpg:** guilds ([3099059](https://github.com/IamMrCupp/annoybots/commit/30990592b3fba013bed9317c4da6b099239db809))
+* **idlerpg:** guilds — band together, pool gold, level faster (closes [#198](https://github.com/IamMrCupp/annoybots/issues/198)) ([9c61693](https://github.com/IamMrCupp/annoybots/commit/9c61693420b2a16be3bc913305a69af863323163))
+
 ## [1.52.0](https://github.com/IamMrCupp/annoybots/compare/v1.51.0...v1.52.0) (2026-07-10)
 
 
