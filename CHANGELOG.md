@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.52.0](https://github.com/IamMrCupp/annoybots/compare/v1.51.0...v1.52.0) (2026-07-10)
+
+
+### Features
+
+* **idlerpg:** dungeons ([3087d4f](https://github.com/IamMrCupp/annoybots/commit/3087d4f752aac5b8bba1cc0861a4db1cb0c32b15))
+* **idlerpg:** dungeons — delve rooms you find while roaming (closes [#193](https://github.com/IamMrCupp/annoybots/issues/193)) ([8ae9cf7](https://github.com/IamMrCupp/annoybots/commit/8ae9cf70d3e95d3509f5d38b1fe23df8d0efae0c))
+
 ## [1.51.0](https://github.com/IamMrCupp/annoybots/compare/v1.50.0...v1.51.0) (2026-07-10)
 
 
