@@ -86,3 +86,26 @@ func TestDungeonStatus(t *testing.T) {
 		t.Fatalf("delve status should name the dungeon and rooms left, got %q", got)
 	}
 }
+
+func TestClearingADungeonEarnsDelverAndCounts(t *testing.T) {
+	m, _, st := newMgr()
+	ctx := context.Background()
+	m.Handle(chanMsg("alice", "!rpg"))
+	st.HSet(ctx, sheetKey("net|alice"), "level", 90)
+	st.HSet(ctx, sheetKey("net|alice"), "dgn", 1)
+	st.SetStr(ctx, dungeonKey("net|alice"), "the Drowned Vault")
+	// Kit her out so beating the lord doesn't depend on the RNG order.
+	for _, slot := range itemSlots {
+		st.HSet(ctx, sheetKey("net|alice"), itemField(slot), 200)
+	}
+	p := player{network: "net", nick: "alice", channel: "#chan", key: "net|alice"}
+
+	m.dungeonTick(ctx, p)
+	s, _ := st.HGetAll(ctx, sheetKey("net|alice"))
+	if s["feats"]&(1<<8) == 0 {
+		t.Fatal("clearing a dungeon should earn Delver")
+	}
+	if got, _ := st.Get(ctx, statKey("delves")); got != 1 {
+		t.Fatalf("the realm should count one cleared dungeon, got %d", got)
+	}
+}

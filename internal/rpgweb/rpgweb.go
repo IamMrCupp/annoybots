@@ -323,6 +323,7 @@ const indexTmpl = `<!doctype html>
   <div class="stat"><span class="num">{{.Stats.Bosses}}</span><span class="lab">bosses felled</span></div>
   <div class="stat"><span class="num">{{.Stats.Gold}}</span><span class="lab">gold minted</span></div>
   <div class="stat"><span class="num">{{.Stats.Legendaries}}</span><span class="lab">legendaries</span></div>
+  <div class="stat"><span class="num">{{.Stats.Delves}}</span><span class="lab">dungeons cleared</span></div>
 </div>
 {{if .WEvent}}
 <div class="wevent"><strong>🌕 {{.WEvent.Name}}</strong> — {{.WEvent.Desc}} <span class="muted">({{dur .WEvent.Left}} left)</span></div>

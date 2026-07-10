@@ -26,6 +26,7 @@ type RealmStats struct {
 	Bosses      int64 // bosses felled (lifetime)
 	Gold        int64 // gold minted by kills (lifetime)
 	Legendaries int64 // legendary items found (lifetime)
+	Delves      int64 // dungeons cleared (lifetime)
 }
 
 // ReadStats gathers the realm overview: hero count + level sum from the
@@ -43,5 +44,6 @@ func ReadStats(ctx context.Context, store state.Store) (RealmStats, error) {
 	s.Bosses, _ = store.Get(ctx, statKey("bosses"))
 	s.Gold, _ = store.Get(ctx, statKey("gold"))
 	s.Legendaries, _ = store.Get(ctx, statKey("legendaries"))
+	s.Delves, _ = store.Get(ctx, statKey("delves"))
 	return s, nil
 }

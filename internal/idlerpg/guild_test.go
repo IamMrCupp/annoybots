@@ -141,3 +141,23 @@ func TestReadGuildsRanksBySummedLevels(t *testing.T) {
 		t.Fatalf("guilds should rank by summed member level, got %+v", views)
 	}
 }
+
+func TestFoundingAGuildEarnsGuildmaster(t *testing.T) {
+	m, _, st := newMgr()
+	ctx := context.Background()
+	m.Handle(chanMsg("alice", "!rpg"))
+	st.HSet(ctx, sheetKey("net|alice"), "gold", guildFoundCost)
+
+	m.guildCmd(chanMsg("alice", "!rpg guild create Founders"), []string{"!rpg", "guild", "create", "Founders"})
+	s, _ := st.HGetAll(ctx, sheetKey("net|alice"))
+	if s["feats"]&(1<<9) == 0 {
+		t.Fatal("founding a guild should earn Guildmaster")
+	}
+	// Joining one shouldn't.
+	m.Handle(chanMsg("bob", "!rpg"))
+	m.guildCmd(chanMsg("bob", "!rpg guild join Founders"), []string{"!rpg", "guild", "join", "Founders"})
+	s, _ = st.HGetAll(ctx, sheetKey("net|bob"))
+	if s["feats"]&(1<<9) != 0 {
+		t.Fatal("merely joining should not earn Guildmaster")
+	}
+}
