@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.55.0](https://github.com/IamMrCupp/annoybots/compare/v1.54.0...v1.55.0) (2026-07-10)
+
+
+### Features
+
+* **rpgweb:** mobile-responsive dashboard ([f5da289](https://github.com/IamMrCupp/annoybots/commit/f5da28915680ae9a0f362cc4edd238439839cfb9))
+* **rpgweb:** responsive dashboard — no horizontal scroll on mobile (closes [#204](https://github.com/IamMrCupp/annoybots/issues/204)) ([6d044ef](https://github.com/IamMrCupp/annoybots/commit/6d044ef4bfcb9c3b4fe56b74179f3b0842fbb5a6))
+
 ## [1.54.0](https://github.com/IamMrCupp/annoybots/compare/v1.53.0...v1.54.0) (2026-07-10)
 
 
