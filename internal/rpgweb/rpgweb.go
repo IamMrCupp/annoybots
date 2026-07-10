@@ -137,6 +137,12 @@ func humanAgo(secs int64) string {
 	}
 }
 
+// mapData is the map page view model: the world plus the current per-biome sky.
+type mapData struct {
+	idlerpg.WorldView
+	Weather []idlerpg.WeatherView
+}
+
 // worldMap renders the persistent world map: every placed player + the towns.
 func (s *Server) worldMap(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
@@ -146,8 +152,9 @@ func (s *Server) worldMap(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "the realm is unreachable right now.", http.StatusServiceUnavailable)
 		return
 	}
+	sky, _ := idlerpg.ReadWeather(ctx, s.store)
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	_ = s.mapTmpl.Execute(w, world)
+	_ = s.mapTmpl.Execute(w, mapData{WorldView: world, Weather: sky})
 }
 
 // helpData is the /help page view model: the public command groups plus the
@@ -480,6 +487,7 @@ const mapTmpl = `<!doctype html>
   .sea-l { fill:#6e8a85; font-style:italic; font-size:13px; }
   .region-l { fill:#9a8255; font-style:italic; font-size:11px; }
   .frame { fill:none; stroke:#6b563b; }
+  .sky { color:#6b5a3a; font-style:italic; margin:0 0 1rem; }
   .town-l { fill:#5a3a22; font-size:12px; font-variant:small-caps; }
   .biome-l { fill:#9a8255; font-size:8.5px; font-style:italic; }
   .dot { fill:#2f4a78; stroke:#e7d9b5; stroke-width:1.2; }
@@ -492,6 +500,7 @@ const mapTmpl = `<!doctype html>
 <body>
 <nav class="nav"><a href="/">⚔ realm</a><a href="/map">🗺 map</a><a href="/hall">🏆 hall of fame</a><a href="/help">📖 how to play</a></nav>
 <h1>🗺 the realm map</h1>
+{{if .Weather}}<p class="sky">the sky — {{range $i, $w := .Weather}}{{if $i}} · {{end}}{{$w.Biome}}: {{$w.Kind}}{{end}}</p>{{end}}
 <p class="sub">{{len .Players}} souls abroad in the realm</p>
 <svg class="world" viewBox="0 0 {{.Size}} {{.Size}}" role="img" aria-label="fantasy map of the realm with towns and wandering players">
   <rect x="0" y="0" width="{{.Size}}" height="{{.Size}}" fill="#e7d9b5"/>

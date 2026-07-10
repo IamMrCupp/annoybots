@@ -161,6 +161,13 @@ func (m *Manager) resolveFight(ctx context.Context, p player, sheet map[string]i
 	case 2:
 		pAtk++ // chaotic: +attack
 	}
+	// the local sky leans on the fight: fog blinds you, a storm steadies your foe.
+	switch m.weatherAt(biomeOf(sheet["mx"], sheet["my"])) {
+	case "fog":
+		pAtk -= fogAtkPenalty
+	case "storm":
+		mon.Atk += stormAtkBonus
+	}
 	pDmgBonus := classAttackMod(sheet, class)
 	if pDmgBonus < 0 {
 		pDmgBonus = 0

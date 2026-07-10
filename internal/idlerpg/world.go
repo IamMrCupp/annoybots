@@ -65,6 +65,10 @@ func (m *Manager) moveOnMap(ctx context.Context, p player) {
 		if m.mountOf(ctx, p.key) != "" {
 			step += mountBonus
 		}
+		step -= travelSlow(m.weatherAt(biomeOf(x, y))) // rain and snow slow the road
+		if step < 2 {
+			step = 2
+		}
 		nx, ny, reached := stepToward(int(x), int(y), t.X, t.Y, step)
 		_ = m.store.HSet(ctx, sheetKey(p.key), "mx", int64(nx))
 		_ = m.store.HSet(ctx, sheetKey(p.key), "my", int64(ny))
