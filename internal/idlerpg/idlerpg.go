@@ -77,6 +77,9 @@ type Manager struct {
 	wmu     sync.Mutex
 	weather *weatherState // per-biome sky, rotated periodically
 
+	gmu    sync.Mutex
+	guilds *guildBook // every guild in the realm
+
 	rmu sync.Mutex
 	rng *rand.Rand
 }
@@ -112,6 +115,7 @@ func New(store state.Store, out engine.Sender, resolve Resolver, interval, baseT
 	m.loadBoss(context.Background())
 	m.loadWorldEvent(context.Background())
 	m.loadWeather(context.Background())
+	m.loadGuilds(context.Background())
 	return m
 }
 
@@ -247,6 +251,12 @@ func (m *Manager) command(msg engine.Message, fields []string) {
 			return
 		case "dungeon", "delve":
 			m.out.Say(msg.Network, msg.Channel, m.dungeonStatus(msg))
+			return
+		case "guild":
+			m.out.Say(msg.Network, msg.Channel, m.guildCmd(msg, fields))
+			return
+		case "guilds":
+			m.out.Say(msg.Network, msg.Channel, m.guildBoard())
 			return
 		case "quest":
 			m.out.Say(msg.Network, msg.Channel, m.questStatus())
@@ -738,6 +748,7 @@ func (m *Manager) wipeChar(ctx context.Context, key string) {
 	_ = m.store.Del(ctx, petKey(key))
 	_ = m.store.Del(ctx, dungeonKey(key))
 	_ = m.store.Del(ctx, sheetKey(key))
+	m.dropFromGuild(ctx, key)
 	_ = m.store.ZRem(ctx, boardKey(), key)
 	m.mu.Lock()
 	for ok, p := range m.online {
@@ -765,6 +776,10 @@ func (m *Manager) wipeAll(ctx context.Context) int {
 	}
 	_ = m.store.Del(ctx, boardKey())
 	_ = m.store.Del(ctx, questKey())
+	_ = m.store.Del(ctx, guildsKey())
+	m.gmu.Lock()
+	m.guilds = nil
+	m.gmu.Unlock()
 	m.qmu.Lock()
 	m.quest = nil
 	m.qmu.Unlock()
@@ -916,7 +931,8 @@ func (m *Manager) Tick() {
 		if m.tickHP(ctx, p.key) {
 			continue // downed and recovering — no progress this tick
 		}
-		ttl, err := m.store.HIncr(ctx, key, "ttl", -step)
+		pstep := step * m.guildPct(p.key, roster) / 100 // guildmates at your side speed you further
+		ttl, err := m.store.HIncr(ctx, key, "ttl", -pstep)
 		if err != nil {
 			continue
 		}

@@ -135,6 +135,12 @@ one-line summary (and your title).
   blows harder to land there (-attack), a **storm** steadies your foes (+their
   attack), and **rain** or **snow** slow the road through it. `!rpg weather` shows
   the sky everywhere; the dashboard map carries a legend.
+- **Guilds.** `!rpg guild create <name>` founds a band of heroes for 500g; others
+  `!rpg guild join <name>`. A guild's level is the sum of its members' levels, its
+  vault is a shared purse (`!rpg guild deposit <gold>`), and whenever guildmates
+  idle side by side each of them levels a little faster — +3% per guildmate present,
+  up to +15%, stacking with the fellowship bonus. `!rpg guilds` ranks them; the Hall
+  of Fame carries a guild table.
 - **Dungeons.** While roaming you may stumble on a way down — the Sunken Crypt,
   the Gloomforge, the Barrow of Kings. A delve is personal and runs over several
   ticks: each one clears a room (a lurking foe, a sprung trap, or a chest), and
