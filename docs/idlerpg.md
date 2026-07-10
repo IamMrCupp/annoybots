@@ -145,7 +145,8 @@ one-line summary (and your title).
   the Gloomforge, the Barrow of Kings. A delve is personal and runs over several
   ticks: each one clears a room (a lurking foe, a sprung trap, or a chest), and
   the final chamber holds the **dungeon's lord**, worth a heavy purse and
-  guaranteed treasure. Get downed inside and you're dragged out, the delve lost.
+  guaranteed treasure — and the **Delver** feat. Get downed inside and you're dragged
+  out, the delve lost.
   You stop wandering while underground. `!rpg dungeon` shows your progress, and it
   appears on your dashboard page.
 - **World events.** Now and then the whole realm shifts for a while: a **Blood

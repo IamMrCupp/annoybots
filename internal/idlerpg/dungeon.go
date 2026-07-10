@@ -102,6 +102,9 @@ func (m *Manager) dungeonTick(ctx context.Context, p player) {
 			m.bumpStat("gold", plunder)
 			m.drama(p.network, p.channel, fmt.Sprintf("🏆 %s plunders %s — +%dg and treasure hauled from the dark!", p.nick, name, plunder))
 			m.findItem(ctx, p, lvl+12) // guaranteed good spoils
+			m.bumpStat("delves", 1)
+			m.awardFeat(ctx, p, 1<<8) // Delver
+
 		}
 		m.exitDungeon(ctx, p.key)
 		return

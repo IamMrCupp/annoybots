@@ -246,7 +246,12 @@ func (m *Manager) guildCmd(msg engine.Message, fields []string) string {
 	}
 	switch strings.ToLower(fields[2]) {
 	case "create", "found":
-		return m.guildCreate(ctx, msg.Nick, key, strings.Join(fields[3:], " "))
+		guildless := m.guildOf(key) == nil
+		out := m.guildCreate(ctx, msg.Nick, key, strings.Join(fields[3:], " "))
+		if guildless && m.guildOf(key) != nil { // the founding took
+			m.awardFeat(ctx, player{network: msg.Network, nick: msg.Nick, channel: msg.Channel, key: key}, 1<<9)
+		}
+		return out
 	case "join":
 		return m.guildJoin(ctx, msg.Nick, key, strings.Join(fields[3:], " "))
 	case "leave":

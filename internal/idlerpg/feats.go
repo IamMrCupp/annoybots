@@ -29,6 +29,8 @@ var feats = []featDef{
 	{1 << 5, "Deep Pockets (1000 gold)"},
 	{1 << 6, "Exterminator (5000 kills)"},
 	{1 << 7, "Dragon-Hoard (10000 gold)"},
+	{1 << 8, "Delver (a dungeon cleared)"},
+	{1 << 9, "Guildmaster (founded a guild)"},
 }
 
 func featName(bit int64) string {
