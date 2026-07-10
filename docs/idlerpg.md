@@ -131,6 +131,10 @@ one-line summary (and your title).
 - **Events.** At random the gods intervene — a **godsend** (time forward), a
   **calamity** (time back, or an item loses its luster), or the **Hand of God**
   (a big swing either way).
+- **Weather.** Each biome has its own sky, rotating every so often: **fog** makes
+  blows harder to land there (-attack), a **storm** steadies your foes (+their
+  attack), and **rain** or **snow** slow the road through it. `!rpg weather` shows
+  the sky everywhere; the dashboard map carries a legend.
 - **World events.** Now and then the whole realm shifts for a while: a **Blood
   Moon** (monsters prowl far more often), the **Harvest Festival** (every coin is
   worth half again), or a **Storm of Fate** (the gods meddle far more often).

@@ -74,6 +74,9 @@ type Manager struct {
 	emu    sync.Mutex
 	wevent *worldEvent // the active realm-wide world event, nil when none
 
+	wmu     sync.Mutex
+	weather *weatherState // per-biome sky, rotated periodically
+
 	rmu sync.Mutex
 	rng *rand.Rand
 }
@@ -108,6 +111,7 @@ func New(store state.Store, out engine.Sender, resolve Resolver, interval, baseT
 	m.loadQuest(context.Background())
 	m.loadBoss(context.Background())
 	m.loadWorldEvent(context.Background())
+	m.loadWeather(context.Background())
 	return m
 }
 
@@ -237,6 +241,9 @@ func (m *Manager) command(msg engine.Message, fields []string) {
 			return
 		case "who", "online":
 			m.out.Say(msg.Network, msg.Channel, m.who(msg))
+			return
+		case "weather", "sky":
+			m.out.Say(msg.Network, msg.Channel, m.weatherStatus())
 			return
 		case "quest":
 			m.out.Say(msg.Network, msg.Channel, m.questStatus())
@@ -882,6 +889,7 @@ func (m *Manager) Tick() {
 	if step < 1 {
 		step = 1
 	}
+	m.weatherTick(context.Background())    // roll a fresh sky when the old one blows out
 	m.worldEventTick(context.Background()) // begin/end a realm-wide modifier
 	m.maybeEvent(context.Background())
 	m.maybeMonster(context.Background())
