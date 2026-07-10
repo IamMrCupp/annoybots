@@ -311,6 +311,14 @@ const indexTmpl = `<!doctype html>
   a { color:#7fd1a8; text-decoration:none; }
   a:hover { text-decoration:underline; }
   footer { margin-top:2rem; color:#4b5563; font-size:.8rem; }
+  @media (max-width:640px) {
+    body { padding:1rem .85rem; }
+    h1 { font-size:1.2rem; }
+    .nav { display:flex; flex-wrap:wrap; gap:.4rem 1rem; }
+    .nav a { margin-right:0; }
+    /* wide tables scroll inside themselves instead of stretching the page */
+    table { display:block; overflow-x:auto; white-space:nowrap; -webkit-overflow-scrolling:touch; }
+  }
 </style>
 </head>
 <body>
@@ -417,6 +425,14 @@ const charTmpl = `<!doctype html>
   a { color:#7fd1a8; text-decoration:none; }
   a:hover { text-decoration:underline; }
   footer { margin-top:2rem; color:#4b5563; font-size:.8rem; }
+  @media (max-width:640px) {
+    body { padding:1rem .85rem; }
+    h1 { font-size:1.2rem; }
+    .nav { display:flex; flex-wrap:wrap; gap:.4rem 1rem; }
+    .nav a { margin-right:0; }
+    /* wide tables scroll inside themselves instead of stretching the page */
+    table { display:block; overflow-x:auto; white-space:nowrap; -webkit-overflow-scrolling:touch; }
+  }
 </style>
 </head>
 <body>
@@ -506,6 +522,12 @@ const mapTmpl = `<!doctype html>
   a { color:#e9b949; text-decoration:none; }
   a:hover { text-decoration:underline; }
   footer { margin-top:1.5rem; color:#6b5a3a; font-size:.8rem; text-align:center; }
+  @media (max-width:640px) {
+    body { padding:1rem .85rem; }
+    h1 { font-size:1.3rem; }
+    .nav { display:flex; flex-wrap:wrap; gap:.4rem 1rem; }
+    .nav a { margin-right:0; }
+  }
 </style>
 </head>
 <body>
@@ -617,6 +639,14 @@ const helpTmpl = `<!doctype html>
   a { color:#7fd1a8; text-decoration:none; }
   a:hover { text-decoration:underline; }
   footer { margin-top:2rem; color:#4b5563; font-size:.8rem; }
+  @media (max-width:640px) {
+    body { padding:1rem .85rem; }
+    h1 { font-size:1.2rem; }
+    .nav { display:flex; flex-wrap:wrap; gap:.4rem 1rem; }
+    .nav a { margin-right:0; }
+    /* wide tables scroll inside themselves instead of stretching the page */
+    table { display:block; overflow-x:auto; white-space:nowrap; -webkit-overflow-scrolling:touch; }
+  }
 </style>
 </head>
 <body>
@@ -692,6 +722,14 @@ const hallTmpl = `<!doctype html>
   .guilds-h { font-size:1.1rem; color:#e9b949; margin:2rem 0 .25rem; }
   table.guilds { margin-top:.5rem; max-width:44rem; }
   footer { margin-top:2rem; color:#4b5563; font-size:.8rem; }
+  @media (max-width:640px) {
+    body { padding:1rem .85rem; }
+    h1 { font-size:1.2rem; }
+    .nav { display:flex; flex-wrap:wrap; gap:.4rem 1rem; }
+    .nav a { margin-right:0; }
+    /* wide tables scroll inside themselves instead of stretching the page */
+    table { display:block; overflow-x:auto; white-space:nowrap; -webkit-overflow-scrolling:touch; }
+  }
 </style>
 </head>
 <body>
