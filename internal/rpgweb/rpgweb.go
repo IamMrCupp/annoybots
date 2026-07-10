@@ -424,6 +424,7 @@ const charTmpl = `<!doctype html>
   <tr><td class="k">location</td><td class="muted">{{.Location}}</td></tr>
   {{if .Pet}}<tr><td class="k">companion</td><td>🐾 {{.Pet}}</td></tr>{{end}}
   {{if .Mount}}<tr><td class="k">mount</td><td>🐎 {{.Mount}}</td></tr>{{end}}
+  {{if .Dungeon}}<tr><td class="k">delving</td><td>🏚 {{.Dungeon}} — {{.Rooms}} room(s) to go</td></tr>{{end}}
   {{if .Draughts}}<tr><td class="k">draughts</td><td>🧪 {{.Draughts}}</td></tr>{{end}}
   <tr><td class="k">time to next</td><td class="muted">{{dur .TTL}}</td></tr>
   <tr><td class="k">power</td><td>{{.Power}}</td></tr>

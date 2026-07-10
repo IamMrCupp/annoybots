@@ -47,6 +47,7 @@ func CommandHelp() []HelpGroup {
 		{"World & combat", []HelpItem{
 			{"!rpg travel <town>", "Set off for a town; you walk there over the next ticks."},
 			{"!rpg town", "Where you are on the map (at a town, travelling, or roaming)."},
+			{"!rpg dungeon (delve)", "Your delve — found by roaming; each tick clears a room, the last holds the dungeon's lord."},
 			{"!rpg quest", "The active quest's party, objective, and time left."},
 			{"!rpg duel <name>", "A friendly best-of-three spar with a present player."},
 			{"!rpg give <name> <amount|item #>", "Give gold, or hand a stashed item, to another player."},
