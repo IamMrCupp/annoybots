@@ -79,6 +79,7 @@ type pageData struct {
 	Feed      []feedRow
 	Stats     idlerpg.RealmStats
 	Boss      *idlerpg.WorldBossView
+	WEvent    *idlerpg.WorldEventView
 }
 
 // feedRow is one rendered activity-feed line: the text plus a relative timestamp.
@@ -106,8 +107,9 @@ func (s *Server) index(w http.ResponseWriter, r *http.Request) {
 	events, _ := idlerpg.ReadFeed(ctx, s.store, feedSize)
 	stats, _ := idlerpg.ReadStats(ctx, s.store)
 	boss, _ := idlerpg.ReadWorldBoss(ctx, s.store)
+	wev, _ := idlerpg.ReadWorldEvent(ctx, s.store, s.now().Unix())
 
-	data := pageData{Board: board, Quest: quest, Stats: stats, Boss: boss}
+	data := pageData{Board: board, Quest: quest, Stats: stats, Boss: boss, WEvent: wev}
 	if quest != nil && quest.Kind != "map" {
 		data.QuestLeft = humanLeft(quest.Deadline - s.now().Unix())
 	}
@@ -282,6 +284,8 @@ const indexTmpl = `<!doctype html>
   .stat { flex:1 1 7rem; min-width:7rem; background:#15171d; border:1px solid #20232b; border-radius:8px; padding:.6rem .8rem; }
   .stat .num { display:block; font-size:1.5rem; color:#e9b949; line-height:1.1; }
   .stat .lab { font-size:.75rem; color:#7c8290; text-transform:uppercase; letter-spacing:.05em; }
+  .wevent { max-width:760px; background:#12161d; border:1px solid #2c3b52; border-radius:8px; padding:.7rem 1rem; margin:0 0 1rem; }
+  .wevent strong { color:#8aa0c6; }
   .boss { max-width:760px; background:#1d1212; border:1px solid #5a2b2b; border-radius:8px; padding:.8rem 1rem; margin:0 0 1.5rem; }
   .boss strong { color:#e06c75; }
   .bar { height:14px; background:#2a1414; border-radius:7px; overflow:hidden; margin-top:.5rem; }
@@ -305,6 +309,9 @@ const indexTmpl = `<!doctype html>
   <div class="stat"><span class="num">{{.Stats.Gold}}</span><span class="lab">gold minted</span></div>
   <div class="stat"><span class="num">{{.Stats.Legendaries}}</span><span class="lab">legendaries</span></div>
 </div>
+{{if .WEvent}}
+<div class="wevent"><strong>🌕 {{.WEvent.Name}}</strong> — {{.WEvent.Desc}} <span class="muted">({{dur .WEvent.Left}} left)</span></div>
+{{end}}
 {{if .Boss}}
 <div class="boss">
   <strong>🐲 WORLD BOSS — {{.Boss.Name}}</strong>

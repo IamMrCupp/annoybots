@@ -120,7 +120,11 @@ func (m *Manager) pickMonster(level int64, biome string) monster {
 
 // maybeMonster occasionally throws a monster at a random online idler.
 func (m *Manager) maybeMonster(ctx context.Context) {
-	if m.roll(monsterOdds) != 0 {
+	odds := monsterOdds
+	if m.eventKind() == "bloodmoon" { // a Blood Moon draws the monsters out
+		odds = 2
+	}
+	if m.roll(odds) != 0 {
 		return
 	}
 	if p, ok := m.randomOnline(); ok {
@@ -226,14 +230,15 @@ func (m *Manager) resolveFight(ctx context.Context, p player, sheet map[string]i
 		if usedAbility && cm.ability != "" {
 			flourish = " with " + cm.ability
 		}
+		gold := m.harvestGold(mon.Gold) // the Harvest Festival fattens every purse
 		if mon.Boss {
 			reward := m.pctOfTTL(ctx, p.key, 22, 35)
 			_, _ = m.store.HIncr(ctx, sheetKey(p.key), "ttl", -reward)
-			_, _ = m.store.HIncr(ctx, sheetKey(p.key), "gold", mon.Gold)
+			_, _ = m.store.HIncr(ctx, sheetKey(p.key), "gold", gold)
 			_, _ = m.store.HIncr(ctx, sheetKey(p.key), "kills", bossKills)
 			m.drama(p.network, p.channel, fmt.Sprintf(
 				"🏆 %s has slain %s%s! a legend is born — +%dg, %d kills, and %ds toward glory.",
-				p.nick, mon.Name, flourish, mon.Gold, bossKills, reward))
+				p.nick, mon.Name, flourish, gold, bossKills, reward))
 			// guaranteed top-tier spoils: two drops rolled as if far higher level.
 			m.findItem(ctx, p, sheet["level"]+30)
 			m.findItem(ctx, p, sheet["level"]+30)
@@ -245,22 +250,22 @@ func (m *Manager) resolveFight(ctx context.Context, p player, sheet map[string]i
 			m.questKillCredit(ctx, p.key)
 			m.bumpStat("kills", 1)
 			m.bumpStat("bosses", 1)
-			m.bumpStat("gold", mon.Gold)
+			m.bumpStat("gold", gold)
 			return
 		}
 		reward := m.pctOfTTL(ctx, p.key, 8, 14)
 		_, _ = m.store.HIncr(ctx, sheetKey(p.key), "ttl", -reward)
-		_, _ = m.store.HIncr(ctx, sheetKey(p.key), "gold", mon.Gold)
+		_, _ = m.store.HIncr(ctx, sheetKey(p.key), "gold", gold)
 		_, _ = m.store.HIncr(ctx, sheetKey(p.key), "kills", 1)
 		m.drama(p.network, p.channel, fmt.Sprintf(
-			"⚔️ %s slew %s%s — +%dg, %ds closer to the next level.", p.nick, mon.Name, flourish, mon.Gold, reward))
+			"⚔️ %s slew %s%s — +%dg, %ds closer to the next level.", p.nick, mon.Name, flourish, gold, reward))
 		if m.roll(3) == 0 {
 			m.findItem(ctx, p, sheet["level"])
 		}
 		m.checkCombatFeats(ctx, p, false)
 		m.questKillCredit(ctx, p.key)
 		m.bumpStat("kills", 1)
-		m.bumpStat("gold", mon.Gold)
+		m.bumpStat("gold", gold)
 		return
 	}
 
