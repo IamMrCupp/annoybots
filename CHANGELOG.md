@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.54.0](https://github.com/IamMrCupp/annoybots/compare/v1.53.0...v1.54.0) (2026-07-10)
+
+
+### Features
+
+* **idlerpg:** Delver + Guildmaster feats ([03429c6](https://github.com/IamMrCupp/annoybots/commit/03429c6cafa36fbb488a3e76cd7f44fcf4fcd56c))
+* **idlerpg:** Delver and Guildmaster feats, a delves counter (closes [#201](https://github.com/IamMrCupp/annoybots/issues/201)) ([4d034d8](https://github.com/IamMrCupp/annoybots/commit/4d034d8590126fcc1e21275355820ac4c016cd66))
+
 ## [1.53.0](https://github.com/IamMrCupp/annoybots/compare/v1.52.0...v1.53.0) (2026-07-10)
 
 
