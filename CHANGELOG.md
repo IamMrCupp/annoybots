@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.50.0](https://github.com/IamMrCupp/annoybots/compare/v1.49.0...v1.50.0) (2026-07-10)
+
+
+### Features
+
+* **idlerpg:** seasonal world events — Blood Moon, Harvest Festival, Storm of Fate (closes [#190](https://github.com/IamMrCupp/annoybots/issues/190)) ([d053551](https://github.com/IamMrCupp/annoybots/commit/d0535510e78bcb9bbe0b05e8b08b853c0319f804))
+* **idlerpg:** seasonal world events ([#190](https://github.com/IamMrCupp/annoybots/issues/190)) ([1cc1fa2](https://github.com/IamMrCupp/annoybots/commit/1cc1fa2dbee01f608e89eb2fbfcf45632495b7a9))
+
 ## [1.49.0](https://github.com/IamMrCupp/annoybots/compare/v1.48.0...v1.49.0) (2026-07-03)
 
 
