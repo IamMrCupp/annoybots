@@ -135,6 +135,13 @@ one-line summary (and your title).
   blows harder to land there (-attack), a **storm** steadies your foes (+their
   attack), and **rain** or **snow** slow the road through it. `!rpg weather` shows
   the sky everywhere; the dashboard map carries a legend.
+- **Dungeons.** While roaming you may stumble on a way down — the Sunken Crypt,
+  the Gloomforge, the Barrow of Kings. A delve is personal and runs over several
+  ticks: each one clears a room (a lurking foe, a sprung trap, or a chest), and
+  the final chamber holds the **dungeon's lord**, worth a heavy purse and
+  guaranteed treasure. Get downed inside and you're dragged out, the delve lost.
+  You stop wandering while underground. `!rpg dungeon` shows your progress, and it
+  appears on your dashboard page.
 - **World events.** Now and then the whole realm shifts for a while: a **Blood
   Moon** (monsters prowl far more often), the **Harvest Festival** (every coin is
   worth half again), or a **Storm of Fate** (the gods meddle far more often).

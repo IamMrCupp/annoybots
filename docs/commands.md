@@ -47,6 +47,7 @@ Opt in with `!rpg`, then "play" by being present and **quiet**. Full rules in
 | `!rpg quest` | The active quest's party, objective, and time left. |
 | `!rpg travel <town>` | Set off for a town; you walk there over the next ticks. |
 | `!rpg town` | Where you are on the map (at a town, travelling, or roaming). |
+| `!rpg dungeon` (`delve`) | Your delve — found by roaming; each tick clears a room, the last holds the dungeon's lord. |
 | `!rpg pet` (`companion`) | Your companion and the combat bonus it grants (earned by slaying a boss). |
 | `!rpg duel <name>` (`spar`) | Friendly best-of-three spar with a present player — bragging rights only, no stat changes. |
 | `!rpg feats [name]` (`achievements`) | One-time achievements you've earned (first kill, first boss, a legendary, 1000 gold, …). |

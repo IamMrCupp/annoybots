@@ -245,6 +245,9 @@ func (m *Manager) command(msg engine.Message, fields []string) {
 		case "weather", "sky":
 			m.out.Say(msg.Network, msg.Channel, m.weatherStatus())
 			return
+		case "dungeon", "delve":
+			m.out.Say(msg.Network, msg.Channel, m.dungeonStatus(msg))
+			return
 		case "quest":
 			m.out.Say(msg.Network, msg.Channel, m.questStatus())
 			return
@@ -733,6 +736,7 @@ func (m *Manager) wipeChar(ctx context.Context, key string) {
 	_ = m.store.Del(ctx, stashKey(key))
 	_ = m.store.Del(ctx, mountKey(key))
 	_ = m.store.Del(ctx, petKey(key))
+	_ = m.store.Del(ctx, dungeonKey(key))
 	_ = m.store.Del(ctx, sheetKey(key))
 	_ = m.store.ZRem(ctx, boardKey(), key)
 	m.mu.Lock()
@@ -756,6 +760,7 @@ func (m *Manager) wipeAll(ctx context.Context) int {
 		_ = m.store.Del(ctx, stashKey(e.Member))
 		_ = m.store.Del(ctx, mountKey(e.Member))
 		_ = m.store.Del(ctx, petKey(e.Member))
+		_ = m.store.Del(ctx, dungeonKey(e.Member))
 		_ = m.store.Del(ctx, sheetKey(e.Member))
 	}
 	_ = m.store.Del(ctx, boardKey())
@@ -901,7 +906,12 @@ func (m *Manager) Tick() {
 	for _, p := range roster {
 		ctx := context.Background()
 		key := sheetKey(p.key)
-		m.moveOnMap(ctx, p)  // wander the world map (or travel to a town)
+		if m.inDungeon(ctx, p.key) {
+			m.dungeonTick(ctx, p) // delving: push into the next room instead of roaming
+		} else {
+			m.moveOnMap(ctx, p) // wander the world map (or travel to a town)
+			m.maybeDiscoverDungeon(ctx, p)
+		}
 		m.tickStatus(ctx, p) // poison and other timed effects sap/decay
 		if m.tickHP(ctx, p.key) {
 			continue // downed and recovering — no progress this tick
