@@ -50,6 +50,7 @@ type CharView struct {
 	Class      string     // class, empty if unset
 	Pet        string     // companion's kind (e.g. "wolf"), empty if none
 	Mount      string     // steed's name, empty if none
+	Guild      string     // guild name, empty if unaffiliated
 	Dungeon    string     // the dungeon being delved, empty if not underground
 	Rooms      int64      // rooms left in that delve
 	Draughts   int64      // healing draughts carried
@@ -158,6 +159,7 @@ func readChar(ctx context.Context, store state.Store, key string) CharView {
 	pet, _ := store.GetStr(ctx, petKey(key))
 	mount, _ := store.GetStr(ctx, mountKey(key))
 	dgn, _ := store.GetStr(ctx, dungeonKey(key))
+	gld := guildNameFor(ctx, store, key)
 	var items []ItemView
 	for _, s := range itemSlots {
 		lvl := sheet[itemField(s)]
@@ -195,6 +197,7 @@ func readChar(ctx context.Context, store state.Store, key string) CharView {
 		Class:      class,
 		Pet:        pet,
 		Mount:      mount,
+		Guild:      gld,
 		Dungeon:    dgn,
 		Rooms:      sheet["dgn"],
 		Draughts:   sheet["pots"],

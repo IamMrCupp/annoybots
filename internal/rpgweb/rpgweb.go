@@ -169,6 +169,13 @@ type helpData struct {
 	Alignments []string
 }
 
+// hallData is everything the Hall of Fame renders: the ranking columns, then the
+// guild table beneath them.
+type hallData struct {
+	Boards []hallBoard
+	Guilds []idlerpg.GuildView
+}
+
 // hallBoard is one named ranking column on the Hall of Fame.
 type hallBoard struct {
 	Title string
@@ -193,8 +200,9 @@ func (s *Server) hall(w http.ResponseWriter, r *http.Request) {
 	for i := range boards {
 		boards[i].Rows, _ = idlerpg.ReadRanking(ctx, s.store, fields[i], hallSize)
 	}
+	guilds, _ := idlerpg.ReadGuilds(ctx, s.store)
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	_ = s.hallTmpl.Execute(w, boards)
+	_ = s.hallTmpl.Execute(w, hallData{Boards: boards, Guilds: guilds})
 }
 
 // help renders the command reference + the character-options catalog at /help.
@@ -424,6 +432,7 @@ const charTmpl = `<!doctype html>
   <tr><td class="k">location</td><td class="muted">{{.Location}}</td></tr>
   {{if .Pet}}<tr><td class="k">companion</td><td>🐾 {{.Pet}}</td></tr>{{end}}
   {{if .Mount}}<tr><td class="k">mount</td><td>🐎 {{.Mount}}</td></tr>{{end}}
+  {{if .Guild}}<tr><td class="k">guild</td><td>🛡 {{.Guild}}</td></tr>{{end}}
   {{if .Dungeon}}<tr><td class="k">delving</td><td>🏚 {{.Dungeon}} — {{.Rooms}} room(s) to go</td></tr>{{end}}
   {{if .Draughts}}<tr><td class="k">draughts</td><td>🧪 {{.Draughts}}</td></tr>{{end}}
   <tr><td class="k">time to next</td><td class="muted">{{dur .TTL}}</td></tr>
@@ -679,6 +688,8 @@ const hallTmpl = `<!doctype html>
   a { color:#7fd1a8; text-decoration:none; }
   a:hover { text-decoration:underline; }
   .muted { color:#6b7280; }
+  .guilds-h { font-size:1.1rem; color:#e9b949; margin:2rem 0 .25rem; }
+  table.guilds { margin-top:.5rem; max-width:44rem; }
   footer { margin-top:2rem; color:#4b5563; font-size:.8rem; }
 </style>
 </head>
@@ -687,7 +698,7 @@ const hallTmpl = `<!doctype html>
 <h1>🏆 Hall of Fame</h1>
 <p class="sub">the realm's greatest — ranked every way that matters.</p>
 <div class="halls">
-{{range .}}
+{{range .Boards}}
   {{$unit := .Unit}}
   <div class="board">
     <h2>{{.Title}}</h2>
@@ -701,6 +712,16 @@ const hallTmpl = `<!doctype html>
   </div>
 {{end}}
 </div>
+{{if .Guilds}}
+<h2 class="guilds-h">🛡 Guilds</h2>
+<p class="sub">bands of heroes, ranked by their members' summed levels.</p>
+<table class="guilds">
+  <tr><td class="rank"></td><td class="muted">guild</td><td class="muted">founder</td><td class="val muted">members</td><td class="val muted">vault</td><td class="val muted">level</td></tr>
+  {{range $i, $g := .Guilds}}
+  <tr><td class="rank">{{add $i 1}}</td><td>{{$g.Name}}</td><td class="muted">{{$g.Founder}}</td><td class="val">{{$g.Members}}</td><td class="val">{{$g.Vault}}<span class="muted"> g</span></td><td class="val">{{$g.Level}}</td></tr>
+  {{end}}
+</table>
+{{end}}
 <footer>annoybots · auto-refreshes every 60s · <a href="/">&larr; back to the realm</a></footer>
 </body>
 </html>`

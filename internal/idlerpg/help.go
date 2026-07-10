@@ -43,6 +43,8 @@ func CommandHelp() []HelpGroup {
 			{"!rpg class <" + strings.Join(classNames(), "|") + ">", "Pick a class — sharpens your attacks and feeds your HP."},
 			{"!rpg align <good|neutral|evil> [+ lawful|neutral|chaotic]", "Set your alignment on the D&D 9-point grid (affects combat)."},
 			{"!rpg pet (companion)", "Your companion (a wolf, boar, hawk, imp, or owlbear — earned by slaying a boss)."},
+			{"!rpg guild [create|join <name>|leave|deposit <gold>]", "Band together: found or join a guild, pool gold in its vault, and level faster when guildmates idle with you."},
+			{"!rpg guilds", "The guild leaderboard, by summed member levels."},
 		}},
 		{"World & combat", []HelpItem{
 			{"!rpg travel <town>", "Set off for a town; you walk there over the next ticks."},
