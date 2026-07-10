@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.51.0](https://github.com/IamMrCupp/annoybots/compare/v1.50.0...v1.51.0) (2026-07-10)
+
+
+### Features
+
+* **idlerpg:** per-biome weather ([#192](https://github.com/IamMrCupp/annoybots/issues/192)) ([5cd23c3](https://github.com/IamMrCupp/annoybots/commit/5cd23c32fb574f5b5f8c0b0734ef50fb416d4bea))
+* **idlerpg:** per-biome weather system (closes [#192](https://github.com/IamMrCupp/annoybots/issues/192)) ([152d925](https://github.com/IamMrCupp/annoybots/commit/152d92595b3ad900c7b74aa997c0bb9d4e412c18))
+
 ## [1.50.0](https://github.com/IamMrCupp/annoybots/compare/v1.49.0...v1.50.0) (2026-07-10)
 
 
