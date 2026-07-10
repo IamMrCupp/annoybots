@@ -71,6 +71,9 @@ type Manager struct {
 	bmu  sync.Mutex
 	boss *worldBoss // the active world-boss raid, nil when none
 
+	emu    sync.Mutex
+	wevent *worldEvent // the active realm-wide world event, nil when none
+
 	rmu sync.Mutex
 	rng *rand.Rand
 }
@@ -104,6 +107,7 @@ func New(store state.Store, out engine.Sender, resolve Resolver, interval, baseT
 	}
 	m.loadQuest(context.Background())
 	m.loadBoss(context.Background())
+	m.loadWorldEvent(context.Background())
 	return m
 }
 
@@ -475,6 +479,13 @@ func (m *Manager) info() string {
 	}
 	m.qmu.Unlock()
 
+	wev := ""
+	m.emu.Lock()
+	if e := m.wevent; e != nil {
+		wev = fmt.Sprintf(" · 🌕 %s — %s (%s left)", e.Name, e.Desc, dur(e.Deadline-m.now().Unix()))
+	}
+	m.emu.Unlock()
+
 	raid := ""
 	m.bmu.Lock()
 	if b := m.boss; b != nil {
@@ -486,7 +497,7 @@ func (m *Manager) info() string {
 	}
 	m.bmu.Unlock()
 
-	return fmt.Sprintf("the realm: %d idling now · top idler %s · %s%s.", online, lead, quest, raid)
+	return fmt.Sprintf("the realm: %d idling now · top idler %s · %s%s%s.", online, lead, quest, wev, raid)
 }
 
 // questStatus describes the active quest, or says there isn't one.
@@ -871,6 +882,7 @@ func (m *Manager) Tick() {
 	if step < 1 {
 		step = 1
 	}
+	m.worldEventTick(context.Background()) // begin/end a realm-wide modifier
 	m.maybeEvent(context.Background())
 	m.maybeMonster(context.Background())
 	m.questTick(context.Background())
@@ -976,7 +988,11 @@ const eventOdds = 6 // ~1-in-N chance an event fires each tick
 // maybeEvent occasionally visits luck (good or bad) on a random online player —
 // idlerpg.net's godsends, calamities, and the Hand of God.
 func (m *Manager) maybeEvent(ctx context.Context) {
-	if m.roll(eventOdds) != 0 {
+	odds := eventOdds
+	if m.eventKind() == "tempest" { // a Storm of Fate: the gods meddle far more
+		odds = 3
+	}
+	if m.roll(odds) != 0 {
 		return
 	}
 	p, ok := m.randomOnline()

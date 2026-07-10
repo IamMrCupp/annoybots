@@ -131,6 +131,11 @@ one-line summary (and your title).
 - **Events.** At random the gods intervene — a **godsend** (time forward), a
   **calamity** (time back, or an item loses its luster), or the **Hand of God**
   (a big swing either way).
+- **World events.** Now and then the whole realm shifts for a while: a **Blood
+  Moon** (monsters prowl far more often), the **Harvest Festival** (every coin is
+  worth half again), or a **Storm of Fate** (the gods meddle far more often).
+  Announced when it falls and when it passes; `!rpg info` and the dashboard show
+  the active one and its time left.
 - **The wandering merchant.** Sometimes a passing trader finds you and gifts a
   purse of gold, a healing draught, or a shortcut toward your next level — a little
   kindness amid the monsters.
