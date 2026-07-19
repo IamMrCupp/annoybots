@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.56.0](https://github.com/IamMrCupp/annoybots/compare/v1.55.0...v1.56.0) (2026-07-19)
+
+
+### Features
+
+* **chanops:** in-channel !op — an opped bot ops a recognized admin (closes [#209](https://github.com/IamMrCupp/annoybots/issues/209)) ([534b650](https://github.com/IamMrCupp/annoybots/commit/534b650a553100945896d1019a03009ebfd30643))
+* **chanops:** in-channel !op command ([720db76](https://github.com/IamMrCupp/annoybots/commit/720db76d7dc3d7c174a0eccdfe885aeeb52b4ec7))
+
 ## [1.55.0](https://github.com/IamMrCupp/annoybots/compare/v1.54.0...v1.55.0) (2026-07-10)
 
 
