@@ -65,6 +65,46 @@ func TestRouterDispatchesByNetwork(t *testing.T) {
 	}
 }
 
+// opTransport is a transport that also implements engine.Opper.
+type opTransport struct {
+	fakeTransport
+	held bool // whether it "holds ops" (what Op returns)
+	ops  []string
+}
+
+func (o *opTransport) Op(network, channel, nick string) bool {
+	o.ops = append(o.ops, network+"|"+channel+"|"+nick)
+	return o.held
+}
+
+func TestRouterOpRoutesToOpperOnly(t *testing.T) {
+	opped := &opTransport{fakeTransport: fakeTransport{networks: []string{"irc"}}, held: true}
+	plain := &fakeTransport{networks: []string{"discord"}} // no Op method
+	r := NewRouter()
+	r.Add(opped)
+	r.Add(plain)
+
+	if !r.Op("irc", "#chan", "boss") {
+		t.Fatal("an opped Opper transport should grant and return true")
+	}
+	if len(opped.ops) != 1 || opped.ops[0] != "irc|#chan|boss" {
+		t.Fatalf("expected Op(irc,#chan,boss), got %v", opped.ops)
+	}
+	// A transport that doesn't implement Opper (Discord) returns false, no panic.
+	if r.Op("discord", "#chan", "boss") {
+		t.Fatal("a non-Opper transport must return false")
+	}
+	// Unknown network: false, no panic.
+	if r.Op("nope", "#chan", "boss") {
+		t.Fatal("unknown network must return false")
+	}
+	// An Opper that doesn't currently hold ops returns false.
+	opped.held = false
+	if r.Op("irc", "#chan", "boss") {
+		t.Fatal("an un-opped Opper should return false")
+	}
+}
+
 func TestRouterAnyConnected(t *testing.T) {
 	a := &fakeTransport{networks: []string{"a"}, connected: false}
 	b := &fakeTransport{networks: []string{"b"}, connected: false}
