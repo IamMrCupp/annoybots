@@ -101,6 +101,21 @@ func (r *Router) Invite(network, nick, channel string) {
 	}
 }
 
+// Op asks the owning transport to grant channel-operator status to nick, if the
+// transport supports it (engine.Opper) and the bot holds ops there. Returns true
+// only when the mode was actually sent — Discord and other non-IRC transports,
+// which have no op mode, always return false.
+func (r *Router) Op(network, channel, nick string) bool {
+	t, ok := r.byNetwork[network]
+	if !ok {
+		return false
+	}
+	if o, ok := t.(engine.Opper); ok {
+		return o.Op(network, channel, nick)
+	}
+	return false
+}
+
 // Identify asks the owning transport to (re)authenticate to services on network.
 func (r *Router) Identify(network, password string) bool {
 	if t, ok := r.byNetwork[network]; ok {

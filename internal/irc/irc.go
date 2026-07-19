@@ -523,6 +523,23 @@ func (m *Manager) Invite(network, nick, channel string) {
 	}
 }
 
+// Op grants channel-operator (+o) to nick in channel on the named network, but
+// only if this bot currently holds ops there (tracked by the chankeeper). It
+// returns true when it actually sent the mode. Requires op-state tracking to be
+// running — the chankeeper — otherwise it can't know it's opped and returns false.
+func (m *Manager) Op(network, channel, nick string) bool {
+	c, ok := m.conns[network]
+	if !ok || c.keeper == nil || !c.keeper.HoldsOp(channel) {
+		return false
+	}
+	if err := c.ic.Send("MODE", channel, "+o", nick); err != nil {
+		c.log.Warn("op command mode failed", "channel", channel, "nick", nick, "err", err)
+		return false
+	}
+	c.log.Info("op: granting operator", "channel", channel, "nick", nick)
+	return true
+}
+
 // AnyConnected reports whether at least one network is currently connected.
 func (m *Manager) AnyConnected() bool {
 	for _, c := range m.conns {

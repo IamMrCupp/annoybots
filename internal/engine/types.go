@@ -30,6 +30,15 @@ type Noticer interface {
 	Notice(network, target, text string)
 }
 
+// Opper is an optional capability: transports that can grant IRC channel-operator
+// status implement it. Op grants +o to nick in channel on network, but only if
+// the bot currently holds ops there; it returns true when it actually sent the
+// mode. Callers type-assert a Sender to it; Discord and other platforms without
+// an IRC-style op mode simply don't implement it.
+type Opper interface {
+	Op(network, channel, nick string) bool
+}
+
 // Duration is a time.Duration that unmarshals from a human string like "30s".
 type Duration time.Duration
 

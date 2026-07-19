@@ -77,6 +77,19 @@ and serves the full command reference at `/help` (the same source as `!rpg help`
 |---|---|
 | `!message <nick> <text>` | Leave a note; it's delivered when that nick is next active or rejoins. |
 
+### Channel ops
+
+| Command | What it does |
+|---|---|
+| `!op` | A recognized admin asks the bots to op them. Whichever bot in the channel currently holds channel operator grants `+o`; the mode change is the acknowledgement. |
+
+`!op` is authorized by the same identity model as the admin console (op flag or
+better — verified account or hostmask). Non-admins are ignored silently. Every
+bot present sees the command, but only the one(s) actually holding ops act, so a
+channel full of bots produces neither a mode war nor duplicate replies. Op-state
+awareness comes from channel-keeping's per-channel tracking, which is enabled
+automatically wherever `!op` is available.
+
 ## Accounts — in a DM
 
 Link your identities across networks so you're one character everywhere (one

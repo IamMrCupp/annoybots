@@ -145,6 +145,16 @@ func (k *chankeeper) onModeOp(channel, nick string, add bool) {
 	k.enforce(channel)
 }
 
+// HoldsOp reports whether the bot itself currently holds channel-operator status
+// in the channel — the precondition for granting anyone else ops.
+func (k *chankeeper) HoldsOp(channel string) bool {
+	self := strings.ToLower(k.selfNick())
+	k.mu.Lock()
+	defer k.mu.Unlock()
+	s := k.chans[strings.ToLower(channel)]
+	return s != nil && s.ops[self]
+}
+
 // enforce ops any present, un-opped protected nick — but only while the bot holds
 // ops itself. Each op is rate-limited per (channel, nick) to avoid op wars.
 func (k *chankeeper) enforce(channel string) {

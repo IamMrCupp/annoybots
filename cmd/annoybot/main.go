@@ -17,6 +17,7 @@ import (
 	"github.com/IamMrCupp/annoybots/internal/admin"
 	"github.com/IamMrCupp/annoybots/internal/bot"
 	"github.com/IamMrCupp/annoybots/internal/botnet"
+	"github.com/IamMrCupp/annoybots/internal/chanops"
 	"github.com/IamMrCupp/annoybots/internal/config"
 	"github.com/IamMrCupp/annoybots/internal/discord"
 	"github.com/IamMrCupp/annoybots/internal/engine"
@@ -174,6 +175,14 @@ func main() {
 		rpgMgr.SetAuthz(adminMgr.IsAdmin)
 	}
 
+	// In-channel !op: a recognized admin asks an opped bot to op them. Needs the
+	// admin flag system for authorization; available whenever it's configured.
+	var opMgr *chanops.Manager
+	if adminMgr != nil {
+		opMgr = chanops.New(router, router, log)
+		opMgr.SetAuthz(adminMgr.IsAdmin)
+	}
+
 	handler := func(m engine.Message) {
 		isOther := !strings.EqualFold(m.Nick, m.Self) && !eng.IsSibling(m.Nick)
 		// Admin commands (DM-only) are handled first and never reach the engine.
@@ -184,6 +193,9 @@ func main() {
 			return
 		}
 		if tellMgr != nil && isOther && tellMgr.Handle(m) {
+			return
+		}
+		if opMgr != nil && isOther && opMgr.Handle(m) {
 			return
 		}
 		if gamesMgr != nil && isOther && gamesMgr.Handle(m) {
@@ -241,10 +253,17 @@ func main() {
 			os.Exit(1)
 		}
 		mgr.SetEventSink(disp.Emit)
-		if cfg.ChanKeep.Enabled {
-			protect := append(append([]string(nil), cfg.Personality.Siblings...), cfg.ChanKeep.Protect...)
+		// The chankeeper is our per-channel op-state tracker. Channel-keeping uses
+		// it to auto-op protected nicks; the !op command uses it to know whether we
+		// hold ops. Enable it for either — with an empty protect list it purely
+		// tracks and never auto-ops, so !op works without turning on channel-keeping.
+		if cfg.ChanKeep.Enabled || opMgr != nil {
+			var protect []string
+			if cfg.ChanKeep.Enabled {
+				protect = append(append([]string(nil), cfg.Personality.Siblings...), cfg.ChanKeep.Protect...)
+			}
 			mgr.EnableChanKeep(protect)
-			log.Info("channel keeping enabled", "protect", protect)
+			log.Info("channel op tracking enabled", "chankeep", cfg.ChanKeep.Enabled, "protect", protect)
 		}
 		router.Add(mgr)
 	}

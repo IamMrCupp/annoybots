@@ -116,3 +116,26 @@ func TestOpChangesParser(t *testing.T) {
 		t.Fatalf("opChanges parse wrong: %#v", got)
 	}
 }
+
+func TestChanKeepHoldsOp(t *testing.T) {
+	r := &modeRec{}
+	k := newKeeper(r) // self is "arwyen"
+	if k.HoldsOp("#tns") {
+		t.Fatal("no state yet — should not report holding ops")
+	}
+	k.onJoin("#tns", "arwyen") // present but not opped
+	if k.HoldsOp("#tns") {
+		t.Fatal("present but un-opped — should not report holding ops")
+	}
+	k.onModeOp("#tns", "arwyen", true) // now opped
+	if !k.HoldsOp("#tns") {
+		t.Fatal("should report holding ops after +o on self")
+	}
+	if k.HoldsOp("#other") {
+		t.Fatal("holding ops is per-channel")
+	}
+	k.onModeOp("#tns", "arwyen", false) // deopped
+	if k.HoldsOp("#tns") {
+		t.Fatal("should not report holding ops after -o on self")
+	}
+}
