@@ -76,10 +76,43 @@ func (m *Manager) partySnapshot(skipKey string) []partyMember {
 	return out
 }
 
-// relayLocal DMs an already-formatted line to every local member except skipKey.
+// bridgeTarget is a public channel the partyline is echoed into.
+type bridgeTarget struct {
+	network string
+	channel string
+}
+
+// setBridge points the partyline at a public channel (nil clears it). Returns the
+// previous target, so the caller can report what changed.
+func (m *Manager) setBridge(b *bridgeTarget) *bridgeTarget {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	prev := m.bridge
+	m.bridge = b
+	return prev
+}
+
+// bridgeOf returns the current bridge target, or nil.
+func (m *Manager) bridgeOf() *bridgeTarget {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return m.bridge
+}
+
+// relayLocal DMs an already-formatted line to every local member except skipKey,
+// and echoes it into the bridged public channel when one is set.
+//
+// This is the single choke point every partyline line passes through — chat,
+// join/leave notices, and lines arriving from other bots over the bus — so the
+// bridge is wired here rather than at each call site. The bridge is deliberately
+// one-way: public channel chatter never flows back onto the partyline, so there's
+// no loop and nothing said in channel is mistaken for an admin's word.
 func (m *Manager) relayLocal(line, skipKey string) {
 	for _, mem := range m.partySnapshot(skipKey) {
 		m.ctl.Say(mem.network, mem.target, line)
+	}
+	if b := m.bridgeOf(); b != nil {
+		m.ctl.Say(b.network, b.channel, line)
 	}
 }
 
