@@ -30,13 +30,18 @@ type Noticer interface {
 	Notice(network, target, text string)
 }
 
-// Opper is an optional capability: transports that can grant IRC channel-operator
-// status implement it. Op grants +o to nick in channel on network, but only if
-// the bot currently holds ops there; it returns true when it actually sent the
-// mode. Callers type-assert a Sender to it; Discord and other platforms without
-// an IRC-style op mode simply don't implement it.
+// Opper is an optional capability: transports that can manage IRC channel modes
+// implement it. Every method acts only when the bot currently holds ops in the
+// channel, and reports whether it actually sent anything. Callers type-assert a
+// Sender to it; Discord and other platforms without IRC-style modes don't
+// implement it.
 type Opper interface {
+	// Op grants +o to nick.
 	Op(network, channel, nick string) bool
+	// Mode applies a mode change (e.g. "+v", "-o") to nick.
+	Mode(network, channel, modes, nick string) bool
+	// Kick removes nick from the channel with an optional reason.
+	Kick(network, channel, nick, reason string) bool
 }
 
 // Duration is a time.Duration that unmarshals from a human string like "30s".
