@@ -103,7 +103,7 @@ var cmdFlags = map[string]byte{
 	"!join": flagMaster, "!part": flagMaster, "!invite": flagMaster,
 	"!identify": flagMaster,
 	"!bridge":   flagMaster, "!unbridge": flagMaster,
-	"!admins":   flagMaster, "!reload": flagMaster,
+	"!admins": flagMaster, "!reload": flagMaster,
 	"!addadmin": flagOwner, "!deladmin": flagOwner,
 }
 
