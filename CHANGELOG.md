@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.57.0](https://github.com/IamMrCupp/annoybots/compare/v1.56.0...v1.57.0) (2026-07-22)
+
+
+### Features
+
+* **idlerpg:** item affixes ([04ba8b1](https://github.com/IamMrCupp/annoybots/commit/04ba8b10287b0ea7eb5a1311114b1e45791a6174))
+* **idlerpg:** item affixes — gear with magical properties, not just power (closes [#212](https://github.com/IamMrCupp/annoybots/issues/212)) ([ec53edd](https://github.com/IamMrCupp/annoybots/commit/ec53edd8ad652f425c4669a48e520594d94b4b7b))
+
 ## [1.56.0](https://github.com/IamMrCupp/annoybots/compare/v1.55.0...v1.56.0) (2026-07-19)
 
 
