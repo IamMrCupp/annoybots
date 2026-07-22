@@ -149,6 +149,16 @@ one-line summary (and your title).
   as much as having it. Enchanting can awaken a new property as the item ascends (up
   to four per item). Affixes travel with an item into your stash and show on
   `!rpg items`, your character page, and the `/help` catalog.
+- **Guild raids.** A guild can spend its vault (`!rpg guild raid`, 1000g) to summon
+  a champion **only that guild may fight**. Every guildmate present chips damage each
+  tick; slay it and the spoils split among everyone who struck it, the biggest
+  contributor takes a champion's cut, and the guild keeps a share of the hoard. Let
+  the clock run out and it departs — the vault bought only a story.
+- **Vault perks.** Pooled gold buys lasting upgrades for every member
+  (`!rpg guild perk <name>`): **swiftness** (guildmates idle faster), **fortune**
+  (richer monster gold), **might** (guildmates strike harder). Each levels
+  independently and costs more as it climbs. Perks and raids show on `!rpg guild`
+  and the Hall of Fame guild table.
 - **Dungeons.** While roaming you may stumble on a way down — the Sunken Crypt,
   the Gloomforge, the Barrow of Kings. A delve is personal and runs over several
   ticks: each one clears a room (a lurking foe, a sprung trap, or a chest), and
