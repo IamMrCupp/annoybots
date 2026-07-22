@@ -1,6 +1,7 @@
 package games
 
 import (
+	"context"
 	"io"
 	"log/slog"
 	"math/rand"
@@ -27,8 +28,15 @@ func msg(nick, text string) engine.Message {
 }
 
 func newGames(r *recorder) *Manager {
+	m, _ := newGamesWithStore(r)
+	return m
+}
+
+// newGamesWithStore also hands back the store, for asserting on the ledger.
+func newGamesWithStore(r *recorder) (*Manager, state.Store) {
 	log := slog.New(slog.NewTextHandler(io.Discard, nil))
-	return NewWithRand(r, state.NewMem(), rand.New(rand.NewSource(1)), log)
+	st := state.NewMem()
+	return NewWithRand(r, st, rand.New(rand.NewSource(1)), log), st
 }
 
 func TestKarmaIncrementAndQuery(t *testing.T) {
@@ -118,5 +126,87 @@ func TestGamesIgnoresPrivateAndNormal(t *testing.T) {
 	}
 	if g.Handle(msg("alice", "just talking normally")) {
 		t.Fatal("normal chatter should not be consumed")
+	}
+}
+
+// TestKarmaFollowsALinkedAccountAcrossNetworks is the point of the whole change:
+// praise on IRC and praise on Discord land on one ledger when the identities are
+// linked to the same account.
+func TestKarmaFollowsALinkedAccountAcrossNetworks(t *testing.T) {
+	r := &recorder{}
+	m, st := newGamesWithStore(r)
+	// alice on either network resolves to the same account.
+	m.SetResolver(func(network, _, nick string) string {
+		if strings.EqualFold(nick, "alice") {
+			return "acct:alice"
+		}
+		return strings.ToLower(network) + "|" + strings.ToLower(nick)
+	})
+
+	m.Handle(engine.Message{Network: "irc", Channel: "#c", Nick: "bob", Text: "alice++"})
+	m.Handle(engine.Message{Network: "discord", Channel: "#c", Nick: "carol", Text: "alice++"})
+
+	score, err := st.ZScore(context.Background(), karmaKey(), "acct:alice")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if score != 2 {
+		t.Fatalf("karma from both networks should total 2, got %d", score)
+	}
+	// and reading it from either side agrees
+	if got := m.report("irc", "alice"); !strings.Contains(got, "2 karma") {
+		t.Fatalf("irc report should see 2, got %q", got)
+	}
+	if got := m.report("discord", "alice"); !strings.Contains(got, "2 karma") {
+		t.Fatalf("discord report should see 2, got %q", got)
+	}
+}
+
+func TestKarmaMigrationFoldsLegacyLedgers(t *testing.T) {
+	m, st := newGamesWithStore(&recorder{})
+	ctx := context.Background()
+	// Seed two pre-account per-network ledgers.
+	_, _ = st.ZIncr(ctx, legacyKarmaKey("irc"), "alice", 3)
+	_, _ = st.ZIncr(ctx, legacyKarmaKey("discord"), "alice", 4)
+	_, _ = st.ZIncr(ctx, legacyKarmaKey("irc"), "bob", 1)
+
+	m.SetResolver(func(network, _, nick string) string {
+		if strings.EqualFold(nick, "alice") {
+			return "acct:alice"
+		}
+		return strings.ToLower(network) + "|" + strings.ToLower(nick)
+	})
+	m.MigrateKarma(ctx, []string{"irc", "discord"})
+
+	if got, _ := st.ZScore(ctx, karmaKey(), "acct:alice"); got != 7 {
+		t.Fatalf("alice's two ledgers should merge to 7, got %d", got)
+	}
+	if got, _ := st.ZScore(ctx, karmaKey(), "irc|bob"); got != 1 {
+		t.Fatalf("bob's unlinked karma should carry over, got %d", got)
+	}
+	// legacy keys are drained so a second run is a no-op
+	if entries, _ := st.ZTop(ctx, legacyKarmaKey("irc"), 10); len(entries) != 0 {
+		t.Fatalf("the legacy ledger should be cleared, got %v", entries)
+	}
+	m.MigrateKarma(ctx, []string{"irc", "discord"})
+	if got, _ := st.ZScore(ctx, karmaKey(), "acct:alice"); got != 7 {
+		t.Fatalf("re-running the migration must not double-count, got %d", got)
+	}
+}
+
+func TestKarmaLeaderboardStripsTheNetworkPrefix(t *testing.T) {
+	m, st := newGamesWithStore(&recorder{})
+	ctx := context.Background()
+	_, _ = st.ZIncr(ctx, karmaKey(), "irc|dave", 5)
+	_, _ = st.ZIncr(ctx, karmaKey(), "acct:erin", 9)
+
+	got := m.leaderboard("irc")
+	if strings.Contains(got, "irc|dave") {
+		t.Fatalf("the network prefix should be hidden, got %q", got)
+	}
+	for _, want := range []string{"dave", "erin"} {
+		if !strings.Contains(got, want) {
+			t.Fatalf("leaderboard missing %q, got %q", want, got)
+		}
 	}
 }
