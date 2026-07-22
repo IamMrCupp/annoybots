@@ -25,8 +25,9 @@ type Ability struct {
 type ItemView struct {
 	Slot   string
 	Level  int64
-	Rarity string // "common" … "legendary"
-	Name   string // magic-item name, empty if unnamed
+	Rarity string   // "common" … "legendary"
+	Name   string   // magic-item name, empty if unnamed
+	Affix  []string // magical properties, empty if plain
 }
 
 // CharView is a read-only snapshot of one character's sheet.
@@ -169,6 +170,7 @@ func readChar(ctx context.Context, store state.Store, key string) CharView {
 		name, _ := store.GetStr(ctx, nameKey(key, s))
 		items = append(items, ItemView{
 			Slot: s, Level: lvl, Rarity: rarityName(sheet[rarityField(s)]), Name: name,
+			Affix: affixNames(sheet[affixField(s)]),
 		})
 	}
 	var abil []Ability

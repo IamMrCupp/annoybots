@@ -219,3 +219,38 @@ func TestHallPage(t *testing.T) {
 		}
 	}
 }
+
+func TestCharPageShowsItemAffixes(t *testing.T) {
+	st := state.NewMem()
+	seed(st)
+	ctx := context.Background()
+	// Equip alice a legendary vampiric+keen weapon. The affix field is written
+	// directly here because the roll is random — the key shape it uses is covered
+	// by the idlerpg package's own tests.
+	_ = st.HSet(ctx, "rpg:p:net|alice", "item:weapon", 42)
+	_ = st.HSet(ctx, "rpg:p:net|alice", "ir:weapon", 4)         // legendary
+	_ = st.HSet(ctx, "rpg:p:net|alice", "af:weapon", 1<<0|1<<2) // vampiric + keen
+
+	rr := httptest.NewRecorder()
+	New(st).Handler().ServeHTTP(rr, httptest.NewRequest(http.MethodGet, "/p/net%7Calice", nil))
+	if rr.Code != http.StatusOK {
+		t.Fatalf("status = %d; want 200", rr.Code)
+	}
+	body := rr.Body.String()
+	for _, want := range []string{`class="affix"`, "vampiric", "keen", "legendary lvl 42"} {
+		if !strings.Contains(body, want) {
+			t.Fatalf("character page missing %q", want)
+		}
+	}
+}
+
+func TestHelpPageListsAffixCatalog(t *testing.T) {
+	rr := httptest.NewRecorder()
+	New(state.NewMem()).Handler().ServeHTTP(rr, httptest.NewRequest(http.MethodGet, "/help", nil))
+	body := rr.Body.String()
+	for _, want := range []string{"Item affixes", "vampiric", "thorned", "warded"} {
+		if !strings.Contains(body, want) {
+			t.Fatalf("help page missing %q", want)
+		}
+	}
+}

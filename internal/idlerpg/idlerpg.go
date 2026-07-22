@@ -1153,6 +1153,8 @@ func (m *Manager) findItem(ctx context.Context, p player, level int64) {
 	}
 	_ = m.store.HSet(ctx, sheetKey(p.key), itemField(slot), found)
 	_ = m.store.HSet(ctx, sheetKey(p.key), rarityField(slot), rIdx)
+	afx := m.rollAffixes(rIdx) // magical properties, scaled by rarity
+	_ = m.store.HSet(ctx, sheetKey(p.key), affixField(slot), afx)
 
 	name := ""
 	if rarities[rIdx].named {
@@ -1167,6 +1169,7 @@ func (m *Manager) findItem(ctx context.Context, p player, level int64) {
 	if name != "" {
 		out += " — “" + name + "”"
 	}
+	out += affixSuffix(afx)
 	if scrap > 0 {
 		out += fmt.Sprintf(" (salvaged the old one for %dg)", scrap)
 	}
@@ -1209,6 +1212,7 @@ func (m *Manager) items(msg engine.Message) string {
 		if name, _ := m.store.GetStr(ctx, nameKey(pkey, s)); name != "" {
 			part += " “" + name + "”"
 		}
+		part += affixSuffix(sheet[affixField(s)])
 		parts = append(parts, part)
 	}
 	gear := "nothing yet"

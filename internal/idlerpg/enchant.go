@@ -43,6 +43,9 @@ func (m *Manager) enchant(msg engine.Message, fields []string) {
 		}
 		_, _ = m.store.HIncr(ctx, sheetKey(pkey), "gold", -cost)
 		_ = m.store.HSet(ctx, sheetKey(pkey), rarityField(slot), cur+1)
+		// Ascending doesn't just scale what's there — it can awaken a new property.
+		afx := m.awakenAffix(sheet[affixField(slot)])
+		_ = m.store.HSet(ctx, sheetKey(pkey), affixField(slot), afx)
 
 		p := player{network: msg.Network, nick: msg.Nick, channel: msg.Channel, key: pkey}
 		newName := ""
@@ -59,6 +62,7 @@ func (m *Manager) enchant(msg engine.Message, fields []string) {
 		if newName != "" {
 			line += " — “" + newName + "”"
 		}
+		line += affixSuffix(afx)
 		m.record(line + "!") // feed-worthy; the town service Says the return value
 		return line + fmt.Sprintf(" for %dg.", cost)
 	})
