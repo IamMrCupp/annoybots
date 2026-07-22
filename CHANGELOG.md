@@ -1,5 +1,27 @@
 # Changelog
 
+## [1.59.0](https://github.com/IamMrCupp/annoybots/compare/v1.58.0...v1.59.0) (2026-07-22)
+
+
+### Features
+
+* **admin:** public partyline bridge ([7f4b31e](https://github.com/IamMrCupp/annoybots/commit/7f4b31e061e5e9d805803e544600cbc4aca4c5ca))
+* **admin:** public partyline bridge (!bridge / !unbridge) ([cc1604d](https://github.com/IamMrCupp/annoybots/commit/cc1604d491850e0c38027cf049408f2d7c13c980))
+* **chanops:** !deop, !op &lt;nick&gt;, !voice/!devoice and !kick (closes [#221](https://github.com/IamMrCupp/annoybots/issues/221)) ([500a9c7](https://github.com/IamMrCupp/annoybots/commit/500a9c771391cc170a0522e6a1472ebf1a4c81ed))
+* **chanops:** the full channel-op console ([4c9ff5b](https://github.com/IamMrCupp/annoybots/commit/4c9ff5bfb51ed5f152d0830afeefb8bab5950e20))
+* **games:** cross-network karma ([ef4ac59](https://github.com/IamMrCupp/annoybots/commit/ef4ac5944da6fc3e49076742a23f2645c2ef6093))
+* **games:** karma follows a linked account across networks ([9ea6536](https://github.com/IamMrCupp/annoybots/commit/9ea653688560a617144473df8eb5965aa7225501))
+* **games:** trivia, slots and hangman (closes [#224](https://github.com/IamMrCupp/annoybots/issues/224)) ([2f05d82](https://github.com/IamMrCupp/annoybots/commit/2f05d82062f38e5c44c0938ff4f985920c4a3c1d))
+* **games:** trivia, slots, hangman ([c6162ed](https://github.com/IamMrCupp/annoybots/commit/c6162ed0fa0f3b661cf08d6c9fb9208ca94d9cee))
+* **idlerpg:** bestiary + collection log ([955ec5d](https://github.com/IamMrCupp/annoybots/commit/955ec5d5cb38ed9534501f0f8aa7c23eba4704ab))
+* **idlerpg:** bestiary and collection log (closes [#215](https://github.com/IamMrCupp/annoybots/issues/215)) ([55dc4e1](https://github.com/IamMrCupp/annoybots/commit/55dc4e19f9af4d40d2acdd094347cf40efae6c1e))
+
+
+### CI/CD
+
+* add CodeQL static security analysis ([cff1c36](https://github.com/IamMrCupp/annoybots/commit/cff1c362a4a82cfb72650a9bfbf14d995dbfe450))
+* CodeQL static security analysis ([06fe0e0](https://github.com/IamMrCupp/annoybots/commit/06fe0e09889a6f0401327375c15c4f1c89093df6))
+
 ## [1.58.0](https://github.com/IamMrCupp/annoybots/compare/v1.57.0...v1.58.0) (2026-07-22)
 
 
