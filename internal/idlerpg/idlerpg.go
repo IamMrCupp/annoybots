@@ -253,7 +253,9 @@ func (m *Manager) command(msg engine.Message, fields []string) {
 			m.out.Say(msg.Network, msg.Channel, m.dungeonStatus(msg))
 			return
 		case "guild":
-			m.out.Say(msg.Network, msg.Channel, m.guildCmd(msg, fields))
+			if out := m.guildCmd(msg, fields); out != "" {
+				m.out.Say(msg.Network, msg.Channel, out)
+			}
 			return
 		case "guilds":
 			m.out.Say(msg.Network, msg.Channel, m.guildBoard())
@@ -914,6 +916,7 @@ func (m *Manager) Tick() {
 	m.maybeEvent(context.Background())
 	m.maybeMonster(context.Background())
 	m.questTick(context.Background())
+	m.guildRaidTick(context.Background())  // advance any guild raids
 	m.worldBossTick(context.Background())  // advance an active raid
 	m.maybeWorldBoss(context.Background()) // or rarely raise one
 	roster := m.snapshot()
@@ -931,7 +934,7 @@ func (m *Manager) Tick() {
 		if m.tickHP(ctx, p.key) {
 			continue // downed and recovering — no progress this tick
 		}
-		pstep := step * m.guildPct(p.key, roster) / 100 // guildmates at your side speed you further
+		pstep := step * (m.guildPct(p.key, roster) + m.guildSwiftness(p.key)) / 100 // guildmates + vault perks
 		ttl, err := m.store.HIncr(ctx, key, "ttl", -pstep)
 		if err != nil {
 			continue

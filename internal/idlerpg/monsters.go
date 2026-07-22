@@ -182,6 +182,7 @@ func (m *Manager) resolveFight(ctx context.Context, p player, sheet map[string]i
 	}
 	am := affixesOf(sheet) // magical properties on the equipped gear
 	pAtk += am.swift
+	pAtk += m.guildMight(p.key) // a guild's "might" perk backs every member
 	cm := classCombat(class, sheet)
 	usedAbility := false
 	monHP := mon.HP
@@ -254,7 +255,7 @@ func (m *Manager) resolveFight(ctx context.Context, p player, sheet map[string]i
 		if usedAbility && cm.ability != "" {
 			flourish = " with " + cm.ability
 		}
-		gold := m.harvestGold(mon.Gold) // the Harvest Festival fattens every purse
+		gold := m.guildFortune(p.key, m.harvestGold(mon.Gold)) // festival + guild fortune
 		if mon.Boss {
 			reward := m.pctOfTTL(ctx, p.key, 22, 35)
 			_, _ = m.store.HIncr(ctx, sheetKey(p.key), "ttl", -reward)

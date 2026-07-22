@@ -33,10 +33,12 @@ func guildsKey() string { return "rpg:guilds" }
 
 // guild is one band of heroes. Members are player keys; Founder is one of them.
 type guild struct {
-	Name    string   `json:"name"`
-	Founder string   `json:"founder"`
-	Members []string `json:"members"`
-	Vault   int64    `json:"vault"`
+	Name    string           `json:"name"`
+	Founder string           `json:"founder"`
+	Members []string         `json:"members"`
+	Vault   int64            `json:"vault"`
+	Perks   map[string]int64 `json:"perks,omitempty"` // perk name -> level
+	Raid    *guildRaid       `json:"raid,omitempty"`  // the active guild raid, if any
 }
 
 // guildBook is every guild in the realm, keyed by the guild's slug.
@@ -51,6 +53,9 @@ type GuildView struct {
 	Members int
 	Level   int64 // summed levels of every member
 	Vault   int64
+	Perks   string // e.g. "swiftness 2, might 1"; empty when none bought
+	Raid    string // the active raid's name; empty when not raiding
+	RaidPct int64  // that raid's remaining HP percentage
 }
 
 // guildSlug is the lookup form of a guild name: lowercase, spaces collapsed.
@@ -173,10 +178,18 @@ func ReadGuilds(ctx context.Context, store state.Store) ([]GuildView, error) {
 			sheet, _ := store.HGetAll(ctx, sheetKey(member))
 			level += sheet["level"]
 		}
-		out = append(out, GuildView{
+		gv := GuildView{
 			Name: g.Name, Founder: displayName(g.Founder),
 			Members: len(g.Members), Level: level, Vault: g.Vault,
-		})
+			Perks: strings.TrimPrefix(perkSummary(g.Perks), " · perks: "),
+		}
+		if g.Raid != nil {
+			gv.Raid = g.Raid.Name
+			if g.Raid.MaxHP > 0 && g.Raid.HP > 0 {
+				gv.RaidPct = g.Raid.HP * 100 / g.Raid.MaxHP
+			}
+		}
+		out = append(out, gv)
 	}
 	sort.Slice(out, func(i, j int) bool {
 		if out[i].Level != out[j].Level {
@@ -258,6 +271,10 @@ func (m *Manager) guildCmd(msg engine.Message, fields []string) string {
 		return m.guildLeave(ctx, msg.Nick, key)
 	case "deposit", "donate":
 		return m.guildDeposit(ctx, msg.Nick, key, fields)
+	case "raid":
+		return m.callRaid(ctx, msg.Network, msg.Channel, msg.Nick, key)
+	case "perk", "perks":
+		return m.perkCmd(ctx, msg.Nick, key, fields)
 	}
 	return m.guildStatus(ctx, msg.Nick, key) // "!rpg guild <name>" reads as a lookup
 }
@@ -274,10 +291,12 @@ func (m *Manager) guildStatus(ctx context.Context, nick, key string) string {
 		names[i] = displayName(member)
 	}
 	name, vault := g.Name, g.Vault
+	perks := perkSummary(g.Perks)
+	raid := raidStatus(g, m.now().Unix())
 	m.gmu.Unlock()
 	sort.Strings(names)
-	return fmt.Sprintf("🛡 %s — level %d · vault %dg · %s",
-		name, m.guildLevel(ctx, members), vault, strings.Join(names, ", "))
+	return fmt.Sprintf("🛡 %s — level %d · vault %dg%s%s · %s",
+		name, m.guildLevel(ctx, members), vault, perks, raid, strings.Join(names, ", "))
 }
 
 func (m *Manager) guildCreate(ctx context.Context, nick, key, name string) string {
