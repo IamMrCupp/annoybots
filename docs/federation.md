@@ -98,3 +98,27 @@ provisioning a real VPS are hands-on infra steps — they need the hardware, you
 LAN, and real network identities (a Discord token / IRC SASL for the remote bot).
 The repo gives you the **runbook and the copy-paste artifacts**; the provisioning
 is yours.
+
+## Authenticating bots to each other
+
+The bus is Redis pub/sub, and consumers act on what arrives — including admin
+grants. Anyone able to publish to the channel could otherwise make themselves an
+owner on every bot, which matters much more once the bus leaves a single trusted
+host.
+
+Set `botnet.secret_env` to an env var holding a shared secret, with the **same
+value on every sibling bot**:
+
+```yaml
+botnet:
+  secret_env: "BOTNET_SECRET"
+```
+
+Each event is then signed (HMAC-SHA256) and stamped; receivers drop anything that
+fails to verify or that has drifted more than five minutes from their clock, which
+bounds how long a captured event is worth replaying. Rejected events are counted
+so a mismatched secret shows up as a number rather than silence.
+
+Rollout is safe one bot at a time: with no secret configured the bus behaves
+exactly as before, so you can deploy the code everywhere first and turn the secret
+on afterwards.

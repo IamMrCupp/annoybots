@@ -23,6 +23,11 @@ botnet:
   redis_addr: "redis:6379"
   redis_password_env: "REDIS_PASSWORD"
   channel: "annoybots"
+  # Bot-to-bot link auth. With a shared secret every bus event is HMAC-signed and
+  # unverifiable ones are dropped — without it, anyone who can publish to the
+  # Redis channel could forge an admin grant. Set the SAME value on every sibling
+  # bot. Leave unset to run unauthenticated (the pre-1.60 behaviour).
+  secret_env: "BOTNET_SECRET"
 
 # Shared skit script, loaded by every sibling bot (they must load the identical
 # file). For local runs this relative path resolves from the config dir; in the

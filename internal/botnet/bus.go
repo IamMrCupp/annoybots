@@ -10,6 +10,8 @@ import (
 	"context"
 	"encoding/json"
 	"sync"
+	"sync/atomic"
+	"time"
 
 	"github.com/redis/go-redis/v9"
 )
@@ -34,6 +36,9 @@ type Event struct {
 	// partyline (cross-bot, cross-platform admin chat)
 	Text string `json:"text,omitempty"` // partyline message body / notice
 	Nick string `json:"nick,omitempty"` // originating member's display nick ("*" = system notice)
+	// link auth (see auth.go) — set only when a shared bus secret is configured
+	Ts  int64  `json:"ts,omitempty"`  // unix seconds, for replay bounding
+	Sig string `json:"sig,omitempty"` // HMAC-SHA256 over the event with Sig cleared
 }
 
 // Event type constants.
@@ -59,6 +64,10 @@ type Bus interface {
 type RedisBus struct {
 	client  *redis.Client
 	channel string
+
+	secret  []byte           // when set, events are signed and verified (link auth)
+	now     func() time.Time // injectable clock, for tests
+	dropped atomic.Int64     // events rejected by link auth
 }
 
 // NewRedis builds a RedisBus. channel namespaces the pub/sub topic.
@@ -66,14 +75,34 @@ func NewRedis(addr, password, channel string) *RedisBus {
 	return &RedisBus{
 		client:  redis.NewClient(&redis.Options{Addr: addr, Password: password}),
 		channel: channel,
+		now:     time.Now,
 	}
 }
+
+// SetSecret enables bot-to-bot link authentication: published events are signed
+// and received ones must verify. An empty secret leaves the bus unauthenticated,
+// exactly as before.
+func (b *RedisBus) SetSecret(secret string) {
+	if secret == "" {
+		b.secret = nil
+		return
+	}
+	b.secret = []byte(secret)
+}
+
+// Dropped reports how many events link auth has rejected — surfaced so a
+// mismatched secret shows up as a number instead of silence.
+func (b *RedisBus) Dropped() int64 { return b.dropped.Load() }
 
 // Ping verifies connectivity.
 func (b *RedisBus) Ping(ctx context.Context) error { return b.client.Ping(ctx).Err() }
 
 // Publish marshals and sends an event.
 func (b *RedisBus) Publish(ctx context.Context, e Event) error {
+	if len(b.secret) > 0 {
+		e.Ts = b.now().Unix()
+		e.Sig = signEvent(e, b.secret)
+	}
 	data, err := json.Marshal(e)
 	if err != nil {
 		return err
@@ -99,6 +128,10 @@ func (b *RedisBus) Subscribe(ctx context.Context) (<-chan Event, error) {
 				}
 				var e Event
 				if json.Unmarshal([]byte(m.Payload), &e) != nil {
+					continue
+				}
+				if len(b.secret) > 0 && !verifyEvent(e, b.secret, b.now()) {
+					b.dropped.Add(1) // forged, unsigned, or stale — never act on it
 					continue
 				}
 				select {

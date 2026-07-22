@@ -82,6 +82,10 @@ type Botnet struct {
 	RedisAddr        string `yaml:"redis_addr"`
 	RedisPasswordEnv string `yaml:"redis_password_env"`
 	Channel          string `yaml:"channel"`
+	// SecretEnv names an env var holding a shared secret. When set, bots sign
+	// every bus event and reject any that doesn't verify — so a stranger with
+	// Redis access can't forge admin grants. Leave empty to run unauthenticated.
+	SecretEnv string `yaml:"secret_env"`
 }
 
 // Health configures the k8s liveness/readiness HTTP server.
