@@ -51,6 +51,7 @@ Opt in with `!rpg`, then "play" by being present and **quiet**. Full rules in
 | `!rpg guilds` | The guild leaderboard, by summed member levels. |
 | `!rpg guild raid` | Spend the vault to summon a champion only your guild can fight; damage tracked, spoils split. |
 | `!rpg guild perk [name]` | List the vault perks, or buy the next level (swiftness, fortune, might). |
+| `!rpg bestiary` (`collection`) | Species slain (x/y), favourite prey, and your finds by rarity. |
 | `!rpg dungeon` (`delve`) | Your delve — found by roaming; each tick clears a room, the last holds the dungeon's lord. |
 | `!rpg pet` (`companion`) | Your companion and the combat bonus it grants (earned by slaying a boss). |
 | `!rpg duel <name>` (`spar`) | Friendly best-of-three spar with a present player — bragging rights only, no stat changes. |

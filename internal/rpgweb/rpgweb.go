@@ -29,6 +29,7 @@ type Server struct {
 	mapTmpl  *template.Template
 	helpTmpl *template.Template
 	hallTmpl *template.Template
+	bestTmpl *template.Template
 	now      func() time.Time
 }
 
@@ -52,6 +53,7 @@ func New(store state.Store) *Server {
 		mapTmpl:  template.Must(template.New("map").Funcs(tmplFuncs).Parse(mapTmpl)),
 		helpTmpl: template.Must(template.New("help").Funcs(tmplFuncs).Parse(helpTmpl)),
 		hallTmpl: template.Must(template.New("hall").Funcs(tmplFuncs).Parse(hallTmpl)),
+		bestTmpl: template.Must(template.New("best").Funcs(tmplFuncs).Parse(bestiaryTmpl)),
 		now:      time.Now,
 	}
 }
@@ -63,6 +65,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/map", s.worldMap)
 	mux.HandleFunc("/hall", s.hall)
 	mux.HandleFunc("/help", s.help)
+	mux.HandleFunc("/bestiary", s.bestiary)
 	mux.HandleFunc("/p/", s.char)
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
@@ -206,6 +209,33 @@ func (s *Server) hall(w http.ResponseWriter, r *http.Request) {
 	_ = s.hallTmpl.Execute(w, hallData{Boards: boards, Guilds: guilds})
 }
 
+// bestiary renders the realm's field guide at /bestiary: every species, how many
+// have fallen realm-wide, and which nobody has met yet.
+func (s *Server) bestiary(w http.ResponseWriter, r *http.Request) {
+	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
+	defer cancel()
+	entries, err := idlerpg.ReadBestiary(ctx, s.store)
+	if err != nil {
+		http.Error(w, "the realm is unreachable right now.", http.StatusServiceUnavailable)
+		return
+	}
+	seen := 0
+	for _, e := range entries {
+		if e.Kills > 0 {
+			seen++
+		}
+	}
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	_ = s.bestTmpl.Execute(w, bestData{Entries: entries, Seen: seen, Total: len(entries)})
+}
+
+// bestData is the field guide's view model.
+type bestData struct {
+	Entries []idlerpg.BestiaryEntry
+	Seen    int
+	Total   int
+}
+
 // help renders the command reference + the character-options catalog at /help.
 func (s *Server) help(w http.ResponseWriter, _ *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
@@ -324,7 +354,7 @@ const indexTmpl = `<!doctype html>
 </style>
 </head>
 <body>
-<nav class="nav"><a href="/">⚔ realm</a><a href="/map">🗺 map</a><a href="/hall">🏆 hall of fame</a><a href="/help">📖 how to play</a></nav>
+<nav class="nav"><a href="/">⚔ realm</a><a href="/map">🗺 map</a><a href="/hall">🏆 hall of fame</a><a href="/bestiary">🐾 bestiary</a><a href="/help">📖 how to play</a></nav>
 <h1>⚔ the idle realm</h1>
 <div class="stats">
   <div class="stat"><span class="num">{{.Stats.Heroes}}</span><span class="lab">heroes</span></div>
@@ -439,7 +469,7 @@ const charTmpl = `<!doctype html>
 </style>
 </head>
 <body>
-<nav class="nav"><a href="/">⚔ realm</a><a href="/map">🗺 map</a><a href="/hall">🏆 hall of fame</a><a href="/help">📖 how to play</a></nav>
+<nav class="nav"><a href="/">⚔ realm</a><a href="/map">🗺 map</a><a href="/hall">🏆 hall of fame</a><a href="/bestiary">🐾 bestiary</a><a href="/help">📖 how to play</a></nav>
 <h1>{{if .Rebirths}}<span class="ttl">★{{.Rebirths}}</span> {{end}}{{.Name}}{{if .Title}} <span class="ttl">{{.Title}}</span>{{end}}</h1>
 <p class="sub">the <span class="{{.AlignClass}}">{{.Align}}{{if .Race}} {{.Race}}{{end}}{{if .Class}} {{.Class}}{{end}}</span></p>
 
@@ -454,6 +484,7 @@ const charTmpl = `<!doctype html>
   {{if .Mount}}<tr><td class="k">mount</td><td>🐎 {{.Mount}}</td></tr>{{end}}
   {{if .Guild}}<tr><td class="k">guild</td><td>🛡 {{.Guild}}</td></tr>{{end}}
   {{if .Dungeon}}<tr><td class="k">delving</td><td>🏚 {{.Dungeon}} — {{.Rooms}} room(s) to go</td></tr>{{end}}
+  <tr><td class="k">bestiary</td><td>{{.Species}}<span class="muted"> / {{.SpeciesAll}} species</span>{{if .Collection}} <span class="muted">·</span>{{range .Collection}} <span class="affix">{{.Name}} {{.Kills}}</span>{{end}}{{end}}</td></tr>
   {{if .Draughts}}<tr><td class="k">draughts</td><td>🧪 {{.Draughts}}</td></tr>{{end}}
   <tr><td class="k">time to next</td><td class="muted">{{dur .TTL}}</td></tr>
   <tr><td class="k">power</td><td>{{.Power}}</td></tr>
@@ -534,7 +565,7 @@ const mapTmpl = `<!doctype html>
 </style>
 </head>
 <body>
-<nav class="nav"><a href="/">⚔ realm</a><a href="/map">🗺 map</a><a href="/hall">🏆 hall of fame</a><a href="/help">📖 how to play</a></nav>
+<nav class="nav"><a href="/">⚔ realm</a><a href="/map">🗺 map</a><a href="/hall">🏆 hall of fame</a><a href="/bestiary">🐾 bestiary</a><a href="/help">📖 how to play</a></nav>
 <h1>🗺 the realm map</h1>
 {{if .Weather}}<p class="sky">the sky — {{range $i, $w := .Weather}}{{if $i}} · {{end}}{{$w.Biome}}: {{$w.Kind}}{{end}}</p>{{end}}
 <p class="sub">{{len .Players}} souls abroad in the realm</p>
@@ -653,7 +684,7 @@ const helpTmpl = `<!doctype html>
 </style>
 </head>
 <body>
-<nav class="nav"><a href="/">⚔ realm</a><a href="/map">🗺 map</a><a href="/hall">🏆 hall of fame</a><a href="/help">📖 how to play</a></nav>
+<nav class="nav"><a href="/">⚔ realm</a><a href="/map">🗺 map</a><a href="/hall">🏆 hall of fame</a><a href="/bestiary">🐾 bestiary</a><a href="/help">📖 how to play</a></nav>
 <h1>📖 how to play</h1>
 <p class="sub">You "play" IdleRPG by being present and <strong>quiet</strong> in the channel — every tick you idle, you advance toward the next level. Talking sets you back; leaving sets you back more. Everything below is typed <strong>in the channel</strong> as <code>!rpg …</code>.</p>
 {{range .Groups}}
@@ -744,7 +775,7 @@ const hallTmpl = `<!doctype html>
 </style>
 </head>
 <body>
-<nav class="nav"><a href="/">⚔ realm</a><a href="/map">🗺 map</a><a href="/hall">🏆 hall of fame</a><a href="/help">📖 how to play</a></nav>
+<nav class="nav"><a href="/">⚔ realm</a><a href="/map">🗺 map</a><a href="/hall">🏆 hall of fame</a><a href="/bestiary">🐾 bestiary</a><a href="/help">📖 how to play</a></nav>
 <h1>🏆 Hall of Fame</h1>
 <p class="sub">the realm's greatest — ranked every way that matters.</p>
 <div class="halls">
@@ -772,6 +803,53 @@ const hallTmpl = `<!doctype html>
   {{end}}
 </table>
 {{end}}
+<footer>annoybots · auto-refreshes every 60s · <a href="/">&larr; back to the realm</a></footer>
+</body>
+</html>`
+
+const bestiaryTmpl = `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="refresh" content="60">
+<title>annoybots · bestiary</title>
+<style>
+  :root { color-scheme: dark; }
+  body { background:#0e0f13; color:#d6d8de; font:15px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace; margin:0; padding:2rem; }
+  h1 { font-size:1.4rem; color:#e9b949; margin:0 0 .25rem; }
+  .sub { color:#8aa0c6; margin:0 0 1.5rem; }
+  .nav { margin:0 0 1.25rem; font-size:.95rem; color:#3a3f4b; }
+  .nav a { margin-right:1rem; color:#7fd1a8; text-decoration:none; }
+  .nav a:hover { text-decoration:underline; }
+  table { border-collapse:collapse; width:100%; max-width:40rem; }
+  td { padding:.3rem .5rem; border-bottom:1px solid #20232b; }
+  .val { color:#e9b949; text-align:right; white-space:nowrap; }
+  .unseen { color:#4b5563; font-style:italic; }
+  .boss { color:#e06c75; }
+  .muted { color:#6b7280; }
+  footer { margin-top:2rem; color:#4b5563; font-size:.8rem; }
+  @media (max-width:640px) {
+    body { padding:1rem .85rem; }
+    h1 { font-size:1.2rem; }
+    .nav { display:flex; flex-wrap:wrap; gap:.4rem 1rem; }
+    .nav a { margin-right:0; }
+    table { display:block; overflow-x:auto; white-space:nowrap; -webkit-overflow-scrolling:touch; }
+  }
+</style>
+</head>
+<body>
+<nav class="nav"><a href="/">⚔ realm</a><a href="/map">🗺 map</a><a href="/hall">🏆 hall of fame</a><a href="/bestiary">🐾 bestiary</a><a href="/help">📖 how to play</a></nav>
+<h1>🐾 Bestiary</h1>
+<p class="sub">every foe that walks the realm — {{.Seen}} of {{.Total}} have been met. Legends are listed last.</p>
+<table>
+  {{range .Entries}}
+  <tr>
+    <td class="{{if not .Kills}}unseen{{else if .Boss}}boss{{end}}">{{if .Kills}}{{.Name}}{{if .Boss}} <span class="muted">(legend)</span>{{end}}{{else}}??? <span class="muted">unmet</span>{{end}}</td>
+    <td class="val">{{if .Kills}}{{.Kills}}<span class="muted"> slain</span>{{else}}—{{end}}</td>
+  </tr>
+  {{end}}
+</table>
 <footer>annoybots · auto-refreshes every 60s · <a href="/">&larr; back to the realm</a></footer>
 </body>
 </html>`

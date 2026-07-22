@@ -249,6 +249,9 @@ func (m *Manager) command(msg engine.Message, fields []string) {
 		case "weather", "sky":
 			m.out.Say(msg.Network, msg.Channel, m.weatherStatus())
 			return
+		case "bestiary", "collection":
+			m.out.Say(msg.Network, msg.Channel, m.bestiaryStatus(msg, fields))
+			return
 		case "dungeon", "delve":
 			m.out.Say(msg.Network, msg.Channel, m.dungeonStatus(msg))
 			return
@@ -1167,6 +1170,7 @@ func (m *Manager) findItem(ctx context.Context, p player, level int64) {
 		_ = m.store.Del(ctx, nameKey(p.key, slot)) // clear any prior name on replace
 	}
 
+	m.recordFind(ctx, p.key, rarityName(rIdx))
 	label := rarityName(rIdx)
 	out := fmt.Sprintf("%s found %s %s level %d %s", p.nick, article(label), label, found, slot)
 	if name != "" {
