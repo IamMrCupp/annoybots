@@ -142,6 +142,18 @@ func main() {
 	var bus botnet.Bus // nil interface when botnet is disabled
 	if cfg.Botnet.Enabled {
 		rb := botnet.NewRedis(cfg.Botnet.RedisAddr, os.Getenv(cfg.Botnet.RedisPasswordEnv), cfg.Botnet.Channel)
+		// Link auth: with a shared secret, bots sign every bus event and drop any
+		// that doesn't verify — without it, anyone with Redis access could forge an
+		// admin grant. Unset means unauthenticated, as before.
+		if cfg.Botnet.SecretEnv != "" {
+			if secret := os.Getenv(cfg.Botnet.SecretEnv); secret != "" {
+				rb.SetSecret(secret)
+				log.Info("botnet link auth enabled")
+			} else {
+				log.Warn("botnet secret_env is set but the variable is empty — bus is UNAUTHENTICATED",
+					"var", cfg.Botnet.SecretEnv)
+			}
+		}
 		bus = rb
 		coord = botnet.NewCoordinator(cfg.Bot, rb, router, cfg.Skits, log, botnet.Options{})
 		if rerr := coord.Run(ctx); rerr != nil {
