@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.60.0](https://github.com/IamMrCupp/annoybots/compare/v1.59.0...v1.60.0) (2026-07-22)
+
+
+### Features
+
+* **botnet:** bot-to-bot link authentication ([d8d645b](https://github.com/IamMrCupp/annoybots/commit/d8d645bf641b3d51f4a49b8dd3a4a67016714bbb))
+* **botnet:** HMAC link auth for bot-to-bot bus events (closes [#229](https://github.com/IamMrCupp/annoybots/issues/229)) ([83a7b93](https://github.com/IamMrCupp/annoybots/commit/83a7b9302e6983e50abe39618259f2dbcc71b886))
+
 ## [1.59.0](https://github.com/IamMrCupp/annoybots/compare/v1.58.0...v1.59.0) (2026-07-22)
 
 
