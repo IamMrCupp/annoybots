@@ -523,20 +523,43 @@ func (m *Manager) Invite(network, nick, channel string) {
 	}
 }
 
-// Op grants channel-operator (+o) to nick in channel on the named network, but
-// only if this bot currently holds ops there (tracked by the chankeeper). It
-// returns true when it actually sent the mode. Requires op-state tracking to be
-// running — the chankeeper — otherwise it can't know it's opped and returns false.
+// Op grants channel-operator (+o) to nick in channel on the named network.
 func (m *Manager) Op(network, channel, nick string) bool {
+	return m.Mode(network, channel, "+o", nick)
+}
+
+// Mode applies a channel mode change to nick, but only if this bot currently
+// holds ops there (tracked by the chankeeper). It returns true when it actually
+// sent the mode. Requires op-state tracking — the chankeeper — otherwise it
+// can't know it's opped and returns false.
+func (m *Manager) Mode(network, channel, modes, nick string) bool {
 	c, ok := m.conns[network]
 	if !ok || c.keeper == nil || !c.keeper.HoldsOp(channel) {
 		return false
 	}
-	if err := c.ic.Send("MODE", channel, "+o", nick); err != nil {
-		c.log.Warn("op command mode failed", "channel", channel, "nick", nick, "err", err)
+	if err := c.ic.Send("MODE", channel, modes, nick); err != nil {
+		c.log.Warn("mode change failed", "channel", channel, "modes", modes, "nick", nick, "err", err)
 		return false
 	}
-	c.log.Info("op: granting operator", "channel", channel, "nick", nick)
+	c.log.Info("chanops: mode change", "channel", channel, "modes", modes, "nick", nick)
+	return true
+}
+
+// Kick removes nick from the channel, but only if this bot holds ops there.
+func (m *Manager) Kick(network, channel, nick, reason string) bool {
+	c, ok := m.conns[network]
+	if !ok || c.keeper == nil || !c.keeper.HoldsOp(channel) {
+		return false
+	}
+	args := []string{channel, nick}
+	if reason != "" {
+		args = append(args, reason)
+	}
+	if err := c.ic.Send("KICK", args...); err != nil {
+		c.log.Warn("kick failed", "channel", channel, "nick", nick, "err", err)
+		return false
+	}
+	c.log.Info("chanops: kick", "channel", channel, "nick", nick, "reason", reason)
 	return true
 }
 

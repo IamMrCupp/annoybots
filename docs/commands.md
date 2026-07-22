@@ -84,14 +84,21 @@ and serves the full command reference at `/help` (the same source as `!rpg help`
 
 | Command | What it does |
 |---|---|
-| `!op` | A recognized admin asks the bots to op them. Whichever bot in the channel currently holds channel operator grants `+o`; the mode change is the acknowledgement. |
+| `!op [nick]` | Op yourself, or another user. Whichever bot in the channel currently holds channel operator grants `+o`; the mode change is the acknowledgement. |
+| `!deop [nick]` | Remove ops from yourself or another user. |
+| `!voice [nick]` / `!devoice [nick]` | Grant or remove voice. |
+| `!kick <nick> [reason]` | Remove someone from the channel. |
 
-`!op` is authorized by the same identity model as the admin console (op flag or
+These are authorized by the same identity model as the admin console (op flag or
 better — verified account or hostmask). Non-admins are ignored silently. Every
 bot present sees the command, but only the one(s) actually holding ops act, so a
 channel full of bots produces neither a mode war nor duplicate replies. Op-state
 awareness comes from channel-keeping's per-channel tracking, which is enabled
-automatically wherever `!op` is available.
+automatically wherever these commands are available.
+
+The console **refuses to deop, devoice, or kick its own bots** — those are what
+hold the channel, and turning on them is how a channel gets lost. Granting them
+`+o`/`+v` is always allowed, since that's how a bot gets its ops back.
 
 ## Accounts — in a DM
 

@@ -181,6 +181,7 @@ func main() {
 	if adminMgr != nil {
 		opMgr = chanops.New(router, router, log)
 		opMgr.SetAuthz(adminMgr.IsAdmin)
+		opMgr.SetSiblings(eng.IsSibling) // never deop/kick the bots holding the channel
 	}
 
 	handler := func(m engine.Message) {
