@@ -31,6 +31,7 @@ var feats = []featDef{
 	{1 << 7, "Dragon-Hoard (10000 gold)"},
 	{1 << 8, "Delver (a dungeon cleared)"},
 	{1 << 9, "Guildmaster (founded a guild)"},
+	{1 << 10, "Naturalist (every species slain)"},
 }
 
 func featName(bit int64) string {
@@ -87,6 +88,9 @@ func (m *Manager) checkCombatFeats(ctx context.Context, p player, boss bool) {
 	}
 	if s["gold"] >= 10000 {
 		m.awardFeat(ctx, p, 1<<7)
+	}
+	if seen, total := m.charBestiary(ctx, p.key); total > 0 && seen == total {
+		m.awardFeat(ctx, p, 1<<10) // Naturalist — the field guide is complete
 	}
 }
 

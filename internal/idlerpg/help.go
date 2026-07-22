@@ -36,6 +36,7 @@ func CommandHelp() []HelpGroup {
 			{"!rpg weather (sky)", "The current weather over every biome — fog, storms, snow."},
 			{"!rpg top [kills|gold|duels]", "Leaderboards — by level (default), or kills/gold/duels."},
 			{"!rpg feats [name]", "One-time achievements you've earned."},
+			{"!rpg bestiary [name]", "Species you've slain (x/y), your favourite prey, and your finds by rarity."},
 			{"!rpg rebirth", "At level 50+, reset to level 0 for permanent prestige (★) and faster leveling — you keep gold, gear & glory."},
 		}},
 		{"Your character", []HelpItem{

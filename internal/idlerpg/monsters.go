@@ -270,6 +270,7 @@ func (m *Manager) resolveFight(ctx context.Context, p player, sheet map[string]i
 				m.drama(p.network, p.channel, fmt.Sprintf(
 					"🐾 from the carnage a %s emerges and takes to %s — a new companion joins the hunt!", pet, p.nick))
 			}
+			m.recordKill(ctx, p.key, mon.Name)
 			m.checkCombatFeats(ctx, p, true)
 			m.questKillCredit(ctx, p.key)
 			m.bumpStat("kills", 1)
@@ -286,6 +287,7 @@ func (m *Manager) resolveFight(ctx context.Context, p player, sheet map[string]i
 		if m.roll(3) == 0 {
 			m.findItem(ctx, p, sheet["level"])
 		}
+		m.recordKill(ctx, p.key, mon.Name)
 		m.checkCombatFeats(ctx, p, false)
 		m.questKillCredit(ctx, p.key)
 		m.bumpStat("kills", 1)
