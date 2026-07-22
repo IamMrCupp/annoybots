@@ -24,13 +24,16 @@ it, it's in-memory and resets on restart.
 | `name++` / `name--` | Bump someone's karma up or down. No self-karma. |
 | `!karma [name]` | Show karma for a name (or yourself). |
 | `!top` | The karma leaderboard. |
+| `!roll [NdM]` | Roll dice — `!roll` is `1d6`, `!roll 2d20` rolls two twenty-siders. |
+| `!8ball <question>` | A magic-8-ball answer. |
+| `!slots` | Pull the reels. Pure flavour — nothing is at stake. |
+| `!trivia` | Ask a question; the first correct answer in channel wins. One per channel. |
+| `!hangman` / `!guess <letter\|word>` | A channel-wide word game — six wrong guesses and everyone loses. |
 
 Karma is **one ledger across every network**: if you've linked your identities
 with [accounts](accounts.md), praise on IRC and praise on Discord land on the same
 score. Unlinked identities keep their own. Pre-existing per-network karma is folded
 into the shared ledger automatically on first start.
-| `!roll [NdM]` | Roll dice — `!roll` is `1d6`, `!roll 2d20` rolls two twenty-siders. |
-| `!8ball <question>` | A magic-8-ball answer. |
 
 ### IdleRPG
 

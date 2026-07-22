@@ -32,6 +32,9 @@ type Manager struct {
 	log     *slog.Logger
 	resolve Resolver
 
+	trivia  *triviaState
+	hangman *hangmanState
+
 	mu  sync.Mutex
 	rng *rand.Rand
 }
@@ -49,6 +52,8 @@ func New(out engine.Sender, store state.Store, log *slog.Logger) *Manager {
 // NewWithRand lets tests inject a deterministic RNG.
 func NewWithRand(out engine.Sender, store state.Store, rng *rand.Rand, log *slog.Logger) *Manager {
 	return &Manager{out: out, store: store, rng: rng, log: log,
+		trivia:  newTriviaState(),
+		hangman: newHangmanState(),
 		resolve: func(network, _, nick string) string {
 			return strings.ToLower(network) + "|" + strings.ToLower(nick)
 		}}
@@ -122,6 +127,23 @@ func (m *Manager) Handle(msg engine.Message) bool {
 		return true
 	case "!top":
 		m.out.Say(msg.Network, msg.Channel, m.leaderboard(msg.Network))
+		return true
+	case "!slots":
+		m.out.Say(msg.Network, msg.Channel, m.spin(msg.Nick))
+		return true
+	case "!trivia":
+		m.out.Say(msg.Network, msg.Channel, m.ask(msg.Network, msg.Channel, msg.Nick))
+		return true
+	case "!hangman":
+		m.out.Say(msg.Network, msg.Channel, m.startHangman(msg.Network, msg.Channel))
+		return true
+	case "!guess":
+		m.out.Say(msg.Network, msg.Channel, m.guess(msg.Network, msg.Channel, msg.Nick, arg(fields, 1)))
+		return true
+	}
+	// An open trivia question turns ordinary chatter into an answer attempt.
+	if line, won := m.answer(msg.Network, msg.Channel, msg.Nick, msg.Text); won {
+		m.out.Say(msg.Network, msg.Channel, line)
 		return true
 	}
 	return m.maybeKarma(msg, fields)
