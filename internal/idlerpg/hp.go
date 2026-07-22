@@ -20,7 +20,7 @@ func maxHP(sheet map[string]int64, class string) int64 {
 	if perLevel < 1 {
 		perLevel = 1
 	}
-	return baseHP + perLevel*(sheet["level"]+1)
+	return baseHP + perLevel*(sheet["level"]+1) + affixesOf(sheet).vital // vital gear adds hit points
 }
 
 // curHP returns current hit points (clamped at 0).

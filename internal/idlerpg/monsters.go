@@ -180,16 +180,28 @@ func (m *Manager) resolveFight(ctx context.Context, p player, sheet map[string]i
 		pAtk += blessAtk
 		pDmgBonus += blessDmg
 	}
+	am := affixesOf(sheet) // magical properties on the equipped gear
+	pAtk += am.swift
 	cm := classCombat(class, sheet)
 	usedAbility := false
 	monHP := mon.HP
 
 	swing := func() bool { // one weapon attack; returns whether it landed
-		if int64(m.roll(20)+1)+pAtk >= mon.AC {
-			monHP -= int64(m.roll(8)+1) + pDmgBonus
-			return true
+		face := int64(m.roll(20) + 1)
+		if face+pAtk < mon.AC {
+			return false
 		}
-		return false
+		dmg := int64(m.roll(8)+1) + pDmgBonus
+		if face >= 20-am.keen { // keen gear widens the critical range
+			dmg *= 2
+		}
+		monHP -= dmg
+		if am.lifesteal > 0 && pHP < startHP { // vampiric gear drinks the wound
+			if pHP += am.lifesteal; pHP > startHP {
+				pHP = startHP
+			}
+		}
+		return true
 	}
 
 	for round := 0; round < 30 && pHP > 0 && monHP > 0; round++ {
@@ -214,7 +226,12 @@ func (m *Manager) resolveFight(ctx context.Context, p player, sheet map[string]i
 		if cm.negateChance > 0 && m.roll(cm.negateChance) == 0 {
 			usedAbility = true
 		} else if int64(m.roll(20)+1)+mon.Atk >= pAC {
-			pHP -= int64(m.roll(int(mon.DmgDie)) + 1)
+			hurt := int64(m.roll(int(mon.DmgDie))+1) - am.warded // warded gear blunts it
+			if hurt < 1 {
+				hurt = 1 // even the best armor lets something through
+			}
+			pHP -= hurt
+			monHP -= am.thorns // thorned gear bites back
 		}
 		if cm.selfHeal > 0 && pHP < startHP { // cleric: Healing Word
 			pHP += cm.selfHeal

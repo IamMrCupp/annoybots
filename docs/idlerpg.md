@@ -141,6 +141,14 @@ one-line summary (and your title).
   idle side by side each of them levels a little faster — +3% per guildmate present,
   up to +15%, stacking with the fellowship bonus. `!rpg guilds` ranks them; the Hall
   of Fame carries a guild table.
+- **Item affixes.** Gear isn't just a power number. A drop can roll magical
+  properties — **vampiric** (heals you as you land blows), **thorned** (turns damage
+  back on your attacker), **keen** (crits far more often), **vital** (bonus maximum
+  HP), **warded** (blunts incoming blows), **swift** (sharper aim). Rarer items roll
+  more of them, and each is stronger on a rarer item, so where an affix sits matters
+  as much as having it. Enchanting can awaken a new property as the item ascends (up
+  to four per item). Affixes travel with an item into your stash and show on
+  `!rpg items`, your character page, and the `/help` catalog.
 - **Dungeons.** While roaming you may stumble on a way down — the Sunken Crypt,
   the Gloomforge, the Barrow of Kings. A delve is personal and runs over several
   ticks: each one clears a room (a lurking foe, a sprung trap, or a chest), and

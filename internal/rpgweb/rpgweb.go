@@ -167,6 +167,7 @@ type helpData struct {
 	Races      []idlerpg.RaceInfo
 	Pets       []idlerpg.PetInfo
 	Alignments []string
+	Affixes    []idlerpg.HelpItem
 }
 
 // hallData is everything the Hall of Fame renders: the ranking columns, then the
@@ -215,6 +216,7 @@ func (s *Server) help(w http.ResponseWriter, _ *http.Request) {
 		Races:      idlerpg.Races(),
 		Pets:       idlerpg.Pets(),
 		Alignments: idlerpg.Alignments(),
+		Affixes:    idlerpg.Affixes(),
 	})
 }
 
@@ -424,6 +426,7 @@ const charTmpl = `<!doctype html>
   .muted { color:#6b7280; }
   a { color:#7fd1a8; text-decoration:none; }
   a:hover { text-decoration:underline; }
+  .affix { color:#c9a227; font-size:.8em; border:1px solid #4a3c14; border-radius:4px; padding:0 .3rem; margin-left:.2rem; }
   footer { margin-top:2rem; color:#4b5563; font-size:.8rem; }
   @media (max-width:640px) {
     body { padding:1rem .85rem; }
@@ -466,7 +469,7 @@ const charTmpl = `<!doctype html>
 
 <h2 style="font-size:1rem;color:#8aa0c6;margin:1.5rem 0 .5rem;">equipment</h2>
 <table>
-  {{range .Items}}<tr><td class="k">{{.Slot}}</td><td>{{.Rarity}} lvl {{.Level}}{{if .Name}} <span class="muted">“{{.Name}}”</span>{{end}}</td></tr>
+  {{range .Items}}<tr><td class="k">{{.Slot}}</td><td>{{.Rarity}} lvl {{.Level}}{{if .Name}} <span class="muted">“{{.Name}}”</span>{{end}}{{range .Affix}} <span class="affix">{{.}}</span>{{end}}</td></tr>
   {{else}}<tr><td colspan="2" class="muted">nothing equipped yet.</td></tr>{{end}}
 </table>
 
@@ -680,6 +683,13 @@ const helpTmpl = `<!doctype html>
 </table>
 <h3 style="color:#8aa0c6;font-size:.95rem;margin:1rem 0 .35rem;">Alignments</h3>
 <p>{{range .Alignments}}<span class="opt">{{.}}</span> · {{end}}</p>
+
+<h3 style="color:#8aa0c6;font-size:.95rem;margin:1rem 0 .35rem;">Item affixes</h3>
+<p class="muted">Magical properties rolled on a drop. Rarer gear rolls more of them, and each one is stronger on a rarer item.</p>
+<table>
+  {{range .Affixes}}<tr><td class="cmd">{{.Cmd}}</td><td>{{.Desc}}</td></tr>
+  {{end}}
+</table>
 
 <div class="admin">
 <h2>{{.Admin.Title}}</h2>

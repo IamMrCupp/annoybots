@@ -24,6 +24,7 @@ type stashItem struct {
 	Slot   string `json:"slot"`
 	Level  int64  `json:"lvl"`
 	Rarity int64  `json:"rar"`
+	Affix  int64  `json:"afx,omitempty"`
 	Name   string `json:"name,omitempty"`
 }
 
@@ -52,7 +53,7 @@ func (m *Manager) writeStash(ctx context.Context, key string, items []stashItem)
 }
 
 func stashLabel(it stashItem) string {
-	s := fmt.Sprintf("%s %s lvl %d", rarityName(it.Rarity), it.Slot, it.Level)
+	s := fmt.Sprintf("%s %s lvl %d", rarityName(it.Rarity), it.Slot, it.Level) + affixSuffix(it.Affix)
 	if it.Name != "" {
 		s += " “" + it.Name + "”"
 	}
@@ -98,10 +99,11 @@ func (m *Manager) stash(msg engine.Message, fields []string) {
 		return
 	}
 	name, _ := m.store.GetStr(ctx, nameKey(pkey, slot))
-	items = append(items, stashItem{Slot: slot, Level: sheet[itemField(slot)], Rarity: sheet[rarityField(slot)], Name: name})
+	items = append(items, stashItem{Slot: slot, Level: sheet[itemField(slot)], Rarity: sheet[rarityField(slot)], Affix: sheet[affixField(slot)], Name: name})
 	m.writeStash(ctx, pkey, items)
 	_ = m.store.HSet(ctx, sheetKey(pkey), itemField(slot), 0)
 	_ = m.store.HSet(ctx, sheetKey(pkey), rarityField(slot), 0)
+	_ = m.store.HSet(ctx, sheetKey(pkey), affixField(slot), 0)
 	_ = m.store.Del(ctx, nameKey(pkey, slot))
 	m.out.Say(msg.Network, msg.Channel, fmt.Sprintf("🎒 %s banks their %s (%d/%d stashed).", msg.Nick, slot, len(items), stashCap))
 }
@@ -132,12 +134,13 @@ func (m *Manager) equip(msg engine.Message, fields []string) {
 	// swap the currently-equipped item in that slot back into the stash
 	if sheet[itemField(it.Slot)] > 0 {
 		curName, _ := m.store.GetStr(ctx, nameKey(pkey, it.Slot))
-		items = append(items, stashItem{Slot: it.Slot, Level: sheet[itemField(it.Slot)], Rarity: sheet[rarityField(it.Slot)], Name: curName})
+		items = append(items, stashItem{Slot: it.Slot, Level: sheet[itemField(it.Slot)], Rarity: sheet[rarityField(it.Slot)], Affix: sheet[affixField(it.Slot)], Name: curName})
 	}
 	m.writeStash(ctx, pkey, items)
 
 	_ = m.store.HSet(ctx, sheetKey(pkey), itemField(it.Slot), it.Level)
 	_ = m.store.HSet(ctx, sheetKey(pkey), rarityField(it.Slot), it.Rarity)
+	_ = m.store.HSet(ctx, sheetKey(pkey), affixField(it.Slot), it.Affix)
 	if it.Name != "" {
 		_ = m.store.SetStr(ctx, nameKey(pkey, it.Slot), it.Name)
 	} else {
