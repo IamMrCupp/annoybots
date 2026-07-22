@@ -1,0 +1,46 @@
+name: codeql
+
+# Static security analysis. Runs on pushes to main, on pull requests, and weekly
+# so newly-published rules catch code that was already merged.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: "27 4 * * 1" # Mondays, off the hour to dodge the scheduling stampede
+
+permissions:
+  contents: read
+
+jobs:
+  analyze:
+    name: analyze (go)
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write # required to upload the SARIF results
+      actions: read
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v4
+        with:
+          languages: go
+          queries: security-and-quality
+
+      # Build explicitly rather than leaving it to autobuild, so analysis covers
+      # the same packages CI builds (and fails loudly if that ever diverges).
+      - name: Build
+        run: go build ./...
+
+      - name: Perform CodeQL analysis
+        uses: github/codeql-action/analyze@v4
+        with:
+          category: "/language:go"
