@@ -38,8 +38,13 @@ func chanMsg(nick, text string) engine.Message {
 }
 
 func newMgr() (*Manager, *recorder, state.Store) {
+	return newMgrOn(state.NewMem())
+}
+
+// newMgrOn builds a Manager over an existing store — for asserting that state
+// rehydrates the way a real restart would.
+func newMgrOn(st state.Store) (*Manager, *recorder, state.Store) {
 	r := &recorder{}
-	st := state.NewMem()
 	log := slog.New(slog.NewTextHandler(io.Discard, nil))
 	// 1s tick, 1s base ttl → one quiet tick levels you up. nil resolver = key by network|nick.
 	// Long quest interval so quests never start unless a test forces one.

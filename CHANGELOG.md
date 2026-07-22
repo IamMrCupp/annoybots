@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.58.0](https://github.com/IamMrCupp/annoybots/compare/v1.57.0...v1.58.0) (2026-07-22)
+
+
+### Features
+
+* **idlerpg:** guild raids + vault perks ([0a1c654](https://github.com/IamMrCupp/annoybots/commit/0a1c65405a75a06a4fc9e9b0f538785a9891e0d9))
+* **idlerpg:** guild raids and vault perks (closes [#214](https://github.com/IamMrCupp/annoybots/issues/214)) ([01fbada](https://github.com/IamMrCupp/annoybots/commit/01fbada056156315019f3cb0448bd2088fffce3b))
+
 ## [1.57.0](https://github.com/IamMrCupp/annoybots/compare/v1.56.0...v1.57.0) (2026-07-22)
 
 

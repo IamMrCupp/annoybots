@@ -49,6 +49,8 @@ Opt in with `!rpg`, then "play" by being present and **quiet**. Full rules in
 | `!rpg town` | Where you are on the map (at a town, travelling, or roaming). |
 | `!rpg guild [create\|join <name>\|leave\|deposit <gold>]` | Found or join a guild, pool gold in its vault, and level faster when guildmates idle with you. |
 | `!rpg guilds` | The guild leaderboard, by summed member levels. |
+| `!rpg guild raid` | Spend the vault to summon a champion only your guild can fight; damage tracked, spoils split. |
+| `!rpg guild perk [name]` | List the vault perks, or buy the next level (swiftness, fortune, might). |
 | `!rpg bestiary` (`collection`) | Species slain (x/y), favourite prey, and your finds by rarity. |
 | `!rpg dungeon` (`delve`) | Your delve — found by roaming; each tick clears a room, the last holds the dungeon's lord. |
 | `!rpg pet` (`companion`) | Your companion and the combat bonus it grants (earned by slaying a boss). |

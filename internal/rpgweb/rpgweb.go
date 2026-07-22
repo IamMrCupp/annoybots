@@ -761,7 +761,8 @@ const hallTmpl = `<!doctype html>
   a:hover { text-decoration:underline; }
   .muted { color:#6b7280; }
   .guilds-h { font-size:1.1rem; color:#e9b949; margin:2rem 0 .25rem; }
-  table.guilds { margin-top:.5rem; max-width:44rem; }
+  table.guilds { margin-top:.5rem; max-width:52rem; }
+  .raiding { color:#e06c75; font-size:.8em; }
   footer { margin-top:2rem; color:#4b5563; font-size:.8rem; }
   @media (max-width:640px) {
     body { padding:1rem .85rem; }
@@ -796,9 +797,9 @@ const hallTmpl = `<!doctype html>
 <h2 class="guilds-h">🛡 Guilds</h2>
 <p class="sub">bands of heroes, ranked by their members' summed levels.</p>
 <table class="guilds">
-  <tr><td class="rank"></td><td class="muted">guild</td><td class="muted">founder</td><td class="val muted">members</td><td class="val muted">vault</td><td class="val muted">level</td></tr>
+  <tr><td class="rank"></td><td class="muted">guild</td><td class="muted">founder</td><td class="muted">perks</td><td class="val muted">members</td><td class="val muted">vault</td><td class="val muted">level</td></tr>
   {{range $i, $g := .Guilds}}
-  <tr><td class="rank">{{add $i 1}}</td><td>{{$g.Name}}</td><td class="muted">{{$g.Founder}}</td><td class="val">{{$g.Members}}</td><td class="val">{{$g.Vault}}<span class="muted"> g</span></td><td class="val">{{$g.Level}}</td></tr>
+  <tr><td class="rank">{{add $i 1}}</td><td>{{$g.Name}}{{if $g.Raid}}<br><span class="raiding">⚔️ raiding {{$g.Raid}} ({{$g.RaidPct}}%)</span>{{end}}</td><td class="muted">{{$g.Founder}}</td><td class="muted">{{if $g.Perks}}{{$g.Perks}}{{else}}—{{end}}</td><td class="val">{{$g.Members}}</td><td class="val">{{$g.Vault}}<span class="muted"> g</span></td><td class="val">{{$g.Level}}</td></tr>
   {{end}}
 </table>
 {{end}}

@@ -46,6 +46,8 @@ func CommandHelp() []HelpGroup {
 			{"!rpg pet (companion)", "Your companion (a wolf, boar, hawk, imp, or owlbear — earned by slaying a boss)."},
 			{"!rpg guild [create|join <name>|leave|deposit <gold>]", "Band together: found or join a guild, pool gold in its vault, and level faster when guildmates idle with you."},
 			{"!rpg guilds", "The guild leaderboard, by summed member levels."},
+			{"!rpg guild raid", "Spend the vault to summon a champion only your guild can fight — damage is tracked, spoils are split."},
+			{"!rpg guild perk [name]", "List the vault perks, or buy the next level of one (swiftness, fortune, might)."},
 		}},
 		{"World & combat", []HelpItem{
 			{"!rpg travel <town>", "Set off for a town; you walk there over the next ticks."},
