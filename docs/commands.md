@@ -134,6 +134,7 @@ block; send `!help` for the list your flags allow.
 | `!help` / `!admin` | friend | List commands / show your access. |
 | `!networks` | friend | Which networks the bot is connected to (connected/offline). |
 | `!party` / `!unparty` | friend | Join/leave the partyline (cross-bot operator chat). |
+| `!bridge <net> <#chan>` / `!unbridge` | master | Echo partyline chat into a public channel (one-way — channel chatter never flows back). Bare `!bridge` shows the current target. |
 | `!say <net> <target> <text>` | op | Puppet the bot. The target can be a nick or a service — e.g. `!say <net> NickServ IDENTIFY …` to message NickServ directly. |
 | `!act <net> <target> <text>` | op | Puppet a `/me`. |
 | `!identify <net> [password]` | master | (Re)authenticate the bot to NickServ. Omit the password to use the network's configured secret — nothing sensitive is typed in chat or written to logs. Pass one explicitly only when the network has none configured. |

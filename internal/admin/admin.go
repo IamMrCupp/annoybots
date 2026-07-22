@@ -91,6 +91,7 @@ type Manager struct {
 	sessions    map[string]time.Time // network|nick -> session expiry (password logins)
 	fails       map[string][]time.Time
 	party       map[string]partyMember // network|nick -> joined partyline member
+	bridge      *bridgeTarget          // if set, partyline traffic is echoed to this public channel
 	claimCode   string                 // one-time bootstrap code; empty once any admin exists
 }
 

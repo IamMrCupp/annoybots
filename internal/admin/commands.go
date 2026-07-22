@@ -21,6 +21,7 @@ var adminCommands = map[string]bool{
 	"!addadmin": true, "!deladmin": true, "!admins": true,
 	"!reload": true,
 	"!party":  true, "!unparty": true,
+	"!bridge": true, "!unbridge": true,
 	"!networks": true,
 }
 
@@ -149,6 +150,40 @@ func (m *Manager) exec(_ context.Context, msg engine.Message, cmd string, fields
 			m.announceParty(msg, msg.Nick+" left the partyline")
 		} else {
 			m.reply(msg, "you're not on the partyline.")
+		}
+
+	case "!bridge":
+		if len(fields) < 3 {
+			if b := m.bridgeOf(); b != nil {
+				m.reply(msg, "partyline is bridged to "+b.network+" "+b.channel+". !unbridge to stop.")
+				return
+			}
+			m.reply(msg, "usage: !bridge <net> <#chan> — echo partyline chat into a public channel.")
+			return
+		}
+		network, channel := fields[1], fields[2]
+		if _, known := m.ctl.NetworkStatus()[network]; !known {
+			m.reply(msg, "unknown network: "+network)
+			return
+		}
+		if !strings.HasPrefix(channel, "#") {
+			m.reply(msg, "that doesn't look like a channel: "+channel)
+			return
+		}
+		prev := m.setBridge(&bridgeTarget{network: network, channel: channel})
+		if prev != nil {
+			m.reply(msg, "partyline now bridges to "+network+" "+channel+" (was "+prev.network+" "+prev.channel+").")
+		} else {
+			m.reply(msg, "partyline now bridges to "+network+" "+channel+". everything said on the partyline is public there.")
+		}
+		m.announceParty(msg, msg.Nick+" bridged the partyline to "+channel+" — mind what you say")
+
+	case "!unbridge":
+		if prev := m.setBridge(nil); prev != nil {
+			m.reply(msg, "partyline bridge to "+prev.channel+" stopped.")
+			m.announceParty(msg, msg.Nick+" stopped the partyline bridge")
+		} else {
+			m.reply(msg, "the partyline isn't bridged anywhere.")
 		}
 
 	case "!join":
