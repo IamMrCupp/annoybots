@@ -32,34 +32,37 @@ type ItemView struct {
 
 // CharView is a read-only snapshot of one character's sheet.
 type CharView struct {
-	Key        string     // canonical character key (network|nick, or a linked account)
-	Name       string     // display name: the key with any "network|" prefix stripped
-	Level      int64      // current level
-	Rebirths   int64      // prestige count (times reborn)
-	HP         int64      // current hit points
-	MaxHP      int64      // hit-point ceiling
-	Poisoned   bool       // carrying venom (damage-over-time)
-	Blessed    bool       // under a temple blessing (combat buff)
-	Gold       int64      // coin from monster kills
-	Kills      int64      // monsters slain
-	TTL        int64      // seconds to the next level
-	Power      int64      // total equipment power (sum of item levels)
-	Title      string     // earned honorific (e.g. "the Dragonslayer"), empty if none yet
-	Align      string     // full 9-point alignment, e.g. "chaotic evil" / "true neutral"
-	AlignClass string     // moral axis only ("good"/"neutral"/"evil"), for color styling
-	Race       string     // chosen race, empty if unset
-	Class      string     // class, empty if unset
-	Pet        string     // companion's kind (e.g. "wolf"), empty if none
-	Mount      string     // steed's name, empty if none
-	Guild      string     // guild name, empty if unaffiliated
-	Dungeon    string     // the dungeon being delved, empty if not underground
-	Rooms      int64      // rooms left in that delve
-	Draughts   int64      // healing draughts carried
-	DuelWins   int64      // career spar wins
-	Location   string     // where on the map: at/travelling-to a town, or roaming
-	Items      []ItemView // equipped items (only non-empty slots), in slot order
-	Abilities  []Ability  // the six ability scores, in canonical order (empty if unrolled)
-	Feats      []string   // earned one-time achievements, in display order
+	Key        string          // canonical character key (network|nick, or a linked account)
+	Name       string          // display name: the key with any "network|" prefix stripped
+	Level      int64           // current level
+	Rebirths   int64           // prestige count (times reborn)
+	HP         int64           // current hit points
+	MaxHP      int64           // hit-point ceiling
+	Poisoned   bool            // carrying venom (damage-over-time)
+	Blessed    bool            // under a temple blessing (combat buff)
+	Gold       int64           // coin from monster kills
+	Kills      int64           // monsters slain
+	TTL        int64           // seconds to the next level
+	Power      int64           // total equipment power (sum of item levels)
+	Title      string          // earned honorific (e.g. "the Dragonslayer"), empty if none yet
+	Align      string          // full 9-point alignment, e.g. "chaotic evil" / "true neutral"
+	AlignClass string          // moral axis only ("good"/"neutral"/"evil"), for color styling
+	Race       string          // chosen race, empty if unset
+	Class      string          // class, empty if unset
+	Pet        string          // companion's kind (e.g. "wolf"), empty if none
+	Mount      string          // steed's name, empty if none
+	Guild      string          // guild name, empty if unaffiliated
+	Dungeon    string          // the dungeon being delved, empty if not underground
+	Rooms      int64           // rooms left in that delve
+	Draughts   int64           // healing draughts carried
+	DuelWins   int64           // career spar wins
+	Location   string          // where on the map: at/travelling-to a town, or roaming
+	Items      []ItemView      // equipped items (only non-empty slots), in slot order
+	Abilities  []Ability       // the six ability scores, in canonical order (empty if unrolled)
+	Feats      []string        // earned one-time achievements, in display order
+	Species    int             // distinct bestiary species slain
+	SpeciesAll int             // how many species exist
+	Collection []BestiaryEntry // items found, by rarity
 }
 
 // QuestView is a read-only snapshot of the active quest.
@@ -173,6 +176,7 @@ func readChar(ctx context.Context, store state.Store, key string) CharView {
 			Affix: affixNames(sheet[affixField(s)]),
 		})
 	}
+	seen, speciesTotal := BestiaryProgress(ctx, store, key)
 	var abil []Ability
 	if sheet["str"] != 0 { // scores rolled
 		for _, a := range abilityLabels {
@@ -208,6 +212,9 @@ func readChar(ctx context.Context, store state.Store, key string) CharView {
 		Items:      items,
 		Abilities:  abil,
 		Feats:      featList(sheet["feats"]),
+		Species:    seen,
+		SpeciesAll: speciesTotal,
+		Collection: CollectionOf(ctx, store, key),
 	}
 }
 

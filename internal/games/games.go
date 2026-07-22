@@ -27,9 +27,10 @@ var eightBall = []string{
 
 // Manager handles the toy commands; karma is persisted via the F3 state store.
 type Manager struct {
-	out   engine.Sender
-	store state.Store
-	log   *slog.Logger
+	out     engine.Sender
+	store   state.Store
+	log     *slog.Logger
+	resolve Resolver
 
 	trivia  *triviaState
 	hangman *hangmanState
@@ -37,6 +38,11 @@ type Manager struct {
 	mu  sync.Mutex
 	rng *rand.Rand
 }
+
+// Resolver maps a (network, account, nick) to a canonical player key — the
+// account system, so linked identities are one person everywhere. Karma uses it
+// so praise on IRC and praise on Discord land on the same ledger.
+type Resolver func(network, account, nick string) string
 
 // New returns a Manager with a time-seeded RNG.
 func New(out engine.Sender, store state.Store, log *slog.Logger) *Manager {
@@ -46,10 +52,57 @@ func New(out engine.Sender, store state.Store, log *slog.Logger) *Manager {
 // NewWithRand lets tests inject a deterministic RNG.
 func NewWithRand(out engine.Sender, store state.Store, rng *rand.Rand, log *slog.Logger) *Manager {
 	return &Manager{out: out, store: store, rng: rng, log: log,
-		trivia: newTriviaState(), hangman: newHangmanState()}
+		trivia:  newTriviaState(),
+		hangman: newHangmanState(),
+		resolve: func(network, _, nick string) string {
+			return strings.ToLower(network) + "|" + strings.ToLower(nick)
+		}}
 }
 
-func karmaKey(network string) string { return "karma:" + strings.ToLower(network) }
+// SetResolver wires the account system in, so karma follows a linked person
+// across networks. Without it, karma stays keyed per network identity.
+func (m *Manager) SetResolver(r Resolver) {
+	if r != nil {
+		m.resolve = r
+	}
+}
+
+// karmaKey is a single realm-wide ledger; members are resolved player keys, so a
+// linked person carries one karma score across every network.
+func karmaKey() string { return "karma:all" }
+
+// legacyKarmaKey is the pre-account, per-network ledger, kept only for migration.
+func legacyKarmaKey(network string) string { return "karma:" + strings.ToLower(network) }
+
+// displayKarma strips a "network|" prefix from a resolved key for display.
+func displayKarma(key string) string {
+	if i := strings.IndexByte(key, '|'); i >= 0 {
+		return key[i+1:]
+	}
+	return key
+}
+
+// MigrateKarma folds the old per-network ledgers into the single resolved one,
+// so switching to account-keyed karma never orphans what people already earned.
+// Safe to run on every start: once a legacy key is drained it's removed.
+func (m *Manager) MigrateKarma(ctx context.Context, networks []string) {
+	for _, n := range networks {
+		old := legacyKarmaKey(n)
+		entries, err := m.store.ZTop(ctx, old, 100000)
+		if err != nil || len(entries) == 0 {
+			continue
+		}
+		for _, e := range entries {
+			key := m.resolve(n, "", e.Member)
+			if _, err := m.store.ZIncr(ctx, karmaKey(), key, e.Score); err != nil {
+				m.log.Warn("karma migration failed", "network", n, "member", e.Member, "err", err)
+				return // leave the legacy key intact so it can be retried
+			}
+		}
+		_ = m.store.Del(ctx, old)
+		m.log.Info("karma migrated to the shared ledger", "network", n, "entries", len(entries))
+	}
+}
 
 // Handle processes a channel message. Returns true if it consumed it (a command
 // or a karma op), false to let normal chatter flow on to the engine.
@@ -118,7 +171,8 @@ func (m *Manager) maybeKarma(msg engine.Message, fields []string) bool {
 			acted = true
 			continue
 		}
-		score, err := m.store.ZIncr(context.Background(), karmaKey(msg.Network), strings.ToLower(target), int64(delta))
+		key := m.resolve(msg.Network, "", target)
+		score, err := m.store.ZIncr(context.Background(), karmaKey(), key, int64(delta))
 		if err != nil {
 			m.log.Warn("karma store failed", "err", err)
 			m.out.Say(msg.Network, msg.Channel, "karma's having a moment, try later.")
@@ -131,7 +185,7 @@ func (m *Manager) maybeKarma(msg engine.Message, fields []string) bool {
 }
 
 func (m *Manager) report(network, nick string) string {
-	score, err := m.store.ZScore(context.Background(), karmaKey(network), strings.ToLower(nick))
+	score, err := m.store.ZScore(context.Background(), karmaKey(), m.resolve(network, "", nick))
 	if err != nil {
 		m.log.Warn("karma report failed", "err", err)
 		return "can't reach the karma vault right now."
@@ -139,8 +193,8 @@ func (m *Manager) report(network, nick string) string {
 	return fmt.Sprintf("%s has %d karma.", nick, score)
 }
 
-func (m *Manager) leaderboard(network string) string {
-	top, err := m.store.ZTop(context.Background(), karmaKey(network), 5)
+func (m *Manager) leaderboard(_ string) string {
+	top, err := m.store.ZTop(context.Background(), karmaKey(), 5)
 	if err != nil {
 		m.log.Warn("karma leaderboard failed", "err", err)
 		return "can't reach the karma vault right now."
@@ -150,7 +204,7 @@ func (m *Manager) leaderboard(network string) string {
 	}
 	parts := make([]string, 0, len(top))
 	for _, e := range top {
-		parts = append(parts, fmt.Sprintf("%s (%d)", e.Member, e.Score))
+		parts = append(parts, fmt.Sprintf("%s (%d)", displayKarma(e.Member), e.Score))
 	}
 	return "karma leaders: " + strings.Join(parts, ", ")
 }

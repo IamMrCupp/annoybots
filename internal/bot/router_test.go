@@ -73,7 +73,16 @@ type opTransport struct {
 }
 
 func (o *opTransport) Op(network, channel, nick string) bool {
-	o.ops = append(o.ops, network+"|"+channel+"|"+nick)
+	return o.Mode(network, channel, "+o", nick)
+}
+
+func (o *opTransport) Mode(network, channel, modes, nick string) bool {
+	o.ops = append(o.ops, network+"|"+channel+"|"+modes+"|"+nick)
+	return o.held
+}
+
+func (o *opTransport) Kick(network, channel, nick, reason string) bool {
+	o.ops = append(o.ops, "KICK|"+network+"|"+channel+"|"+nick+"|"+reason)
 	return o.held
 }
 
@@ -87,8 +96,8 @@ func TestRouterOpRoutesToOpperOnly(t *testing.T) {
 	if !r.Op("irc", "#chan", "boss") {
 		t.Fatal("an opped Opper transport should grant and return true")
 	}
-	if len(opped.ops) != 1 || opped.ops[0] != "irc|#chan|boss" {
-		t.Fatalf("expected Op(irc,#chan,boss), got %v", opped.ops)
+	if len(opped.ops) != 1 || opped.ops[0] != "irc|#chan|+o|boss" {
+		t.Fatalf("expected +o for boss, got %v", opped.ops)
 	}
 	// A transport that doesn't implement Opper (Discord) returns false, no panic.
 	if r.Op("discord", "#chan", "boss") {
@@ -117,5 +126,23 @@ func TestRouterAnyConnected(t *testing.T) {
 	b.connected = true
 	if !r.AnyConnected() {
 		t.Fatal("expected connected once one transport is up")
+	}
+}
+
+func TestRouterModeAndKickRouteToOpperOnly(t *testing.T) {
+	opped := &opTransport{fakeTransport: fakeTransport{networks: []string{"irc"}}, held: true}
+	plain := &fakeTransport{networks: []string{"discord"}}
+	r := NewRouter()
+	r.Add(opped)
+	r.Add(plain)
+
+	if !r.Mode("irc", "#chan", "-o", "bob") || !r.Kick("irc", "#chan", "pest", "bye") {
+		t.Fatal("an opped transport should carry out mode and kick")
+	}
+	if r.Mode("discord", "#c", "+v", "bob") || r.Kick("discord", "#c", "bob", "") {
+		t.Fatal("a non-Opper transport must refuse both")
+	}
+	if r.Mode("nope", "#c", "+v", "bob") || r.Kick("nope", "#c", "bob", "") {
+		t.Fatal("an unknown network must refuse both")
 	}
 }

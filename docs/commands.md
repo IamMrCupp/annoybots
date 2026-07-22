@@ -24,11 +24,16 @@ it, it's in-memory and resets on restart.
 | `name++` / `name--` | Bump someone's karma up or down. No self-karma. |
 | `!karma [name]` | Show karma for a name (or yourself). |
 | `!top` | The karma leaderboard. |
+| `!roll [NdM]` | Roll dice — `!roll` is `1d6`, `!roll 2d20` rolls two twenty-siders. |
+| `!8ball <question>` | A magic-8-ball answer. |
 | `!slots` | Pull the reels. Pure flavour — nothing is at stake. |
 | `!trivia` | Ask a question; the first correct answer in channel wins. One per channel. |
 | `!hangman` / `!guess <letter\|word>` | A channel-wide word game — six wrong guesses and everyone loses. |
-| `!roll [NdM]` | Roll dice — `!roll` is `1d6`, `!roll 2d20` rolls two twenty-siders. |
-| `!8ball <question>` | A magic-8-ball answer. |
+
+Karma is **one ledger across every network**: if you've linked your identities
+with [accounts](accounts.md), praise on IRC and praise on Discord land on the same
+score. Unlinked identities keep their own. Pre-existing per-network karma is folded
+into the shared ledger automatically on first start.
 
 ### IdleRPG
 
@@ -54,6 +59,7 @@ Opt in with `!rpg`, then "play" by being present and **quiet**. Full rules in
 | `!rpg guilds` | The guild leaderboard, by summed member levels. |
 | `!rpg guild raid` | Spend the vault to summon a champion only your guild can fight; damage tracked, spoils split. |
 | `!rpg guild perk [name]` | List the vault perks, or buy the next level (swiftness, fortune, might). |
+| `!rpg bestiary` (`collection`) | Species slain (x/y), favourite prey, and your finds by rarity. |
 | `!rpg dungeon` (`delve`) | Your delve — found by roaming; each tick clears a room, the last holds the dungeon's lord. |
 | `!rpg pet` (`companion`) | Your companion and the combat bonus it grants (earned by slaying a boss). |
 | `!rpg duel <name>` (`spar`) | Friendly best-of-three spar with a present player — bragging rights only, no stat changes. |
@@ -86,14 +92,21 @@ and serves the full command reference at `/help` (the same source as `!rpg help`
 
 | Command | What it does |
 |---|---|
-| `!op` | A recognized admin asks the bots to op them. Whichever bot in the channel currently holds channel operator grants `+o`; the mode change is the acknowledgement. |
+| `!op [nick]` | Op yourself, or another user. Whichever bot in the channel currently holds channel operator grants `+o`; the mode change is the acknowledgement. |
+| `!deop [nick]` | Remove ops from yourself or another user. |
+| `!voice [nick]` / `!devoice [nick]` | Grant or remove voice. |
+| `!kick <nick> [reason]` | Remove someone from the channel. |
 
-`!op` is authorized by the same identity model as the admin console (op flag or
+These are authorized by the same identity model as the admin console (op flag or
 better — verified account or hostmask). Non-admins are ignored silently. Every
 bot present sees the command, but only the one(s) actually holding ops act, so a
 channel full of bots produces neither a mode war nor duplicate replies. Op-state
 awareness comes from channel-keeping's per-channel tracking, which is enabled
-automatically wherever `!op` is available.
+automatically wherever these commands are available.
+
+The console **refuses to deop, devoice, or kick its own bots** — those are what
+hold the channel, and turning on them is how a channel gets lost. Granting them
+`+o`/`+v` is always allowed, since that's how a bot gets its ops back.
 
 ## Accounts — in a DM
 

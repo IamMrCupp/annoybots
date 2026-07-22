@@ -104,6 +104,16 @@ func main() {
 		gamesMgr = games.New(router, store, log)
 	}
 
+	// Karma follows a linked person across networks, same as an IdleRPG character.
+	if gamesMgr != nil && acctMgr != nil {
+		gamesMgr.SetResolver(acctMgr.Resolve)
+		nets := make([]string, 0, len(cfg.Networks))
+		for _, n := range cfg.Networks {
+			nets = append(nets, n.Name)
+		}
+		gamesMgr.MigrateKarma(ctx, nets) // fold any pre-account per-network ledgers in
+	}
+
 	// IdleRPG — off by default; persists to the shared state store, keyed by
 	// account when accounts are on, else by network identity.
 	var rpgMgr *idlerpg.Manager
@@ -181,6 +191,7 @@ func main() {
 	if adminMgr != nil {
 		opMgr = chanops.New(router, router, log)
 		opMgr.SetAuthz(adminMgr.IsAdmin)
+		opMgr.SetSiblings(eng.IsSibling) // never deop/kick the bots holding the channel
 	}
 
 	handler := func(m engine.Message) {

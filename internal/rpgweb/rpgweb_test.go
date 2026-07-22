@@ -254,3 +254,19 @@ func TestHelpPageListsAffixCatalog(t *testing.T) {
 		}
 	}
 }
+
+func TestBestiaryPageListsSpecies(t *testing.T) {
+	st := state.NewMem()
+	seed(st)
+	rr := httptest.NewRecorder()
+	New(st).Handler().ServeHTTP(rr, httptest.NewRequest(http.MethodGet, "/bestiary", nil))
+	if rr.Code != http.StatusOK {
+		t.Fatalf("status = %d; want 200", rr.Code)
+	}
+	body := rr.Body.String()
+	for _, want := range []string{"Bestiary", "unmet", `href="/bestiary"`} {
+		if !strings.Contains(body, want) {
+			t.Fatalf("bestiary page missing %q", want)
+		}
+	}
+}

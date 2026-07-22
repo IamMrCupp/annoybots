@@ -106,14 +106,36 @@ func (r *Router) Invite(network, nick, channel string) {
 // only when the mode was actually sent — Discord and other non-IRC transports,
 // which have no op mode, always return false.
 func (r *Router) Op(network, channel, nick string) bool {
-	t, ok := r.byNetwork[network]
-	if !ok {
-		return false
-	}
-	if o, ok := t.(engine.Opper); ok {
+	if o, ok := r.opperFor(network); ok {
 		return o.Op(network, channel, nick)
 	}
 	return false
+}
+
+// Mode asks the owning transport to apply a channel mode change to nick.
+func (r *Router) Mode(network, channel, modes, nick string) bool {
+	if o, ok := r.opperFor(network); ok {
+		return o.Mode(network, channel, modes, nick)
+	}
+	return false
+}
+
+// Kick asks the owning transport to remove nick from the channel.
+func (r *Router) Kick(network, channel, nick, reason string) bool {
+	if o, ok := r.opperFor(network); ok {
+		return o.Kick(network, channel, nick, reason)
+	}
+	return false
+}
+
+// opperFor returns the mode-capable transport owning network, if any.
+func (r *Router) opperFor(network string) (engine.Opper, bool) {
+	t, ok := r.byNetwork[network]
+	if !ok {
+		return nil, false
+	}
+	o, ok := t.(engine.Opper)
+	return o, ok
 }
 
 // Identify asks the owning transport to (re)authenticate to services on network.
