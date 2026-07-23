@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.61.1](https://github.com/IamMrCupp/annoybots/compare/v1.61.0...v1.61.1) (2026-07-23)
+
+
+### Bug Fixes
+
+* **admin:** honest feedback for unknown network names ([6518fb0](https://github.com/IamMrCupp/annoybots/commit/6518fb0afa936021d275dde07935bac3d0136734))
+
 ## [1.61.0](https://github.com/IamMrCupp/annoybots/compare/v1.60.0...v1.61.0) (2026-07-23)
 
 
