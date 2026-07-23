@@ -325,6 +325,25 @@ func (m *Manager) onBusEvent(e botnet.Event) {
 		m.applyAdminAdd(Identity{Network: e.AdminNet, Account: e.Account, Flags: e.Flags})
 	case botnet.EventAdminDel:
 		m.applyAdminDel(Identity{Network: e.AdminNet, Account: e.Account})
+	case botnet.EventJoinChan, botnet.EventPartChan:
+		m.applyChannelControl(e.Type, e.Network, e.Channel)
+	}
+}
+
+// applyChannelControl joins or parts a channel on this bot. It's the shared body
+// of the local action and the one taken when a sibling broadcasts, so both paths
+// behave identically.
+func (m *Manager) applyChannelControl(evt, network, channel string) {
+	if network == "" || channel == "" {
+		return
+	}
+	switch evt {
+	case botnet.EventJoinChan:
+		m.ctl.Join(network, channel)
+		m.log.Info("botnet channel control: joining", "network", network, "channel", channel)
+	case botnet.EventPartChan:
+		m.ctl.Part(network, channel)
+		m.log.Info("botnet channel control: parting", "network", network, "channel", channel)
 	}
 }
 

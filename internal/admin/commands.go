@@ -16,6 +16,7 @@ var adminCommands = map[string]bool{
 	"!admin": true, "!help": true,
 	"!login": true, "!logout": true, "!claim": true,
 	"!join": true, "!part": true, "!invite": true,
+	"!joinall": true, "!partall": true,
 	"!say": true, "!act": true, "!identify": true,
 	"!addquote": true, "!delquote": true,
 	"!addadmin": true, "!deladmin": true, "!admins": true,
@@ -129,6 +130,7 @@ func (m *Manager) exec(_ context.Context, msg engine.Message, cmd string, fields
 	case "!admin", "!help":
 		m.reply(msg, "commands: !login <password> | !logout | "+
 			"!join <net> <#chan> | !part <net> <#chan> | "+
+			"!joinall <net> <#chan> | !partall <net> <#chan> | "+
 			"!invite <net> <#chan> <nick> | !say <net> <target> <text> | "+
 			"!act <net> <target> <text> | !identify <net> [password] | "+
 			"!addquote <pack> <text> | "+
@@ -193,6 +195,26 @@ func (m *Manager) exec(_ context.Context, msg engine.Message, cmd string, fields
 		}
 		m.ctl.Join(fields[1], fields[2])
 		m.reply(msg, "joining "+fields[2]+" on "+fields[1])
+
+	case "!joinall", "!partall":
+		if len(fields) < 3 {
+			m.reply(msg, "usage: "+cmd+" <network> <#channel>")
+			return
+		}
+		network, channel := fields[1], fields[2]
+		if _, known := m.ctl.NetworkStatus()[network]; !known {
+			m.reply(msg, "unknown network: "+network)
+			return
+		}
+		// Act locally, then tell the siblings — the same shape as the partyline,
+		// so behaviour never depends on the bus echoing back to its publisher.
+		verb, evt := "joining", botnet.EventJoinChan
+		if cmd == "!partall" {
+			verb, evt = "parting", botnet.EventPartChan
+		}
+		m.applyChannelControl(evt, network, channel)
+		m.publish(botnet.Event{Type: evt, Network: network, Channel: channel})
+		m.reply(msg, "every bot is "+verb+" "+channel+" on "+network+".")
 
 	case "!part":
 		if len(fields) < 3 {

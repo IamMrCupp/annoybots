@@ -50,6 +50,8 @@ const (
 	EventAdminAdd    = "admin_add"
 	EventAdminDel    = "admin_del"
 	EventPartyline   = "partyline"
+	EventJoinChan    = "join_chan" // fleet-wide channel control
+	EventPartChan    = "part_chan"
 )
 
 // Bus is a publish/subscribe channel shared by all bots.
