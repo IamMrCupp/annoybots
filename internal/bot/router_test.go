@@ -146,3 +146,39 @@ func TestRouterModeAndKickRouteToOpperOnly(t *testing.T) {
 		t.Fatal("an unknown network must refuse both")
 	}
 }
+
+func TestRouterResolvesNetworkNamesCaseInsensitively(t *testing.T) {
+	tr := &fakeTransport{networks: []string{"empradio"}}
+	r := NewRouter()
+	r.Add(tr)
+
+	// exact
+	if canon, ok := r.Resolve("empradio"); !ok || canon != "empradio" {
+		t.Fatalf("exact name should resolve, got %q %v", canon, ok)
+	}
+	// different case resolves to the configured spelling
+	for _, try := range []string{"EMPRADIO", "EmpRadio", "empRADIO"} {
+		canon, ok := r.Resolve(try)
+		if !ok || canon != "empradio" {
+			t.Fatalf("%q should resolve to empradio, got %q %v", try, canon, ok)
+		}
+	}
+	// a genuinely different name does not
+	if _, ok := r.Resolve("EMP"); ok {
+		t.Fatal(`"EMP" is not "empradio" and must not resolve`)
+	}
+	// and the transport is actually driven with the canonical name
+	r.Part("EMPRADIO", "#tns")
+	if len(tr.sent) != 1 || tr.sent[0] != "PART empradio #tns" {
+		t.Fatalf("part should reach the transport under its configured name, got %#v", tr.sent)
+	}
+}
+
+func TestRouterNetworksListsNames(t *testing.T) {
+	r := NewRouter()
+	r.Add(&fakeTransport{networks: []string{"zeta", "alpha"}})
+	got := r.Networks()
+	if len(got) != 2 || got[0] != "alpha" || got[1] != "zeta" {
+		t.Fatalf("Networks should list sorted names, got %#v", got)
+	}
+}
