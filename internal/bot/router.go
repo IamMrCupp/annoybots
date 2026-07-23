@@ -7,6 +7,8 @@ package bot
 
 import (
 	"context"
+	"sort"
+	"strings"
 
 	"github.com/IamMrCupp/annoybots/internal/engine"
 )
@@ -37,11 +39,12 @@ type Transport interface {
 type Router struct {
 	transports []Transport
 	byNetwork  map[string]Transport
+	canonical  map[string]string // lowercased name -> the name as configured
 }
 
 // NewRouter returns an empty Router.
 func NewRouter() *Router {
-	return &Router{byNetwork: make(map[string]Transport)}
+	return &Router{byNetwork: make(map[string]Transport), canonical: make(map[string]string)}
 }
 
 // Add registers a transport and indexes the networks it owns.
@@ -49,55 +52,87 @@ func (r *Router) Add(t Transport) {
 	r.transports = append(r.transports, t)
 	for _, n := range t.Networks() {
 		r.byNetwork[n] = t
+		r.canonical[strings.ToLower(n)] = n
 	}
+}
+
+// Resolve maps a user-typed network name to the one as configured, matching
+// case-insensitively. Network names are typed by hand in admin commands, so
+// "EMPRadio" should find "empradio" rather than silently doing nothing.
+func (r *Router) Resolve(network string) (string, bool) {
+	if _, ok := r.byNetwork[network]; ok {
+		return network, true
+	}
+	canon, ok := r.canonical[strings.ToLower(network)]
+	return canon, ok
+}
+
+// Networks lists every network name the router knows, sorted — so callers can
+// tell a user what the valid names actually are.
+func (r *Router) Networks() []string {
+	out := make([]string, 0, len(r.byNetwork))
+	for n := range r.byNetwork {
+		out = append(out, n)
+	}
+	sort.Strings(out)
+	return out
+}
+
+// transportFor finds the transport owning a network, tolerating case.
+func (r *Router) transportFor(network string) (Transport, string, bool) {
+	canon, ok := r.Resolve(network)
+	if !ok {
+		return nil, "", false
+	}
+	return r.byNetwork[canon], canon, true
 }
 
 // Say routes a message to the transport that owns network.
 func (r *Router) Say(network, target, text string) {
-	if s, ok := r.byNetwork[network]; ok {
-		s.Say(network, target, text)
+	if t, canon, ok := r.transportFor(network); ok {
+		t.Say(canon, target, text)
 	}
 }
 
 // Action routes an action/emote to the transport that owns network.
 func (r *Router) Action(network, target, text string) {
-	if s, ok := r.byNetwork[network]; ok {
-		s.Action(network, target, text)
+	if t, canon, ok := r.transportFor(network); ok {
+		t.Action(canon, target, text)
 	}
 }
 
 // Notice routes an IRC NOTICE to the transport that owns network if it supports
 // one; otherwise it falls back to a normal message (engine.Noticer).
 func (r *Router) Notice(network, target, text string) {
-	s, ok := r.byNetwork[network]
+	t, canon, ok := r.transportFor(network)
 	if !ok {
 		return
 	}
-	if n, ok := s.(engine.Noticer); ok {
-		n.Notice(network, target, text)
+	if n, ok := t.(engine.Noticer); ok {
+		n.Notice(canon, target, text)
 		return
 	}
-	s.Say(network, target, text)
+	t.Say(canon, target, text)
 }
 
 // Join asks the owning transport to join a channel.
 func (r *Router) Join(network, channel string) {
-	if t, ok := r.byNetwork[network]; ok {
-		t.Join(network, channel)
+	if t, canon, ok := r.transportFor(network); ok {
+		t.Join(canon, channel)
 	}
 }
 
 // Part asks the owning transport to leave a channel.
 func (r *Router) Part(network, channel string) {
-	if t, ok := r.byNetwork[network]; ok {
-		t.Part(network, channel)
+	if t, canon, ok := r.transportFor(network); ok {
+		t.Part(canon, channel)
 	}
 }
 
 // Invite asks the owning transport to invite a user to a channel.
 func (r *Router) Invite(network, nick, channel string) {
-	if t, ok := r.byNetwork[network]; ok {
-		t.Invite(network, nick, channel)
+	if t, canon, ok := r.transportFor(network); ok {
+		t.Invite(canon, nick, channel)
 	}
 }
 
@@ -106,49 +141,49 @@ func (r *Router) Invite(network, nick, channel string) {
 // only when the mode was actually sent — Discord and other non-IRC transports,
 // which have no op mode, always return false.
 func (r *Router) Op(network, channel, nick string) bool {
-	if o, ok := r.opperFor(network); ok {
-		return o.Op(network, channel, nick)
+	if o, canon, ok := r.opperFor(network); ok {
+		return o.Op(canon, channel, nick)
 	}
 	return false
 }
 
 // Mode asks the owning transport to apply a channel mode change to nick.
 func (r *Router) Mode(network, channel, modes, nick string) bool {
-	if o, ok := r.opperFor(network); ok {
-		return o.Mode(network, channel, modes, nick)
+	if o, canon, ok := r.opperFor(network); ok {
+		return o.Mode(canon, channel, modes, nick)
 	}
 	return false
 }
 
 // Kick asks the owning transport to remove nick from the channel.
 func (r *Router) Kick(network, channel, nick, reason string) bool {
-	if o, ok := r.opperFor(network); ok {
-		return o.Kick(network, channel, nick, reason)
+	if o, canon, ok := r.opperFor(network); ok {
+		return o.Kick(canon, channel, nick, reason)
 	}
 	return false
 }
 
 // opperFor returns the mode-capable transport owning network, if any.
-func (r *Router) opperFor(network string) (engine.Opper, bool) {
-	t, ok := r.byNetwork[network]
+func (r *Router) opperFor(network string) (engine.Opper, string, bool) {
+	t, canon, ok := r.transportFor(network)
 	if !ok {
-		return nil, false
+		return nil, "", false
 	}
 	o, ok := t.(engine.Opper)
-	return o, ok
+	return o, canon, ok
 }
 
 // Identify asks the owning transport to (re)authenticate to services on network.
 func (r *Router) Identify(network, password string) bool {
-	if t, ok := r.byNetwork[network]; ok {
-		return t.Identify(network, password)
+	if t, canon, ok := r.transportFor(network); ok {
+		return t.Identify(canon, password)
 	}
 	return false
 }
 
 // HasNetwork reports whether any transport owns the named network.
 func (r *Router) HasNetwork(network string) bool {
-	_, ok := r.byNetwork[network]
+	_, ok := r.Resolve(network)
 	return ok
 }
 

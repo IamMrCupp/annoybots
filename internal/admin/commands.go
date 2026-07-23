@@ -125,6 +125,33 @@ func (m *Manager) reply(msg engine.Message, text string) {
 	m.ctl.Say(msg.Network, msg.Channel, text)
 }
 
+// knownNetwork checks a user-typed network name and, when it's wrong, replies
+// with the names that actually exist. Silently doing nothing while reporting
+// success is how a typo looks like a broken bot.
+func (m *Manager) knownNetwork(msg engine.Message, network string) bool {
+	st := m.ctl.NetworkStatus()
+	if _, ok := st[network]; ok {
+		return true
+	}
+	// tolerate case, the way the router does
+	for n := range st {
+		if strings.EqualFold(n, network) {
+			return true
+		}
+	}
+	names := make([]string, 0, len(st))
+	for n := range st {
+		names = append(names, n)
+	}
+	sort.Strings(names)
+	if len(names) == 0 {
+		m.reply(msg, "no networks are configured.")
+		return false
+	}
+	m.reply(msg, "unknown network \""+network+"\". I know: "+strings.Join(names, ", ")+" (see !networks)")
+	return false
+}
+
 func (m *Manager) exec(_ context.Context, msg engine.Message, cmd string, fields []string, text string) {
 	switch cmd {
 	case "!admin", "!help":
@@ -164,8 +191,7 @@ func (m *Manager) exec(_ context.Context, msg engine.Message, cmd string, fields
 			return
 		}
 		network, channel := fields[1], fields[2]
-		if _, known := m.ctl.NetworkStatus()[network]; !known {
-			m.reply(msg, "unknown network: "+network)
+		if !m.knownNetwork(msg, network) {
 			return
 		}
 		if !strings.HasPrefix(channel, "#") {
@@ -191,6 +217,9 @@ func (m *Manager) exec(_ context.Context, msg engine.Message, cmd string, fields
 	case "!join":
 		if len(fields) < 3 {
 			m.reply(msg, "usage: !join <network> <#channel>")
+			return
+		}
+		if !m.knownNetwork(msg, fields[1]) {
 			return
 		}
 		m.ctl.Join(fields[1], fields[2])
@@ -221,12 +250,18 @@ func (m *Manager) exec(_ context.Context, msg engine.Message, cmd string, fields
 			m.reply(msg, "usage: !part <network> <#channel>")
 			return
 		}
+		if !m.knownNetwork(msg, fields[1]) {
+			return
+		}
 		m.ctl.Part(fields[1], fields[2])
 		m.reply(msg, "parting "+fields[2]+" on "+fields[1])
 
 	case "!invite":
 		if len(fields) < 4 {
 			m.reply(msg, "usage: !invite <network> <#channel> <nick>")
+			return
+		}
+		if !m.knownNetwork(msg, fields[1]) {
 			return
 		}
 		m.ctl.Invite(fields[1], fields[3], fields[2])
