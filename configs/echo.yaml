@@ -148,10 +148,22 @@ personality:
     cooldown: "30s"        # min gap between banter replies per channel
     max_per_window: 3      # hard cap: at most 3 banter lines...
     window: "5m"           # ...per 5 minutes per channel
+    # Give this a GENEROUS pool. Lines are dealt from a shuffle bag — every line
+    # is used once before any repeats — but a 3-line pool still cycles visibly in
+    # a busy channel. A dozen or more keeps a bot from wearing out its welcome.
     lines:
       - "Oh hey, it's {nick}. Hi, {nick}!"
       - "{nick} said something. I heard it. Neat."
       - "Go on, {nick}, I'm listening. Echoing. Whatever."
+      - "That's certainly a sequence of words, {nick}."
+      - "I'd echo that, {nick}, but I have standards. Low ones, but they exist."
+      - "Noted, {nick}. Filed. Immediately forgotten."
+      - "Careful, {nick}, you're almost making sense."
+      - "mm. sure. why not."
+      - "{nick} speaks and the channel pretends to care."
+      - "I was going to say something clever here. The moment passed."
+      - "Riveting stuff, {nick}. Truly."
+      - "Is this the part where I'm supposed to be impressed?"
 
   triggers:
     - name: greeting
