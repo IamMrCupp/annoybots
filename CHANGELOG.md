@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.61.2](https://github.com/IamMrCupp/annoybots/compare/v1.61.1...v1.61.2) (2026-07-23)
+
+
+### Bug Fixes
+
+* **engine:** deal lines from a shuffle bag so bots stop repeating themselves ([66a1489](https://github.com/IamMrCupp/annoybots/commit/66a1489aa15dd527bf1d1130ca83dda17c15d2f4))
+* **engine:** stop the bots repeating themselves ([ba2f7b5](https://github.com/IamMrCupp/annoybots/commit/ba2f7b582d3cdd92143d6a5e9323f3904cfafae7))
+
 ## [1.61.1](https://github.com/IamMrCupp/annoybots/compare/v1.61.0...v1.61.1) (2026-07-23)
 
 
