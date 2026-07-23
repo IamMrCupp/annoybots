@@ -140,7 +140,8 @@ block; send `!help` for the list your flags allow.
 | `!identify <net> [password]` | master | (Re)authenticate the bot to NickServ. Omit the password to use the network's configured secret — nothing sensitive is typed in chat or written to logs. Pass one explicitly only when the network has none configured. |
 | `!addquote <pack> <text>` | op | Add a runtime quote. |
 | `!delquote <pack> <text>` | op | Remove a runtime-added quote (file packs are immutable). |
-| `!join <net> <#chan>` / `!part <net> <#chan>` | master | Channel ops. |
+| `!join <net> <#chan>` / `!part <net> <#chan>` | master | Channel ops — **this bot only**. |
+| `!joinall <net> <#chan>` / `!partall <net> <#chan>` | master | Channel ops across the **whole botnet** — every sibling bot joins or parts. Broadcast over the bus, so it needs `botnet.enabled`. |
 | `!invite <net> <#chan> <nick>` | master | IRC INVITE (needs ops on `+i` channels). |
 | `!admins` | master | List admins. |
 | `!reload` | master | Re-read quote packs + skits from disk (no restart). |
