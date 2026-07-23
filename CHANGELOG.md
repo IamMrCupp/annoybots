@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.61.0](https://github.com/IamMrCupp/annoybots/compare/v1.60.0...v1.61.0) (2026-07-23)
+
+
+### Features
+
+* **admin:** !joinall / !partall — fleet-wide channel control ([989a055](https://github.com/IamMrCupp/annoybots/commit/989a055010592360295b10d7021253f9e98296de))
+* **admin:** !joinall / !partall for fleet-wide channel control (closes [#232](https://github.com/IamMrCupp/annoybots/issues/232)) ([e4ff2b4](https://github.com/IamMrCupp/annoybots/commit/e4ff2b458fb37b20dc4cbd0cfa4103fc3125a133))
+
 ## [1.60.0](https://github.com/IamMrCupp/annoybots/compare/v1.59.0...v1.60.0) (2026-07-22)
 
 
