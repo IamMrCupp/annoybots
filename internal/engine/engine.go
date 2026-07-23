@@ -35,8 +35,13 @@ type Engine struct {
 	custom      map[string][]string // pack(lower) -> lines added at runtime
 	customNames []string            // display names of custom-only packs, in add order
 
-	mu  sync.Mutex // guards rng (math/rand is not concurrency-safe)
+	mu  sync.Mutex // guards rng, bags and lastPick
 	rng *rand.Rand
+
+	// Per-pool shuffle bags, so a line isn't repeated until its whole pool has
+	// been used. See shuffle.go.
+	bags     map[string][]int
+	lastPick map[string]int
 }
 
 // Options carries test-injectable dependencies. All fields are optional.
@@ -318,11 +323,13 @@ func (e *Engine) roll(p float64) bool {
 	return e.rng.Float64() < p
 }
 
+// pick returns a line from list, cycling through the whole pool before repeating
+// any of it (see shuffle.go) rather than picking uniformly at random.
 func (e *Engine) pick(list []string) string {
 	if len(list) == 0 {
 		return ""
 	}
 	e.mu.Lock()
 	defer e.mu.Unlock()
-	return list[e.rng.Intn(len(list))]
+	return list[e.nextFromBag(poolKey(list), len(list))]
 }
