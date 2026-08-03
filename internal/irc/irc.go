@@ -16,6 +16,7 @@ import (
 	"github.com/ergochat/irc-go/ircmsg"
 
 	"github.com/IamMrCupp/annoybots/internal/config"
+	"github.com/IamMrCupp/annoybots/internal/cooldown"
 	"github.com/IamMrCupp/annoybots/internal/engine"
 	"github.com/IamMrCupp/annoybots/internal/event"
 	"github.com/IamMrCupp/annoybots/internal/ratelimit"
@@ -34,6 +35,15 @@ type outMsg struct {
 	notice bool
 }
 
+// Kicked from a home channel, the bot rejoins after a short pause (classic
+// eggdrop behaviour). The pause avoids racing the kick, and a per-channel
+// cooldown caps how fast a determined op can make us rejoin — so a kick loop
+// can't hammer the server. A ban makes the rejoin fail harmlessly on its own.
+const (
+	rejoinDelay    = 3 * time.Second
+	rejoinCooldown = 20 * time.Second
+)
+
 // conn is a single network connection plus its outbound pacing.
 type conn struct {
 	cfg          config.Network
@@ -41,8 +51,34 @@ type conn struct {
 	limiter      *ratelimit.Limiter
 	out          chan outMsg
 	log          *slog.Logger
-	nickservPass string      // if set, IDENTIFY to NickServ on connect (non-SASL networks)
-	keeper       *chankeeper // if set, eggdrop-style channel keeping (auto-op protected nicks)
+	nickservPass string            // if set, IDENTIFY to NickServ on connect (non-SASL networks)
+	keeper       *chankeeper       // if set, eggdrop-style channel keeping (auto-op protected nicks)
+	rejoin       *cooldown.Manager // rate-limits auto-rejoin after a kick
+}
+
+// channelName returns the channel portion of a configured entry, dropping any
+// join key ("#chan secret" -> "#chan").
+func channelName(entry string) string {
+	if f := strings.Fields(entry); len(f) > 0 {
+		return f[0]
+	}
+	return ""
+}
+
+// rejoinTarget decides whether a KICK should trigger a rejoin. It returns the
+// configured channel entry to rejoin with (preserving any key) when the bot
+// itself was kicked from one of its home channels, else "". A channel the bot
+// only joined ad hoc (not in its config) is deliberately not chased.
+func rejoinTarget(kicked, self, channel string, configured []string) string {
+	if !strings.EqualFold(kicked, self) {
+		return "" // someone else was kicked, not us
+	}
+	for _, entry := range configured {
+		if strings.EqualFold(channelName(entry), channel) {
+			return entry
+		}
+	}
+	return ""
 }
 
 // Manager owns all connections and implements engine.Sender.
@@ -134,6 +170,7 @@ func newConn(n config.Network, log *slog.Logger, getenv func(string) string) *co
 		limiter: ratelimit.New(n.Rate.Burst, n.Rate.PerSecond),
 		out:     make(chan outMsg, 256),
 		log:     log.With("network", n.Name),
+		rejoin:  cooldown.New(),
 	}
 	// NickServ IDENTIFY is the pre-SASL fallback for networks that don't offer
 	// the SASL capability. Only meaningful for real IRC (Twitch has no NickServ).
@@ -242,11 +279,28 @@ func (m *Manager) bind(c *conn) {
 		}
 	})
 	ic.AddCallback("KICK", func(e ircmsg.Message) {
-		if len(e.Params) >= 2 {
-			m.emit(event.Event{Kind: event.Kick, Network: c.cfg.Name, Channel: e.Params[0], Nick: e.Params[1], Actor: e.Nick()})
+		if len(e.Params) < 2 {
+			return
 		}
-		if c.keeper != nil && len(e.Params) >= 2 {
-			c.keeper.onLeave(e.Params[0], e.Params[1])
+		channel, kicked := e.Params[0], e.Params[1]
+		m.emit(event.Event{Kind: event.Kick, Network: c.cfg.Name, Channel: channel, Nick: kicked, Actor: e.Nick()})
+		if c.keeper != nil {
+			c.keeper.onLeave(channel, kicked)
+		}
+		// If we were the one kicked from a home channel, rejoin after a beat —
+		// rate-limited so a determined op can't turn it into a flood.
+		if target := rejoinTarget(kicked, ic.CurrentNick(), channel, c.cfg.Channels); target != "" {
+			if c.rejoin.Use("rejoin:"+strings.ToLower(channel), rejoinCooldown) {
+				c.log.Info("kicked — rejoining shortly", "channel", channel, "by", e.Nick(), "delay", rejoinDelay)
+				cc := c
+				time.AfterFunc(rejoinDelay, func() {
+					if err := cc.ic.Join(target); err != nil {
+						cc.log.Warn("rejoin failed", "channel", target, "err", err)
+					}
+				})
+			} else {
+				c.log.Info("kicked but rejoin on cooldown — leaving it", "channel", channel, "by", e.Nick())
+			}
 		}
 	})
 	ic.AddCallback("MODE", func(e ircmsg.Message) {
