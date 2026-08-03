@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.62.0](https://github.com/IamMrCupp/annoybots/compare/v1.61.2...v1.62.0) (2026-08-03)
+
+
+### Features
+
+* **irc:** auto-rejoin after a kick ([e52aca7](https://github.com/IamMrCupp/annoybots/commit/e52aca7ada59469cf2484cf7cc737452856e85c3))
+* **irc:** rejoin configured channels after being kicked (closes [#239](https://github.com/IamMrCupp/annoybots/issues/239)) ([e42192a](https://github.com/IamMrCupp/annoybots/commit/e42192a6ca32977242c8ee601b546f16a3fd0038))
+
 ## [1.61.2](https://github.com/IamMrCupp/annoybots/compare/v1.61.1...v1.61.2) (2026-07-23)
 
 
