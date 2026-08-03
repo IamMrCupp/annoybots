@@ -22,7 +22,8 @@ triggers, and voice. The repo ships two example personalities, **Echo** and
 - **Games & toys** — karma (`name++` / `name--` / `!karma` / `!top`), `!roll`, `!8ball`, and a full **[IdleRPG](docs/idlerpg.md)** (idle to level, items, battles, random events, alignment/classes, and timed party **quests**) with a read-only **web dashboard**.
 - **Cross-network accounts** — `!register` / `!link` so one person is one identity (and one IdleRPG hero) whether they're on IRC or Discord. See [docs/accounts.md](docs/accounts.md).
 - **Leave a message** — `!message <nick> <text>`, delivered when they're next around.
-- **Channel keeping** — eggdrop-style: an opped bot keeps its sibling bots opped.
+- **Channel keeping** — eggdrop-style: an opped bot keeps its sibling bots
+  opped, and rejoins its configured channels if it gets kicked.
 - **Chat admin console** — DM the bot to puppet it, edit quotes, manage channels and admins; identity-authenticated, tiered by access flag.
 - **Lua plugins** — eggdrop-style scripting: drop a `.lua` file to add `!commands` with no rebuild. See [docs/plugins.md](docs/plugins.md).
 
