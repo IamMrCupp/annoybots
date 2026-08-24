@@ -14,7 +14,7 @@ require (
 
 require (
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
-	github.com/gorilla/websocket v1.4.2 // indirect
+	github.com/gorilla/websocket v1.5.3 // indirect
 	go.uber.org/atomic v1.11.0 // indirect
 	golang.org/x/sys v0.38.0 // indirect
 )
