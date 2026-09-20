@@ -139,3 +139,88 @@ func TestChanKeepHoldsOp(t *testing.T) {
 		t.Fatal("should not report holding ops after -o on self")
 	}
 }
+
+// The regression this fix exists for: both bots are opped, the connection drops,
+// and on reconnect nobody holds ops any more. Without a reset the keeper still
+// believes the sibling is opped and skips it forever — so a manual +o on the bot
+// produces nothing at all.
+func TestChanKeepResetClearsStaleOpsOnReconnect(t *testing.T) {
+	r := &modeRec{}
+	k := newKeeper(r)
+	k.onNames("#tns", "@arwyen @kurkutu") // both opped before the split
+	k.onEndNames("#tns")
+	if r.count() != 0 {
+		t.Fatalf("nothing to do while the sibling is already opped, got %#v", r.calls)
+	}
+
+	k.reset() // reconnect
+
+	// Rejoin: nobody holds ops now.
+	k.onNames("#tns", "arwyen kurkutu")
+	k.onEndNames("#tns")
+	if r.count() != 0 {
+		t.Fatalf("bot isn't opped — it can't op anyone, got %#v", r.calls)
+	}
+	if k.HoldsOp("#tns") {
+		t.Fatal("HoldsOp must not survive a reset")
+	}
+
+	k.onModeOp("#tns", "arwyen", true) // an op hands the bot ops
+	if !r.has("#tns +o kurkutu") {
+		t.Fatalf("sibling should be opped after the reset, got %#v", r.calls)
+	}
+}
+
+// A NAMES burst replaces the channel's state. Without that, a rejoin merges into
+// the old map and a since-deopped nick keeps a stale ops entry — 353 can only add.
+func TestChanKeepNamesBurstReplacesState(t *testing.T) {
+	r := &modeRec{}
+	k := newKeeper(r)
+	k.onNames("#tns", "@arwyen @kurkutu")
+	k.onEndNames("#tns")
+
+	// Fresh burst: the bot still holds ops, the sibling no longer does.
+	k.onNames("#tns", "@arwyen")
+	k.onNames("#tns", "kurkutu") // second 353 of the same burst accumulates
+	k.onEndNames("#tns")
+
+	if !r.has("#tns +o kurkutu") {
+		t.Fatalf("a deopped sibling should be re-opped after a fresh NAMES, got %#v", r.calls)
+	}
+	if !k.HoldsOp("#tns") {
+		t.Fatal("the bot's own op state should survive a burst that still lists it as @")
+	}
+}
+
+// Someone who left between bursts must not linger as a member.
+func TestChanKeepNamesBurstDropsDepartedMembers(t *testing.T) {
+	r := &modeRec{}
+	k := newKeeper(r)
+	k.onNames("#tns", "@arwyen kurkutu")
+	k.onEndNames("#tns")
+	r.mu.Lock()
+	r.calls = nil
+	r.mu.Unlock()
+
+	k.onNames("#tns", "@arwyen") // sibling gone while we weren't looking
+	k.onEndNames("#tns")
+	if r.count() != 0 {
+		t.Fatalf("an absent sibling must not be opped, got %#v", r.calls)
+	}
+}
+
+func TestChanKeepForgetDropsChannel(t *testing.T) {
+	r := &modeRec{}
+	k := newKeeper(r)
+	k.onNames("#tns", "@arwyen @kurkutu")
+	k.onEndNames("#tns")
+
+	k.forget("#TNS") // case-insensitive — we parted or were kicked
+	if k.HoldsOp("#tns") {
+		t.Fatal("forgotten channel must not report op state")
+	}
+	k.onJoin("#tns", "kurkutu")
+	if r.count() != 0 {
+		t.Fatalf("no op state after forget means nothing to enforce, got %#v", r.calls)
+	}
+}
