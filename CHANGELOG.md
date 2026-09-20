@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.62.1](https://github.com/IamMrCupp/annoybots/compare/v1.62.0...v1.62.1) (2026-09-20)
+
+
+### Bug Fixes
+
+* **irc:** reset channel-keeping op state on reconnect ([a7ceb41](https://github.com/IamMrCupp/annoybots/commit/a7ceb417ac411e6e84da0ae51312b0bbfdfc7cb4))
+* **irc:** reset channel-keeping op state on reconnect (closes [#243](https://github.com/IamMrCupp/annoybots/issues/243)) ([75d3077](https://github.com/IamMrCupp/annoybots/commit/75d307770de590241b9530bb85f4013e108ab885))
+
 ## [1.62.0](https://github.com/IamMrCupp/annoybots/compare/v1.61.2...v1.62.0) (2026-08-03)
 
 
