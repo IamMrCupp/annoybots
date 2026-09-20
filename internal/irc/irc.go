@@ -185,6 +185,13 @@ func (m *Manager) bind(c *conn) {
 	ic := c.ic
 	ic.AddConnectCallback(func(ircmsg.Message) {
 		c.log.Info("connected", "nick", ic.CurrentNick())
+		// A reconnect is a clean slate: nothing we tracked about who was present
+		// or opped survives the disconnect. Drop it before rejoining so the new
+		// NAMES burst re-seeds from scratch — carrying stale ops forward makes
+		// channel-keeping skip the siblings it exists to op.
+		if c.keeper != nil {
+			c.keeper.reset()
+		}
 		// Identify to services before joining, in case a channel is +r
 		// (registered-only). NickServ processes this asynchronously; for
 		// unrestricted channels the ordering doesn't matter.
@@ -257,7 +264,11 @@ func (m *Manager) bind(c *conn) {
 			Nick: e.Nick(), Ident: ident, Host: host, Text: paramAt(e, 1),
 		})
 		if c.keeper != nil {
-			c.keeper.onLeave(e.Params[0], e.Nick())
+			if strings.EqualFold(e.Nick(), ic.CurrentNick()) {
+				c.keeper.forget(e.Params[0]) // we left — the whole channel is unknown now
+			} else {
+				c.keeper.onLeave(e.Params[0], e.Nick())
+			}
 		}
 	})
 	ic.AddCallback("QUIT", func(e ircmsg.Message) {
@@ -285,7 +296,11 @@ func (m *Manager) bind(c *conn) {
 		channel, kicked := e.Params[0], e.Params[1]
 		m.emit(event.Event{Kind: event.Kick, Network: c.cfg.Name, Channel: channel, Nick: kicked, Actor: e.Nick()})
 		if c.keeper != nil {
-			c.keeper.onLeave(channel, kicked)
+			if strings.EqualFold(kicked, ic.CurrentNick()) {
+				c.keeper.forget(channel) // we were the one kicked
+			} else {
+				c.keeper.onLeave(channel, kicked)
+			}
 		}
 		// If we were the one kicked from a home channel, rejoin after a beat —
 		// rate-limited so a determined op can't turn it into a flood.

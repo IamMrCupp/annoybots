@@ -21,8 +21,9 @@ type chankeeper struct {
 	cool      *cooldown.Manager                // per-(channel,nick) op cooldown, anti-flood
 	log       *slog.Logger
 
-	mu    sync.Mutex
-	chans map[string]*chanState
+	mu     sync.Mutex
+	chans  map[string]*chanState
+	naming map[string]bool // channels with a NAMES burst (353s) currently open
 }
 
 type chanState struct {
@@ -46,7 +47,32 @@ func newChankeeper(protect []string, selfNick func() string, send func(channel, 
 		cool:      cooldown.New(),
 		log:       log,
 		chans:     make(map[string]*chanState),
+		naming:    make(map[string]bool),
 	}
+}
+
+// reset drops every channel's tracked membership and op state. Call it on
+// (re)connect: after a disconnect we know nothing about who is present or opped,
+// and carrying the old state forward is worse than having none — a stale
+// ops[sibling]=true makes enforce skip the very nick it exists to op, and a
+// stale ops[self]=true makes HoldsOp lie to the !op/!kick commands. The next
+// NAMES burst re-seeds everything.
+func (k *chankeeper) reset() {
+	k.mu.Lock()
+	defer k.mu.Unlock()
+	k.chans = make(map[string]*chanState)
+	k.naming = make(map[string]bool)
+}
+
+// forget drops one channel's state — for when we leave it ourselves (our own
+// PART, or a KICK of us). Whatever happens there while we're gone is invisible
+// to us, so the state is stale the moment we walk out.
+func (k *chankeeper) forget(channel string) {
+	c := strings.ToLower(channel)
+	k.mu.Lock()
+	defer k.mu.Unlock()
+	delete(k.chans, c)
+	delete(k.naming, c)
 }
 
 func (k *chankeeper) ensure(channel string) *chanState {
@@ -61,9 +87,19 @@ func (k *chankeeper) ensure(channel string) *chanState {
 
 // onNames records a RPL_NAMREPLY (353) line's members + ops. Prefixes @/&/~ mean
 // op-or-better; +/% are voice/halfop (not op for our purposes).
+//
+// A NAMES burst *replaces* the channel's state rather than merging into it: the
+// first 353 for a channel wipes what we had, the rest of the burst accumulates,
+// and 366 closes it. Merging would let a nick who has since been deopped keep a
+// stale ops entry forever, since 353 can only ever add.
 func (k *chankeeper) onNames(channel, names string) {
 	k.mu.Lock()
 	defer k.mu.Unlock()
+	c := strings.ToLower(channel)
+	if !k.naming[c] {
+		k.naming[c] = true
+		delete(k.chans, c)
+	}
 	s := k.ensure(channel)
 	for _, raw := range strings.Fields(names) {
 		opped := false
@@ -85,8 +121,14 @@ func (k *chankeeper) onNames(channel, names string) {
 	}
 }
 
-// onEndNames evaluates a channel once its NAMES list is complete.
-func (k *chankeeper) onEndNames(channel string) { k.enforce(channel) }
+// onEndNames closes the NAMES burst (RPL_ENDOFNAMES, 366) and evaluates the
+// channel now that its membership list is complete.
+func (k *chankeeper) onEndNames(channel string) {
+	k.mu.Lock()
+	delete(k.naming, strings.ToLower(channel))
+	k.mu.Unlock()
+	k.enforce(channel)
+}
 
 func (k *chankeeper) onJoin(channel, nick string) {
 	k.mu.Lock()
